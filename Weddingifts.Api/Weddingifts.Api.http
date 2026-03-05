@@ -1,0 +1,6 @@
+@Weddingifts.Api_HostAddress = http://localhost:5298
+
+GET {{Weddingifts.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,20 @@
+# Visual Studio
+.vs/
+
+# Build
+bin/
+obj/
+
+# Rider / VSCode
+.idea/
+.vscode/
+
+# Node (para quando criarmos o frontend)
+node_modules/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
