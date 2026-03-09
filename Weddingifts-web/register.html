@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weddingifts | Criar conta</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <nav class="shell-nav">
+    <div class="shell-nav-inner">
+      <a class="shell-brand" href="./index.html">
+        <span class="shell-dot"></span>
+        <span>Weddingifts</span>
+      </a>
+      <div class="shell-links">
+        <a href="./login.html">Entrar</a>
+        <a href="./register.html" class="active">Criar conta</a>
+        <a href="./event.html">Evento publico</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="auth-layout">
+    <section class="auth-card">
+      <h1 class="auth-title">Crie sua conta</h1>
+      <p class="auth-subtitle">Configure seu acesso ao Weddingifts para criar eventos e administrar presentes.</p>
+
+      <form id="register-form" class="form">
+        <div class="field">
+          <label for="name-input">Nome</label>
+          <input class="input" id="name-input" type="text" placeholder="Maria Silva" required />
+        </div>
+
+        <div class="field">
+          <label for="email-input">Email</label>
+          <input class="input" id="email-input" type="email" placeholder="maria@email.com" required />
+        </div>
+
+        <div class="field">
+          <label for="password-input">Senha</label>
+          <input class="input" id="password-input" type="password" placeholder="Minimo 6 caracteres" required />
+        </div>
+
+        <div class="field">
+          <label for="api-base-input">API base</label>
+          <input class="input" id="api-base-input" type="text" value="http://localhost:5298" required />
+        </div>
+
+        <button id="submit-button" class="btn btn-primary" type="submit">Criar conta</button>
+      </form>
+
+      <p id="status" class="status status-info">Preencha os dados para registrar um novo usuario.</p>
+
+      <p class="auth-footer">
+        Ja possui conta?
+        <a id="login-link" href="./login.html">Entrar agora</a>
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="./js/register.js"></script>
+</body>
+</html>

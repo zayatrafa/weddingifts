@@ -2,7 +2,7 @@
 
 This document defines coding practices for the Weddingifts project.
 
-The goal is to maintain code that is:
+The goal is to keep code:
 
 - readable
 - consistent
@@ -28,17 +28,17 @@ Examples:
 
 Good:
 
-CreateGift
-GetGiftsByEvent
+- CreateGift
+- GetGiftsByEvent
 
 Avoid:
 
-ProcessData
-HandleStuff
+- ProcessData
+- HandleStuff
 
 ---
 
-# Controllers
+# Backend Controllers
 
 Controllers should:
 
@@ -46,36 +46,34 @@ Controllers should:
 - contain minimal logic
 - delegate work to services
 
-Example pattern:
+Pattern:
 
 Controller
-↓
-Service
-↓
-Database
+-> Service
+-> Database
 
 ---
 
-# Services
+# Backend Services
 
 Services contain business rules.
 
 Examples:
 
-GiftService
-UserService
-EventService
+- GiftService
+- UserService
+- EventService
 
 Responsibilities:
 
-- validating operations
-- coordinating database actions
+- validate operations
+- coordinate database actions
 
 ---
 
 # Entities
 
-Entities should represent database tables.
+Entities represent database tables.
 
 Avoid placing business logic inside entities.
 
@@ -83,13 +81,35 @@ Avoid placing business logic inside entities.
 
 # Models
 
-Models should represent request or response payloads.
+Models represent request and response payloads.
 
-Example:
+Examples:
 
-CreateGiftRequest
+- CreateGiftRequest
+- ReserveGiftRequest
+- GiftResponse
 
 Models should not contain database logic.
+
+---
+
+# Frontend MVP (Weddingifts-web)
+
+Use plain HTML/CSS/JavaScript (no build step).
+
+Keep frontend code simple:
+
+- UI structure in `index.html`
+- page logic and API calls in `app.js`
+- visual styles in `styles.css`
+
+When calling backend:
+
+- prefer centralized request helpers
+- always surface backend error messages (`ProblemDetails.detail`) to users
+- provide explicit loading/success/error feedback
+
+Do not introduce extra frontend frameworks unless explicitly requested.
 
 ---
 
@@ -99,9 +119,9 @@ Return meaningful HTTP responses.
 
 Examples:
 
-404 – resource not found
-400 – invalid input
-500 – server error
+- 404 - resource not found
+- 400 - invalid input
+- 500 - server error
 
 ---
 
@@ -113,6 +133,20 @@ Examples:
 
 - price must be >= 0
 - quantity must be >= 1
+- password must have at least 6 characters
+
+---
+
+# Tests
+
+Prefer integration tests for API behavior-critical flows.
+
+Each new business-critical flow should include:
+
+- at least one success path
+- at least one failure path
+
+Keep tests deterministic and isolated.
 
 ---
 

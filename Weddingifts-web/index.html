@@ -3,110 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weddingifts | Evento Publico</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <title>Weddingifts | Lista de Casamento Moderna</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="background-layer"></div>
-
-  <header class="hero">
-    <p class="eyebrow">Weddingifts</p>
-    <h1 id="event-title">Carregando evento...</h1>
-    <p id="event-subtitle" class="subtitle">
-      Buscando informacoes reais do backend.
-    </p>
-
-    <div class="hero-info">
-      <div class="pill">
-        <span class="pill-label">Data</span>
-        <strong id="event-date">--</strong>
-      </div>
-      <div class="pill">
-        <span class="pill-label">Slug</span>
-        <strong id="event-slug">--</strong>
-      </div>
-      <div class="pill">
-        <span class="pill-label">Lista</span>
-        <strong id="event-total-gifts">0 itens</strong>
+  <nav class="shell-nav">
+    <div class="shell-nav-inner">
+      <a class="shell-brand" href="./index.html">
+        <span class="shell-dot"></span>
+        <span>Weddingifts</span>
+      </a>
+      <div class="shell-links">
+        <a href="./event.html">Evento publico</a>
+        <a href="./login.html">Entrar</a>
+        <a href="./register.html" class="active">Criar conta</a>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main class="content">
-    <section class="panel controls controls-top">
-      <div class="load-group">
-        <label for="api-base-input">API</label>
-        <input id="api-base-input" type="text" value="http://localhost:5298" />
-      </div>
-      <div class="load-group">
-        <label for="slug-input">Slug</label>
-        <input id="slug-input" type="text" placeholder="ex: abc12345" />
-      </div>
-      <div class="load-group">
-        <label for="guest-name-input">Convidado</label>
-        <input id="guest-name-input" type="text" placeholder="Seu nome" value="Convidado web" />
-      </div>
-      <button id="load-button" class="load-button" type="button">Carregar evento</button>
-    </section>
-
-    <section class="panel status-panel" id="status-panel">
-      <p id="status-message">Aguardando carregamento do evento.</p>
-    </section>
-
-    <section class="panel stats-panel">
-      <div class="stat-card">
-        <p class="stat-label">Presentes</p>
-        <p class="stat-value" id="stat-total">0</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">Disponiveis</p>
-        <p class="stat-value" id="stat-available">0</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">Com reserva</p>
-        <p class="stat-value" id="stat-reserved">0</p>
-      </div>
-    </section>
-
-    <section class="panel controls">
-      <div class="filter-group">
-        <button data-filter="all" class="filter-button active">Todos</button>
-        <button data-filter="available" class="filter-button">Disponiveis</button>
-        <button data-filter="reserved" class="filter-button">Com reserva</button>
-      </div>
-      <p class="hint">
-        Reserva e cancelamento abaixo usam os endpoints reais do backend.
+  <main class="page">
+    <section class="hero-panel">
+      <p class="hero-eyebrow">Weddingifts Platform</p>
+      <h1 class="hero-title">Sua lista de casamento, simples, elegante e viva.</h1>
+      <p class="hero-subtitle">
+        Crie seu evento, organize presentes em minutos e compartilhe um link publico para os convidados reservarem em tempo real.
+        Tudo conectado diretamente a API do projeto.
       </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="./register.html">Comecar agora</a>
+        <a class="btn btn-secondary" href="./login.html">Ja tenho conta</a>
+        <a class="btn btn-ghost" href="./event.html">Ver pagina publica</a>
+      </div>
     </section>
 
-    <section class="gift-grid" id="gift-grid" aria-live="polite"></section>
+    <section class="section grid-3">
+      <article class="card card-pad">
+        <h3 class="feature-title">Cadastro e acesso rapido</h3>
+        <p class="feature-copy">Crie sua conta em poucos segundos e acesse seu painel privado com autenticacao JWT.</p>
+      </article>
+      <article class="card card-pad">
+        <h3 class="feature-title">Painel do casal</h3>
+        <p class="feature-copy">Cadastre eventos, adicione presentes e copie o link publico com um clique.</p>
+      </article>
+      <article class="card card-pad">
+        <h3 class="feature-title">Experiencia para convidados</h3>
+        <p class="feature-copy">Reserva e cancelamento de presentes usando os endpoints reais ja integrados.</p>
+      </article>
+    </section>
+
+    <section class="section card card-pad">
+      <p class="kicker">Como funciona</p>
+      <h2 class="h2">Um fluxo direto, do cadastro ao evento publico.</h2>
+      <p class="copy muted">
+        Toda a jornada roda em HTML, CSS e JavaScript puro, com arquitetura simples e integrada ao backend ASP.NET.
+      </p>
+
+      <div class="flow-grid">
+        <article class="flow-step">
+          <strong>1. Criar conta</strong>
+          <span class="muted">Informe nome, email e senha para registrar o usuario.</span>
+        </article>
+        <article class="flow-step">
+          <strong>2. Fazer login</strong>
+          <span class="muted">Receba token JWT e entre no painel privado.</span>
+        </article>
+        <article class="flow-step">
+          <strong>3. Montar lista</strong>
+          <span class="muted">Crie evento e presentes vinculados ao seu usuario.</span>
+        </article>
+        <article class="flow-step">
+          <strong>4. Compartilhar link</strong>
+          <span class="muted">Convidados reservam presentes na pagina publica.</span>
+        </article>
+      </div>
+    </section>
+
+    <p class="page-footer">Weddingifts Front MVP evoluido | Multi paginas + autenticacao + dashboard</p>
   </main>
 
-  <template id="gift-card-template">
-    <article class="gift-card">
-      <div class="gift-head">
-        <h2 class="gift-name"></h2>
-        <p class="gift-price"></p>
-      </div>
-      <p class="gift-description"></p>
-      <div class="gift-meta">
-        <span class="gift-status-badge"></span>
-        <span class="gift-quantity"></span>
-      </div>
-      <div class="gift-actions">
-        <button class="reserve-button" type="button">Reservar</button>
-        <button class="unreserve-button" type="button">Cancelar</button>
-      </div>
-    </article>
-  </template>
-
-  <footer class="footer">
-    <p>Weddingifts Front MVP - integracao real de leitura e reserva</p>
-  </footer>
-
-  <script src="./app.js"></script>
+  <script type="module" src="./js/landing.js"></script>
 </body>
 </html>

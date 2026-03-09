@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Weddingifts.Api.Models;
 using Weddingifts.Api.Services;
 
@@ -15,6 +16,7 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
@@ -24,6 +26,7 @@ public class UserController : ControllerBase
         return Created($"/api/users/{response.Id}", response);
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {

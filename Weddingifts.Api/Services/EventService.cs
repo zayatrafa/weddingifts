@@ -41,6 +41,25 @@ public class EventService
         return ev;
     }
 
+    public async Task<Event> CreateEventForUser(int userId, CreateEventRequest request)
+    {
+        request.UserId = userId;
+        return await CreateEvent(request);
+    }
+
+    public async Task<List<Event>> GetEventsByUser(int userId)
+    {
+        if (userId <= 0)
+            throw new DomainValidationException("Authenticated user id is invalid.");
+
+        return await _context.Events
+            .AsNoTracking()
+            .Include(e => e.Gifts)
+            .Where(e => e.UserId == userId)
+            .OrderByDescending(e => e.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<Event> GetEventBySlug(string slug)
     {
         if (string.IsNullOrWhiteSpace(slug))

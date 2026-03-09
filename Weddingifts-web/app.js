@@ -1,11 +1,12 @@
-﻿const fallbackSlug = "";
+const fallbackSlug = "";
 
 const state = {
   filter: "all",
   event: null,
   gifts: [],
   loading: false,
-  actionGiftId: null
+  actionGiftId: null,
+  registerLoading: false
 };
 
 const giftGrid = document.getElementById("gift-grid");
@@ -16,6 +17,12 @@ const apiBaseInput = document.getElementById("api-base-input");
 const guestNameInput = document.getElementById("guest-name-input");
 const statusPanel = document.getElementById("status-panel");
 const statusMessage = document.getElementById("status-message");
+const registerForm = document.getElementById("register-form");
+const registerNameInput = document.getElementById("register-name-input");
+const registerEmailInput = document.getElementById("register-email-input");
+const registerPasswordInput = document.getElementById("register-password-input");
+const registerButton = document.getElementById("register-button");
+const registerMessage = document.getElementById("register-message");
 
 function formatDate(dateString) {
   if (!dateString) return "--";
@@ -74,6 +81,81 @@ function setStatus(type, message) {
   statusMessage.textContent = message;
   statusPanel.classList.remove("status-info", "status-error", "status-success", "status-loading");
   statusPanel.classList.add(type);
+}
+
+function formatDateTime(dateString) {
+  if (!dateString) return "--";
+
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function setRegisterMessage(type, message) {
+  registerMessage.textContent = message;
+  registerMessage.classList.remove("register-info", "register-error", "register-success", "register-loading");
+  registerMessage.classList.add(type);
+}
+
+function setRegisterLoading(isLoading) {
+  state.registerLoading = isLoading;
+  registerButton.disabled = isLoading;
+  registerButton.textContent = isLoading ? "Cadastrando..." : "Cadastrar usuario";
+}
+
+function buildCreatedUserMessage(createdUser, fallbackName, fallbackEmail) {
+  const safeName = createdUser?.name || fallbackName;
+  const safeEmail = createdUser?.email || fallbackEmail;
+  const safeId = typeof createdUser?.id === "number" ? createdUser.id : "--";
+  const safeCreatedAt = formatDateTime(createdUser?.createdAt);
+
+  return `Usuario criado com sucesso: ID ${safeId} | ${safeName} | ${safeEmail} | ${safeCreatedAt}.`;
+}
+
+async function submitRegistration(event) {
+  event.preventDefault();
+
+  if (state.registerLoading) {
+    return;
+  }
+
+  const apiBase = getApiBase();
+  const name = registerNameInput.value.trim();
+  const email = registerEmailInput.value.trim();
+  const password = registerPasswordInput.value;
+
+  if (!apiBase) {
+    setRegisterMessage("register-error", "Informe a URL base da API.");
+    return;
+  }
+
+  if (!name || !email || !password) {
+    setRegisterMessage("register-error", "Preencha nome, email e senha.");
+    return;
+  }
+
+  try {
+    setRegisterLoading(true);
+    setRegisterMessage("register-loading", "Enviando cadastro...");
+
+    const createdUser = await requestJson(`${apiBase}/api/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+
+    registerPasswordInput.value = "";
+    setRegisterMessage("register-success", buildCreatedUserMessage(createdUser, name, email));
+  } catch (error) {
+    setRegisterMessage("register-error", `Falha ao cadastrar usuario: ${error.message}`);
+  } finally {
+    setRegisterLoading(false);
+  }
 }
 
 function refreshHeader() {
@@ -329,6 +411,7 @@ function render() {
 }
 
 loadButton.addEventListener("click", loadEvent);
+registerForm.addEventListener("submit", submitRegistration);
 bindFilters();
 
 const params = new URLSearchParams(window.location.search);
@@ -340,3 +423,4 @@ if (slugFromQuery) {
   render();
   setStatus("status-info", "Preencha o slug do evento para carregar dados reais.");
 }
+

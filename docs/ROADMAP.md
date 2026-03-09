@@ -1,113 +1,106 @@
-﻿# Weddingifts Development Roadmap
+# Weddingifts Development Roadmap
 
 This document tracks the development stages of the Weddingifts project.
 
 ---
 
-# Phase 1 – Backend Core (Completed)
+# Phase 1 - Backend Core (Completed)
 
-✔ User creation
-✔ Event creation
-✔ Gift creation
-✔ Gift listing
-✔ Public event retrieval
+- User creation
+- Event creation
+- Gift creation
+- Gift listing
+- Public event retrieval
 
 Endpoints implemented:
 
-POST /api/users
-GET /api/users
-
-POST /api/events
-GET /api/events/{slug}
-
-POST /api/events/{eventId}/gifts
-GET /api/events/{eventId}/gifts
+- POST /api/users
+- GET /api/users
+- POST /api/events
+- GET /api/events/{slug}
+- POST /api/events/{eventId}/gifts
+- GET /api/events/{eventId}/gifts
 
 ---
 
-# Phase 2 – Gift Reservation System
+# Phase 2 - Gift Reservation System (Completed)
 
-Planned features:
+- Reserve a gift
+- Cancel reservation
+- Prevent over-reservation
+- Validate quantities
 
-- reserve a gift
-- cancel reservation
-- prevent double reservations
-- validate quantities
+Endpoints implemented:
 
-Planned endpoints:
-
-POST /api/gifts/{giftId}/reserve
-POST /api/gifts/{giftId}/unreserve
+- POST /api/gifts/{giftId}/reserve
+- POST /api/gifts/{giftId}/unreserve
 
 ---
 
-# Phase 3 – Backend Improvements
+# Phase 3 - Backend Validation and Error Handling (Completed)
 
-Add validation rules:
+Implemented validation rules:
 
 - event must exist when creating gifts
 - user must exist when creating events
-- price must be positive
+- price must be >= 0
 - quantity must be >= 1
 
-Add improved error handling.
+Implemented global error handling with ProblemDetails.
 
 ---
 
-# Phase 4 – Public Event Page
+# Phase 4 - Frontend Public Event MVP (Completed)
 
-Frontend implementation:
+Implemented in static HTML/CSS/JavaScript:
 
-Public page showing:
-
-- event name
-- gift list
-- reserve buttons
-
-Technology:
-
-Next.js
-React
+- public event page
+- real API integration for loading event and gifts
+- reserve/cancel actions integrated with backend
+- basic loading/success/error feedback
 
 ---
 
-# Phase 5 – Gift Reservation UI
+# Phase 5 - Automated Quality (Completed)
 
-Guests should be able to:
-
-- reserve a gift
-- see reserved gifts
-- confirm reservation
+- Integration tests for reservation and gift validation flows
+- GitHub Actions CI running restore/build/test on push and pull_request
 
 ---
 
-# Phase 6 – Admin Dashboard
+# Phase 6 - Frontend User Registration Screen (Next)
 
-Couples should be able to:
+Implement in `Weddingifts-web`:
 
-- create gifts
-- edit gifts
-- remove gifts
-- track reservations
+- user registration form (name, email, password)
+- integration with POST /api/users
+- clear UX states (loading, success, error)
+- display backend validation errors from ProblemDetails
 
 ---
 
-# Phase 7 – Deployment
+# Phase 7 - Backend Hardening (Planned)
 
-Deploy system to cloud environment.
+- reservation concurrency hardening
+- authentication/authorization
+- rate limiting
+- logging improvements
 
-Possible stack:
+---
 
-Backend:
-.NET container
+# Phase 8 - Frontend Evolution (Planned)
 
-Database:
-PostgreSQL
+- migrate MVP to Next.js + TypeScript
+- improve UX states (loading/errors/empty)
+- add admin dashboard
 
-Frontend:
-Next.js
+---
 
-CI/CD pipeline.
+# Phase 9 - Deployment (Planned)
+
+- Dockerized services
+- cloud deployment
+- CI/CD evolution
 
 ---
 

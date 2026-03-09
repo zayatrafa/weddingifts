@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Weddingifts.Api.Exceptions;
 using Weddingifts.Api.Models;
 using Weddingifts.Api.Services;
 
@@ -15,15 +18,18 @@ public class GiftController : ControllerBase
         _giftService = giftService;
     }
 
+    [Authorize]
     [HttpPost("{eventId:int}/gifts")]
     public async Task<IActionResult> CreateGift(int eventId, [FromBody] CreateGiftRequest request)
     {
-        var gift = await _giftService.CreateGift(eventId, request);
+        var userId = GetAuthenticatedUserId();
+        var gift = await _giftService.CreateGiftForUser(eventId, userId, request);
         var response = GiftResponse.FromEntity(gift);
 
         return Created($"/api/events/{eventId}/gifts/{response.Id}", response);
     }
 
+    [AllowAnonymous]
     [HttpGet("{eventId:int}/gifts")]
     public async Task<IActionResult> GetGifts(int eventId)
     {
@@ -31,5 +37,16 @@ public class GiftController : ControllerBase
         var response = gifts.Select(GiftResponse.FromEntity);
 
         return Ok(response);
+    }
+
+    private int GetAuthenticatedUserId()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!int.TryParse(claim, out var userId) || userId <= 0)
+        {
+            throw new DomainValidationException("Authenticated user id is invalid.");
+        }
+
+        return userId;
     }
 }

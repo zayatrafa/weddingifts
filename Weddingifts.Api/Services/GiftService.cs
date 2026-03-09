@@ -17,31 +17,38 @@ public class GiftService
 
     public async Task<Gift> CreateGift(int eventId, CreateGiftRequest request)
     {
-        if (eventId <= 0)
-            throw new DomainValidationException("EventId must be greater than zero.");
-
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new DomainValidationException("Gift name is required.");
-
-        if (request.Price < 0)
-            throw new DomainValidationException("Price must be greater than or equal to zero.");
-
-        if (request.Quantity < 1)
-            throw new DomainValidationException("Quantity must be greater than or equal to 1.");
+        ValidateCreateGiftRequest(eventId, request);
 
         var eventExists = await _context.Events.AnyAsync(e => e.Id == eventId);
         if (!eventExists)
             throw new ResourceNotFoundException("Event not found.");
 
-        var gift = new Gift
-        {
-            EventId = eventId,
-            Name = request.Name.Trim(),
-            Description = request.Description?.Trim() ?? string.Empty,
-            Price = request.Price,
-            Quantity = request.Quantity,
-            ReservedQuantity = 0
-        };
+        var gift = BuildGift(eventId, request);
+
+        _context.Gifts.Add(gift);
+        await _context.SaveChangesAsync();
+
+        return gift;
+    }
+
+    public async Task<Gift> CreateGiftForUser(int eventId, int userId, CreateGiftRequest request)
+    {
+        ValidateCreateGiftRequest(eventId, request);
+
+        if (userId <= 0)
+            throw new DomainValidationException("Authenticated user id is invalid.");
+
+        var ev = await _context.Events
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        if (ev is null)
+            throw new ResourceNotFoundException("Event not found.");
+
+        if (ev.UserId != userId)
+            throw new ForbiddenOperationException("You do not have permission to modify this event.");
+
+        var gift = BuildGift(eventId, request);
 
         _context.Gifts.Add(gift);
         await _context.SaveChangesAsync();
@@ -114,5 +121,33 @@ public class GiftService
         await _context.SaveChangesAsync();
 
         return gift;
+    }
+
+    private static void ValidateCreateGiftRequest(int eventId, CreateGiftRequest request)
+    {
+        if (eventId <= 0)
+            throw new DomainValidationException("EventId must be greater than zero.");
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new DomainValidationException("Gift name is required.");
+
+        if (request.Price < 0)
+            throw new DomainValidationException("Price must be greater than or equal to zero.");
+
+        if (request.Quantity < 1)
+            throw new DomainValidationException("Quantity must be greater than or equal to 1.");
+    }
+
+    private static Gift BuildGift(int eventId, CreateGiftRequest request)
+    {
+        return new Gift
+        {
+            EventId = eventId,
+            Name = request.Name.Trim(),
+            Description = request.Description?.Trim() ?? string.Empty,
+            Price = request.Price,
+            Quantity = request.Quantity,
+            ReservedQuantity = 0
+        };
     }
 }

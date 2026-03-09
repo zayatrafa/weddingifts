@@ -1,6 +1,6 @@
-﻿# Weddingifts – Project Context for AI Agents
+# Weddingifts - Project Context for AI Agents
 
-This document provides full context about the Weddingifts project.
+This document provides context about the Weddingifts project.
 Any AI coding agent (Codex, Copilot, etc.) should read this file before making changes.
 
 ---
@@ -17,7 +17,7 @@ This project is being developed as:
 - a portfolio project
 - a potential SaaS product
 
-The project prioritizes:
+The project priorities are:
 
 - simple architecture
 - clean code
@@ -28,10 +28,10 @@ The project prioritizes:
 
 # Current Development Stage
 
-Backend core + reservation flow are implemented.
-A first frontend MVP is implemented and integrated end-to-end with the backend.
+Backend core, reservation flow, integration tests, and CI are implemented.
+A frontend MVP is implemented and integrated end-to-end with the backend.
 
-Implemented features:
+Implemented backend features:
 
 - user creation
 - user listing (without exposing PasswordHash)
@@ -44,6 +44,12 @@ Implemented features:
 - global API error handling (ProblemDetails)
 - CORS for local frontend integration
 - startup migration application (`Database.Migrate()`)
+
+Implemented quality features:
+
+- integration test project (`Weddingifts.Api.IntegrationTests`)
+- integration tests for reservation, unreservation, and gift creation validations
+- GitHub Actions CI workflow (`.github/workflows/dotnet-ci.yml`) running restore/build/test on push and pull_request
 
 Implemented frontend MVP (static):
 
@@ -74,40 +80,48 @@ Frontend (planned evolution):
 - React
 - TypeScript
 
-Development Tools:
+Development tools:
 
 - Git
 - GitHub
 - Swagger / OpenAPI
+- GitHub Actions (CI)
 - Docker Desktop (planned use)
 
 ---
 
 # Project Architecture
 
-The backend follows a simple layered architecture:
+Backend layered architecture:
 
 Controllers
-↓
-Services
-↓
-Data Access (DbContext)
-↓
-Database
+-> Services
+-> Data Access (DbContext)
+-> Database
 
 Folder structure:
 
 Weddingifts.Api
-│
-├── Controllers
-├── Services
-├── Entities
-├── Models
-├── Data
-├── Migrations
-├── Middleware
-├── Exceptions
-├── Security
+- Controllers
+- Services
+- Entities
+- Models
+- Data
+- Migrations
+- Middleware
+- Exceptions
+- Security
+
+Testing:
+
+Weddingifts.Api.IntegrationTests
+- `IntegrationTestWebApplicationFactory`
+- `GiftReservationIntegrationTests`
+
+CI:
+
+.github/workflows
+- `dotnet-ci.yml`
 
 ---
 
@@ -122,10 +136,10 @@ Gift
 Relationships:
 
 User
-  └── Event (1:N)
+  -> Event (1:N)
 
 Event
-  └── Gift (1:N)
+  -> Gift (1:N)
 
 ---
 
@@ -143,8 +157,6 @@ Fields:
 - PasswordHash
 - CreatedAt
 
----
-
 ## Event
 
 Represents a wedding event.
@@ -159,12 +171,7 @@ Fields:
 - CreatedAt
 
 Slug is used for public URLs.
-
-Example:
-
-/events/abc123
-
----
+Example: `/events/abc123`
 
 ## Gift
 
@@ -246,11 +253,11 @@ Cancel reservation:
 
 ---
 
-# Local Run (Windows)
+# Local Run and Test (Windows)
 
 Preferred command:
 
-run.bat
+- `run.bat`
 
 What `run.bat` does:
 
@@ -263,13 +270,24 @@ Manual run option:
 
 Backend:
 
+```powershell
 cd Weddingifts.Api
 dotnet run
+```
 
 Frontend:
 
+```powershell
 cd Weddingifts-web
 py -m http.server 5500
+```
+
+Run tests:
+
+```powershell
+dotnet restore Weddingifts.Api/Weddingifts.Api.sln --configfile Weddingifts.Api/NuGet.Config
+dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
+```
 
 ---
 
@@ -295,31 +313,38 @@ When modifying this project:
 7. Prefer explicit validation and meaningful error messages.
 
 Avoid introducing unnecessary frameworks.
-
 Prefer simple and readable code.
 
 ---
 
-# Next High-Level Roadmap
+# Next Task (Frontend)
 
-Backend:
+Primary next task for a new coding window:
 
-- reservation concurrency hardening
-- authentication/authorization
-- rate limiting
-- logging improvements
+Implement a user registration screen in `Weddingifts-web` using the existing backend endpoint:
 
-Frontend:
+- `POST /api/users`
 
-- migrate MVP to Next.js + TypeScript
-- improve UX states (loading/errors/empty)
-- add admin dashboard
+Request body:
 
-Deployment:
+```json
+{
+  "name": "Maria Silva",
+  "email": "maria@email.com",
+  "password": "123456"
+}
+```
 
-- Dockerized services
-- cloud deployment
-- CI/CD pipeline
+Expected behavior:
+
+- show a registration form (name, email, password)
+- submit using real API URL configured in the page
+- show loading state while request is running
+- on success, show confirmation message with created user info (without password)
+- on error, show `ProblemDetails.detail` message returned by backend
+- keep existing event loading + gift reservation flows working
+
+Do not refactor architecture unless explicitly instructed.
 
 ---
 
@@ -333,5 +358,3 @@ Agents should:
 - follow the defined patterns
 - avoid breaking the project structure
 - generate code consistent with existing patterns
-
-Do not refactor architecture unless explicitly instructed.

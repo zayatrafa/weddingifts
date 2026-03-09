@@ -2,7 +2,7 @@
 
 This document explains the system architecture of the Weddingifts project.
 
-The goal is to maintain a simple and scalable backend architecture.
+The goal is to keep a simple and scalable architecture.
 
 ---
 
@@ -18,13 +18,11 @@ The system allows:
 
 ---
 
-# High-Level Architecture
+# High-Level Architecture (Current)
 
-Frontend (planned)
-↓
-REST API (.NET)
-↓
-PostgreSQL Database
+Static Frontend (Weddingifts-web)
+-> REST API (.NET 8)
+-> PostgreSQL Database
 
 ---
 
@@ -33,12 +31,9 @@ PostgreSQL Database
 The backend follows a layered architecture:
 
 Controllers
-↓
-Services
-↓
-Data Access (DbContext)
-↓
-Database
+-> Services
+-> Data Access (DbContext)
+-> Database
 
 ---
 
@@ -49,11 +44,9 @@ Controllers
 - handle HTTP requests
 - validate basic request format
 - call services
-- return responses
+- return response DTOs
 
 Controllers should contain minimal business logic.
-
----
 
 Services
 
@@ -61,21 +54,17 @@ Services
 - coordinate operations
 - interact with database through DbContext
 
-Services contain the core logic of the application.
-
----
+Services contain core application logic.
 
 Entities
 
 Entities represent database tables.
 
-Examples:
+Current entities:
 
-User
-Event
-Gift
-
----
+- User
+- Event
+- Gift
 
 Models
 
@@ -83,13 +72,11 @@ Models represent API request and response structures.
 
 Examples:
 
-CreateUserRequest
-CreateEventRequest
-CreateGiftRequest
-
-These models are separate from database entities.
-
----
+- CreateUserRequest
+- CreateEventRequest
+- CreateGiftRequest
+- ReserveGiftRequest
+- UserResponse / EventResponse / GiftResponse
 
 Data Layer
 
@@ -106,10 +93,10 @@ Responsibilities:
 # Database Schema
 
 User
-  └── Event (1:N)
+  -> Event (1:N)
 
 Event
-  └── Gift (1:N)
+  -> Gift (1:N)
 
 ---
 
@@ -119,9 +106,48 @@ Events are accessed publicly through a slug.
 
 Example:
 
-/events/abc123
+`/events/abc123`
 
 The slug is generated automatically when the event is created.
+
+---
+
+# Testing Architecture
+
+Integration tests are implemented in a dedicated project:
+
+- `Weddingifts.Api.IntegrationTests`
+
+Approach:
+
+- `WebApplicationFactory<Program>` for in-process API execution
+- SQLite in-memory database for isolated test runs
+- real HTTP calls to API endpoints for end-to-end backend behavior validation
+
+Covered flows include:
+
+- reserve gift success and failure
+- unreserve gift success and failure
+- gift creation validations (`price >= 0`, `quantity >= 1`)
+
+---
+
+# CI Architecture
+
+GitHub Actions workflow:
+
+- `.github/workflows/dotnet-ci.yml`
+
+Pipeline steps:
+
+- restore solution
+- build solution
+- run tests
+
+Triggers:
+
+- push
+- pull_request
 
 ---
 

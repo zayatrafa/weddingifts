@@ -36,6 +36,8 @@ public sealed class GlobalExceptionMiddleware
         var (statusCode, title) = exception switch
         {
             DomainValidationException => (StatusCodes.Status400BadRequest, "Validation error"),
+            UnauthorizedRequestException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
+            ForbiddenOperationException => (StatusCodes.Status403Forbidden, "Forbidden"),
             ResourceNotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             _ => (StatusCodes.Status500InternalServerError, "Unexpected server error")
         };
