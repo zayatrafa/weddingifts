@@ -1,29 +1,56 @@
+﻿using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Weddingifts.Api.Data;
+using Weddingifts.Api.Middleware;
+using Weddingifts.Api.Security;
 using Weddingifts.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 
-builder.Services.AddControllers();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<GiftService>();
+builder.Services.AddScoped<PasswordHasherService>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WeddingiftsWeb", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5500", "http://127.0.0.1:5500")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    Console.WriteLine(">>> Configurando DbContext");
-    options.UseNpgsql("Host=localhost;Port=5432;Database=weddingifts;Username=admin;Password=admin123");
+    options.UseNpgsql(connectionString);
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+}
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -31,9 +58,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("WeddingiftsWeb");
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

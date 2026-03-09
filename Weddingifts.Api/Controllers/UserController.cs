@@ -16,18 +16,20 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateUser(CreateUserRequest request)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         var user = await _userService.CreateUser(request);
+        var response = UserResponse.FromEntity(user);
 
-        return Ok(user);
+        return Created($"/api/users/{response.Id}", response);
     }
 
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
         var users = await _userService.GetUsers();
+        var response = users.Select(UserResponse.FromEntity);
 
-        return Ok(users);
+        return Ok(response);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Weddingifts.Api.Models;
 using Weddingifts.Api.Services;
 
 namespace Weddingifts.Api.Controllers;
@@ -15,21 +16,20 @@ public class EventController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateEvent(CreateEventRequest request)
+    public async Task<IActionResult> CreateEvent([FromBody] CreateEventRequest request)
     {
         var ev = await _eventService.CreateEvent(request);
+        var response = EventResponse.FromEntity(ev);
 
-        return Ok(ev);
+        return Created($"/api/events/{response.Slug}", response);
     }
 
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetEvent(string slug)
     {
         var ev = await _eventService.GetEventBySlug(slug);
+        var response = EventResponse.FromEntity(ev);
 
-        if (ev == null)
-            return NotFound();
-
-        return Ok(ev);
+        return Ok(response);
     }
 }

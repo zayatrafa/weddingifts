@@ -15,19 +15,21 @@ public class GiftController : ControllerBase
         _giftService = giftService;
     }
 
-    [HttpPost("{eventId}/gifts")]
-    public async Task<IActionResult> CreateGift(int eventId, CreateGiftRequest request)
+    [HttpPost("{eventId:int}/gifts")]
+    public async Task<IActionResult> CreateGift(int eventId, [FromBody] CreateGiftRequest request)
     {
         var gift = await _giftService.CreateGift(eventId, request);
+        var response = GiftResponse.FromEntity(gift);
 
-        return Ok(gift);
+        return Created($"/api/events/{eventId}/gifts/{response.Id}", response);
     }
 
-    [HttpGet("{eventId}/gifts")]
+    [HttpGet("{eventId:int}/gifts")]
     public async Task<IActionResult> GetGifts(int eventId)
     {
         var gifts = await _giftService.GetGiftsByEvent(eventId);
+        var response = gifts.Select(GiftResponse.FromEntity);
 
-        return Ok(gifts);
+        return Ok(response);
     }
 }

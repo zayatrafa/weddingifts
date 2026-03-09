@@ -79,6 +79,15 @@ namespace Weddingifts.Api.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
+                    b.Property<DateTime?>("ReservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReservedBy")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ReservedQuantity")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -152,3 +161,5 @@ namespace Weddingifts.Api.Migrations
         }
     }
 }
+
+

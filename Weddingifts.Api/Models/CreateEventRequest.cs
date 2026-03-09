@@ -1,4 +1,6 @@
-﻿public class CreateEventRequest
+﻿namespace Weddingifts.Api.Models;
+
+public class CreateEventRequest
 {
     public int UserId { get; set; }
 
