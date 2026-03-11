@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weddingifts | Criar evento</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <nav class="shell-nav">
+    <div class="shell-nav-inner">
+      <a class="shell-brand" href="./index.html"><span class="shell-dot"></span><span>Weddingifts</span></a>
+      <div class="shell-nav-right">
+        <div class="shell-links">
+          <a href="./event.html">Evento público</a>
+        </div>
+        <div class="user-menu-wrap">
+          <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
+          <div id="user-menu" class="user-menu" hidden>
+            <a href="./create-event.html">Criar evento</a>
+            <a href="./my-event.html">Gerenciar presentes</a>
+            <a href="./my-events.html">Gerenciar meus eventos</a>
+            <a href="./account.html">Minha conta</a>
+            <button id="logout-action" type="button">Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page narrow-page">
+    <section class="card card-pad">
+      <p class="kicker">Painel privado</p>
+      <h1 class="h2">Crie e publique o seu evento</h1>
+      <p class="card-subtitle">Depois de criar, você pode gerenciar tudo em "Gerenciar meus eventos".</p>
+      <p id="status" class="status status-info">Preencha os dados para criar seu evento.</p>
+
+      <form id="create-event-form" class="form form-compact">
+        <div class="field"><label for="event-name-input">Nome do evento</label><input class="input" id="event-name-input" type="text" placeholder="Casamento Maria e João" required /></div>
+        <div class="field"><label for="event-date-input">Data</label><input class="input" id="event-date-input" type="date" required /></div>
+        <div class="row row-tight fit-content">
+          <button id="event-submit-button" class="btn btn-primary btn-lg" type="submit">Criar evento</button>
+          <a class="btn btn-secondary btn-lg" href="./my-events.html">Ver meus eventos</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="./js/create-event.js"></script>
+</body>
+</html>

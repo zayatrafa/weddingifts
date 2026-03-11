@@ -23,6 +23,9 @@ public class EventService
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new DomainValidationException("Event name is required.");
 
+        if (request.EventDate == default)
+            throw new DomainValidationException("Event date is required.");
+
         var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
         if (!userExists)
             throw new ResourceNotFoundException("User not found.");
@@ -31,7 +34,7 @@ public class EventService
         {
             UserId = request.UserId,
             Name = request.Name.Trim(),
-            EventDate = request.EventDate,
+            EventDate = NormalizeEventDate(request.EventDate),
             Slug = await GenerateUniqueSlug()
         };
 
@@ -45,6 +48,48 @@ public class EventService
     {
         request.UserId = userId;
         return await CreateEvent(request);
+    }
+
+    public async Task<Event> UpdateEventForUser(int userId, int eventId, UpdateEventRequest request)
+    {
+        if (userId <= 0)
+            throw new DomainValidationException("Authenticated user id is invalid.");
+
+        if (eventId <= 0)
+            throw new DomainValidationException("Event id must be greater than zero.");
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new DomainValidationException("Event name is required.");
+
+        if (request.EventDate == default)
+            throw new DomainValidationException("Event date is required.");
+
+        var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == eventId && e.UserId == userId);
+        if (ev is null)
+            throw new ResourceNotFoundException("Event not found.");
+
+        ev.Name = request.Name.Trim();
+        ev.EventDate = NormalizeEventDate(request.EventDate);
+
+        await _context.SaveChangesAsync();
+
+        return ev;
+    }
+
+    public async Task DeleteEventForUser(int userId, int eventId)
+    {
+        if (userId <= 0)
+            throw new DomainValidationException("Authenticated user id is invalid.");
+
+        if (eventId <= 0)
+            throw new DomainValidationException("Event id must be greater than zero.");
+
+        var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == eventId && e.UserId == userId);
+        if (ev is null)
+            throw new ResourceNotFoundException("Event not found.");
+
+        _context.Events.Remove(ev);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<List<Event>> GetEventsByUser(int userId)
@@ -94,5 +139,15 @@ public class EventService
         }
 
         return Guid.NewGuid().ToString("N")[..12];
+    }
+
+    private static DateTime NormalizeEventDate(DateTime eventDate)
+    {
+        return eventDate.Kind switch
+        {
+            DateTimeKind.Utc => eventDate,
+            DateTimeKind.Local => eventDate.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(eventDate, DateTimeKind.Utc)
+        };
     }
 }

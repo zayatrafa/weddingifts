@@ -3,67 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weddingifts | Evento Publico</title>
+  <title>Weddingifts | Evento público</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <nav class="shell-nav">
     <div class="shell-nav-inner">
-      <a class="shell-brand" href="./index.html">
-        <span class="shell-dot"></span>
-        <span>Weddingifts</span>
-      </a>
-      <div class="shell-links">
-        <a href="./event.html" class="active">Evento publico</a>
-        <a href="./login.html">Entrar</a>
-        <a href="./register.html">Criar conta</a>
+      <a class="shell-brand" href="./index.html"><span class="shell-dot"></span><span>Weddingifts</span></a>
+      <div class="shell-nav-right">
+        <div class="shell-links">
+          <a href="./event.html" class="active">Evento público</a>
+          <a href="./register.html">Criar conta</a>
+          <a href="./login.html">Entrar</a>
+        </div>
       </div>
     </div>
   </nav>
 
   <main class="page">
     <section class="hero-panel">
-      <p class="hero-eyebrow">Lista publica</p>
-      <h1 id="event-title" class="hero-title">Evento nao carregado</h1>
-      <p id="event-subtitle" class="hero-subtitle">Use o slug para abrir a lista publica de presentes.</p>
+      <p class="hero-eyebrow">Lista pública</p>
+      <h1 id="event-title" class="hero-title">Evento não carregado</h1>
+      <p id="event-subtitle" class="hero-subtitle">Use o slug para abrir a lista pública de presentes.</p>
       <div class="flow-grid" style="margin-top: 24px;">
-        <article class="flow-step">
-          <strong>Data</strong>
-          <span id="event-date" class="muted">--</span>
-        </article>
-        <article class="flow-step">
-          <strong>Slug</strong>
-          <span id="event-slug" class="muted">--</span>
-        </article>
-        <article class="flow-step" style="grid-column: span 2;">
-          <strong>Total de itens</strong>
-          <span id="event-total" class="muted">0 itens</span>
-        </article>
+        <article class="flow-step"><strong>Data</strong><span id="event-date" class="muted">--</span></article>
+        <article class="flow-step"><strong>Slug</strong><span id="event-slug" class="muted">--</span></article>
+        <article class="flow-step" style="grid-column: span 2;"><strong>Total de itens</strong><span id="event-total" class="muted">0 itens</span></article>
       </div>
     </section>
 
     <section class="section card card-pad">
       <div class="row">
-        <div class="field" style="margin: 0;">
-          <label for="api-base-input">API base</label>
-          <input class="input" id="api-base-input" type="text" value="http://localhost:5298" />
-        </div>
-
-        <div class="field" style="margin: 0;">
-          <label for="slug-input">Slug</label>
-          <input class="input" id="slug-input" type="text" placeholder="ex: abc12345" />
-        </div>
-
-        <div class="field" style="margin: 0;">
-          <label for="guest-name-input">Convidado</label>
-          <input class="input" id="guest-name-input" type="text" placeholder="Seu nome" value="Convidado web" />
-        </div>
+        <div class="field" style="margin: 0;"><label for="slug-input">Slug</label><input class="input" id="slug-input" type="text" placeholder="ex: abc12345" /></div>
+        <div class="field" style="margin: 0;"><label for="guest-name-input">Convidado</label><input class="input" id="guest-name-input" type="text" placeholder="Seu nome" value="Convidado web" /></div>
       </div>
-
-      <div class="hero-actions" style="margin-top: 14px;">
-        <button id="load-button" class="btn btn-primary" type="button">Carregar evento</button>
-      </div>
-
+      <div class="hero-actions" style="margin-top: 14px;"><button id="load-button" class="btn btn-primary" type="button">Carregar evento</button></div>
       <p id="status" class="status status-info">Aguardando carregamento do evento.</p>
     </section>
 
@@ -72,7 +47,7 @@
         <strong>Filtrar presentes</strong>
         <div class="row" style="margin-left: auto;">
           <button class="btn btn-primary filter-button" data-filter="all" type="button">Todos</button>
-          <button class="btn btn-secondary filter-button" data-filter="available" type="button">Disponiveis</button>
+          <button class="btn btn-secondary filter-button" data-filter="available" type="button">Disponíveis</button>
           <button class="btn btn-secondary filter-button" data-filter="reserved" type="button">Reservados</button>
         </div>
       </div>
@@ -82,23 +57,14 @@
 
     <template id="gift-template">
       <article class="card card-pad">
-        <div class="gift-head">
-          <h3 class="gift-name"></h3>
-          <strong class="gift-price"></strong>
-        </div>
+        <div class="gift-head"><h3 class="gift-name"></h3><strong class="gift-price"></strong></div>
         <p class="gift-description muted"></p>
-        <div class="row" style="align-items: center; margin-top: 4px;">
-          <span class="gift-badge"></span>
-          <span class="gift-meta muted"></span>
-        </div>
-        <div class="row" style="margin-top: 10px;">
-          <button class="btn btn-primary reserve-button" type="button">Reservar</button>
-          <button class="btn btn-secondary unreserve-button" type="button">Cancelar</button>
-        </div>
+        <div class="row" style="align-items: center; margin-top: 4px;"><span class="gift-badge"></span><span class="gift-meta muted"></span></div>
+        <div class="row" style="margin-top: 10px;"><button class="btn btn-primary reserve-button" type="button">Reservar</button><button class="btn btn-secondary unreserve-button" type="button">Cancelar</button></div>
       </article>
     </template>
 
-    <p class="page-footer">Fluxo publico conectado aos endpoints reais de consulta, reserva e cancelamento</p>
+    <p class="page-footer">Fluxo público conectado aos endpoints reais de consulta, reserva e cancelamento</p>
   </main>
 
   <script type="module" src="./js/event.js"></script>

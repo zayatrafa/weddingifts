@@ -1,0 +1,63 @@
+﻿import {
+  clearAuthSession,
+  formatDateTime,
+  initUserDropdown,
+  requireAuth,
+  setStatus
+} from "./common.js";
+
+const session = requireAuth();
+if (!session) throw new Error("Authentication required.");
+
+const accountData = document.getElementById("account-data");
+const form = document.getElementById("change-password-form");
+const status = document.getElementById("status");
+
+initUserDropdown({
+  session,
+  onLogout: () => {
+    clearAuthSession();
+    window.location.href = "./login.html";
+  }
+});
+
+renderAccount();
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const newPassword = document.getElementById("new-password").value;
+  const confirmPassword = document.getElementById("confirm-password").value;
+
+  if (newPassword.length < 6) {
+    setStatus(status, "status-error", "A nova senha precisa ter ao menos 6 caracteres.");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setStatus(status, "status-error", "A confirmação de senha não confere.");
+    return;
+  }
+
+  setStatus(status, "status-info", "Alteração de senha ainda não está disponível no backend. A interface já está preparada.");
+});
+
+function renderAccount() {
+  const user = session.user || {};
+
+  accountData.innerHTML = `
+    <p class="meta"><strong>Nome:</strong> ${escapeHtml(user.name || "--")}</p>
+    <p class="meta"><strong>Email:</strong> ${escapeHtml(user.email || "--")}</p>
+    <p class="meta"><strong>ID:</strong> ${typeof user.id === "number" ? user.id : "--"}</p>
+    <p class="meta"><strong>Criado em:</strong> ${formatDateTime(user.createdAt)}</p>
+  `;
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}

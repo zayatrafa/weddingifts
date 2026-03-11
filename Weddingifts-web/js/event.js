@@ -1,22 +1,13 @@
 ﻿import {
-  attachApiBaseInput,
   formatCurrency,
   formatDate,
   getApiBase,
   requestJson,
-  setApiBase,
   setStatus
 } from "./common.js";
 
-const state = {
-  event: null,
-  gifts: [],
-  filter: "all",
-  loading: false,
-  actionGiftId: null
-};
+const state = { event: null, gifts: [], filter: "all", loading: false, actionGiftId: null };
 
-const apiBaseInput = document.getElementById("api-base-input");
 const slugInput = document.getElementById("slug-input");
 const guestNameInput = document.getElementById("guest-name-input");
 const loadButton = document.getElementById("load-button");
@@ -25,29 +16,17 @@ const giftGrid = document.getElementById("gift-grid");
 const giftTemplate = document.getElementById("gift-template");
 const filters = document.querySelectorAll(".filter-button");
 
-attachApiBaseInput(apiBaseInput);
-
 const query = new URLSearchParams(window.location.search);
-const queryApi = query.get("api");
-if (queryApi) {
-  apiBaseInput.value = queryApi;
-  setApiBase(queryApi);
-}
-
 const querySlug = query.get("slug");
-if (querySlug) {
-  slugInput.value = querySlug;
-}
+if (querySlug) slugInput.value = querySlug;
 
 filters.forEach((button) => {
   button.addEventListener("click", () => {
     state.filter = button.dataset.filter;
-
     filters.forEach((item) => {
       item.classList.remove("btn-primary");
       item.classList.add("btn-secondary");
     });
-
     button.classList.remove("btn-secondary");
     button.classList.add("btn-primary");
     renderGiftList();
@@ -55,17 +34,10 @@ filters.forEach((button) => {
 });
 
 loadButton.addEventListener("click", loadEvent);
-
-if (querySlug) {
-  loadEvent();
-} else {
-  render();
-  setStatus(status, "status-info", "Informe o slug para carregar o evento publico.");
-}
+if (querySlug) loadEvent(); else { render(); setStatus(status, "status-info", "Informe o slug para carregar o evento p\u00fablico."); }
 
 function availableUnits(gift) {
   if (typeof gift.availableQuantity === "number") return gift.availableQuantity;
-
   const reserved = typeof gift.reservedQuantity === "number" ? gift.reservedQuantity : 0;
   return Math.max(0, gift.quantity - reserved);
 }
@@ -78,19 +50,13 @@ function reservedUnits(gift) {
 function badgeForGift(gift) {
   const available = availableUnits(gift);
   if (available === 0) return { label: "Reservado", className: "tag-muted" };
-  if (available === 1) return { label: "Ultima unidade", className: "tag-warning" };
-  return { label: "Disponivel", className: "tag-ok" };
+  if (available === 1) return { label: "\u00daltima unidade", className: "tag-warning" };
+  return { label: "Dispon\u00edvel", className: "tag-ok" };
 }
 
 function filteredGifts() {
-  if (state.filter === "available") {
-    return state.gifts.filter((gift) => availableUnits(gift) > 0);
-  }
-
-  if (state.filter === "reserved") {
-    return state.gifts.filter((gift) => reservedUnits(gift) > 0);
-  }
-
+  if (state.filter === "available") return state.gifts.filter((gift) => availableUnits(gift) > 0);
+  if (state.filter === "reserved") return state.gifts.filter((gift) => reservedUnits(gift) > 0);
   return state.gifts;
 }
 
@@ -102,8 +68,8 @@ function refreshHeader() {
   const total = document.getElementById("event-total");
 
   if (!state.event) {
-    title.textContent = "Evento nao carregado";
-    subtitle.textContent = "Use o slug publico para buscar os dados reais no backend.";
+    title.textContent = "Evento n\u00e3o carregado";
+    subtitle.textContent = "Use o slug p\u00fablico para buscar os dados reais no backend.";
     date.textContent = "--";
     slug.textContent = "--";
     total.textContent = "0 itens";
@@ -111,7 +77,7 @@ function refreshHeader() {
   }
 
   title.textContent = state.event.name;
-  subtitle.textContent = "Lista publica atualizada em tempo real via API.";
+  subtitle.textContent = "Lista p\u00fablica atualizada em tempo real via API.";
   date.textContent = formatDate(state.event.eventDate);
   slug.textContent = state.event.slug;
   total.textContent = `${state.gifts.length} itens`;
@@ -119,17 +85,9 @@ function refreshHeader() {
 
 function renderGiftList() {
   giftGrid.innerHTML = "";
-
-  if (!state.event) {
-    giftGrid.innerHTML = '<div class="center-empty">Nenhum evento carregado.</div>';
-    return;
-  }
-
+  if (!state.event) return (giftGrid.innerHTML = '<div class="center-empty">Nenhum evento carregado.</div>');
   const items = filteredGifts();
-  if (!items.length) {
-    giftGrid.innerHTML = '<div class="center-empty">Nenhum presente encontrado para este filtro.</div>';
-    return;
-  }
+  if (!items.length) return (giftGrid.innerHTML = '<div class="center-empty">Nenhum presente encontrado para este filtro.</div>');
 
   items.forEach((gift) => {
     const fragment = giftTemplate.content.cloneNode(true);
@@ -148,10 +106,10 @@ function renderGiftList() {
 
     giftName.textContent = gift.name;
     giftPrice.textContent = formatCurrency(gift.price);
-    giftDescription.textContent = gift.description || "Sem descricao.";
+    giftDescription.textContent = gift.description || "Sem descri\u00e7\u00e3o.";
     giftBadge.textContent = badge.label;
     giftBadge.classList.add("tag", badge.className);
-    giftMeta.textContent = `${available} disponiveis | ${reserved} reservados`;
+    giftMeta.textContent = `${available} dispon\u00edveis | ${reserved} reservados`;
 
     reserveButton.disabled = busy || available === 0;
     reserveButton.textContent = busy ? "Aguarde..." : "Reservar";
@@ -166,7 +124,6 @@ function renderGiftList() {
 
 async function refreshGifts() {
   if (!state.event) return;
-
   const apiBase = getApiBase();
   state.gifts = await requestJson(`${apiBase}/api/events/${state.event.id}/gifts`);
 }
@@ -175,19 +132,14 @@ async function loadEvent() {
   const apiBase = getApiBase();
   const slug = slugInput.value.trim();
 
-  if (!slug) {
-    setStatus(status, "status-error", "Informe o slug do evento.");
-    return;
-  }
+  if (!slug) return setStatus(status, "status-error", "Informe o slug do evento.");
 
   try {
     state.loading = true;
     loadButton.disabled = true;
     setStatus(status, "status-loading", "Carregando evento e presentes...");
-
     state.event = await requestJson(`${apiBase}/api/events/${encodeURIComponent(slug)}`);
     await refreshGifts();
-
     setStatus(status, "status-success", `Evento '${state.event.name}' carregado com ${state.gifts.length} presente(s).`);
     render();
   } catch (error) {
@@ -203,7 +155,6 @@ async function loadEvent() {
 
 async function reserveGift(giftId) {
   if (!state.event || state.actionGiftId) return;
-
   const apiBase = getApiBase();
   const guestName = guestNameInput.value.trim();
 
@@ -231,16 +182,13 @@ async function reserveGift(giftId) {
 
 async function unreserveGift(giftId) {
   if (!state.event || state.actionGiftId) return;
-
   const apiBase = getApiBase();
 
   try {
     state.actionGiftId = giftId;
     renderGiftList();
     setStatus(status, "status-loading", "Cancelando reserva...");
-
     await requestJson(`${apiBase}/api/gifts/${giftId}/unreserve`, { method: "POST" });
-
     await refreshGifts();
     renderGiftList();
     setStatus(status, "status-success", "Reserva cancelada com sucesso.");

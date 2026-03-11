@@ -1,5 +1,4 @@
 ﻿import {
-  attachApiBaseInput,
   formatDateTime,
   getApiBase,
   requestJson,
@@ -7,11 +6,8 @@
 } from "./common.js";
 
 const form = document.getElementById("register-form");
-const apiBaseInput = document.getElementById("api-base-input");
 const status = document.getElementById("status");
 const submitButton = document.getElementById("submit-button");
-
-attachApiBaseInput(apiBaseInput);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -22,7 +18,7 @@ form.addEventListener("submit", async (event) => {
   const apiBase = getApiBase();
 
   if (!name || !email || !password) {
-    setStatus(status, "status-error", "Preencha nome, email e senha.");
+    setStatus(status, "status-error", "Preencha nome, e-mail e senha.");
     return;
   }
 
@@ -41,13 +37,13 @@ form.addEventListener("submit", async (event) => {
     setStatus(
       status,
       "status-success",
-      `Usuario criado com sucesso: ID ${createdUser.id} | ${createdUser.name} | ${createdUser.email} | ${formatDateTime(createdUser.createdAt)}.`
+      `Usu\u00e1rio criado com sucesso: ID ${createdUser.id} | ${createdUser.name} | ${createdUser.email} | ${formatDateTime(createdUser.createdAt)}.`
     );
 
     const loginLink = document.getElementById("login-link");
     loginLink.href = `./login.html?email=${encodeURIComponent(createdUser.email)}`;
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao cadastrar usuario: ${error.message}`);
+    setStatus(status, "status-error", `Falha ao cadastrar usu\u00e1rio: ${error.message}`);
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Criar conta";

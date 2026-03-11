@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weddingifts | Meu Evento</title>
+  <title>Weddingifts | Gerenciar presentes</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <nav class="shell-nav">
     <div class="shell-nav-inner">
-      <a class="shell-brand" href="./index.html">
-        <span class="shell-dot"></span>
-        <span>Weddingifts</span>
-      </a>
-      <div class="shell-links">
-        <a href="./my-event.html" class="active">Meu evento</a>
-        <a href="./event.html">Evento publico</a>
-        <span id="user-name" class="active">Minha conta</span>
-        <button id="logout-button" class="btn btn-secondary" type="button">Sair</button>
+      <a class="shell-brand" href="./index.html"><span class="shell-dot"></span><span>Weddingifts</span></a>
+      <div class="shell-nav-right">
+        <div class="shell-links">
+          <a href="./event.html">Evento público</a>
+        </div>
+        <div class="user-menu-wrap">
+          <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
+          <div id="user-menu" class="user-menu" hidden>
+            <a href="./create-event.html">Criar evento</a>
+            <a href="./my-event.html">Gerenciar presentes</a>
+            <a href="./my-events.html">Gerenciar meus eventos</a>
+            <a href="./account.html">Minha conta</a>
+            <button id="logout-action" type="button">Sair</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -25,96 +32,33 @@
   <main class="page">
     <section class="card card-pad">
       <p class="kicker">Painel privado</p>
-      <h1 class="h2">Gerencie seu evento e sua lista de presentes</h1>
-      <p class="card-subtitle">Somente o dono do evento autenticado pode criar novos presentes.</p>
-
-      <div class="row" style="margin-top: 14px;">
-        <div class="field" style="margin: 0;">
-          <label for="api-base-input">API base</label>
-          <input class="input" id="api-base-input" type="text" value="http://localhost:5298" required />
-        </div>
-        <div style="display: flex; align-items: flex-end;">
-          <button id="refresh-events-button" class="btn btn-ghost" type="button">Atualizar meus eventos</button>
-        </div>
-      </div>
-
-      <p id="status" class="status status-info">Pronto para carregar seus eventos.</p>
+      <h1 class="h2">Organize os presentes do seu evento</h1>
+      <p class="card-subtitle">Selecione um evento para adicionar itens e acompanhar disponibilidade.</p>
+      <div class="top-gap"><button id="refresh-events-button" class="btn btn-secondary" type="button">Atualizar eventos</button></div>
+      <p id="status" class="status status-info">Selecione um evento para começar.</p>
     </section>
 
     <section class="dashboard-grid">
-      <div class="stack">
-        <article class="card card-pad">
-          <h2 class="card-title">Criar novo evento</h2>
-          <p class="card-subtitle">Informe o nome e a data para gerar seu slug publico automaticamente.</p>
+      <article class="card card-pad">
+        <h2 class="card-title">Adicionar presente</h2>
+        <p class="card-subtitle">Os presentes são vinculados ao evento selecionado.</p>
+        <form id="create-gift-form" class="form form-compact">
+          <div class="field"><label for="event-select">Evento</label><select id="event-select" class="select" required><option value="">Selecione um evento</option></select></div>
+          <div class="field"><label for="gift-name-input">Nome do presente</label><input class="input" id="gift-name-input" type="text" placeholder="Jogo de jantar" required /></div>
+          <div class="field"><label for="gift-description-input">Descrição</label><textarea class="textarea" id="gift-description-input" placeholder="Detalhes opcionais"></textarea></div>
+          <div class="row row-tight">
+            <div class="field field-flat"><label for="gift-price-input">Preço</label><input class="input" id="gift-price-input" type="number" min="0" step="0.01" value="0" required /></div>
+            <div class="field field-flat"><label for="gift-quantity-input">Quantidade</label><input class="input" id="gift-quantity-input" type="number" min="1" step="1" value="1" required /></div>
+          </div>
+          <button id="gift-submit-button" class="btn btn-primary" type="submit">Adicionar presente</button>
+        </form>
+      </article>
 
-          <form id="create-event-form" class="form">
-            <div class="field">
-              <label for="event-name-input">Nome do evento</label>
-              <input class="input" id="event-name-input" type="text" placeholder="Casamento Maria e Joao" required />
-            </div>
-
-            <div class="field">
-              <label for="event-date-input">Data</label>
-              <input class="input" id="event-date-input" type="date" required />
-            </div>
-
-            <button id="event-submit-button" class="btn btn-primary" type="submit">Criar evento</button>
-          </form>
-        </article>
-
-        <article class="card card-pad">
-          <h2 class="card-title">Seus eventos</h2>
-          <p class="card-subtitle">Escolha o evento ativo e copie o link publico para compartilhar.</p>
-          <div id="events-list" class="events-list"></div>
-        </article>
-      </div>
-
-      <div class="stack">
-        <article class="card card-pad">
-          <h2 class="card-title">Adicionar presente</h2>
-          <p class="card-subtitle">Os presentes sao vinculados ao evento selecionado.</p>
-
-          <form id="create-gift-form" class="form">
-            <div class="field">
-              <label for="event-select">Evento</label>
-              <select id="event-select" class="select" required>
-                <option value="">Selecione um evento</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="gift-name-input">Nome do presente</label>
-              <input class="input" id="gift-name-input" type="text" placeholder="Jogo de jantar" required />
-            </div>
-
-            <div class="field">
-              <label for="gift-description-input">Descricao</label>
-              <textarea class="textarea" id="gift-description-input" placeholder="Detalhes opcionais"></textarea>
-            </div>
-
-            <div class="row">
-              <div class="field" style="margin: 0;">
-                <label for="gift-price-input">Preco</label>
-                <input class="input" id="gift-price-input" type="number" min="0" step="0.01" value="0" required />
-              </div>
-              <div class="field" style="margin: 0;">
-                <label for="gift-quantity-input">Quantidade</label>
-                <input class="input" id="gift-quantity-input" type="number" min="1" step="1" value="1" required />
-              </div>
-            </div>
-
-            <button id="gift-submit-button" class="btn btn-primary" type="submit">Adicionar presente</button>
-          </form>
-        </article>
-
-        <article class="card card-pad">
-          <h2 class="card-title">Presentes do evento selecionado</h2>
-          <div id="gifts-list" class="gifts-list"></div>
-        </article>
-      </div>
+      <article class="card card-pad">
+        <h2 class="card-title">Presentes do evento selecionado</h2>
+        <div id="gifts-list" class="gifts-list"></div>
+      </article>
     </section>
-
-    <p class="page-footer">Rotas protegidas por JWT | Crie e mantenha sua lista em um unico painel</p>
   </main>
 
   <script type="module" src="./js/my-event.js"></script>

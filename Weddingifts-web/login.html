@@ -4,53 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Weddingifts | Entrar</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <nav class="shell-nav">
     <div class="shell-nav-inner">
-      <a class="shell-brand" href="./index.html">
-        <span class="shell-dot"></span>
-        <span>Weddingifts</span>
-      </a>
-      <div class="shell-links">
-        <a href="./login.html" class="active">Entrar</a>
-        <a href="./register.html">Criar conta</a>
-        <a href="./event.html">Evento publico</a>
+      <a class="shell-brand" href="./index.html"><span class="shell-dot"></span><span>Weddingifts</span></a>
+      <div class="shell-nav-right">
+        <div class="shell-links">
+          <a href="./event.html">Evento público</a>
+          <a href="./register.html">Criar conta</a>
+          <a href="./login.html" class="active">Entrar</a>
+        </div>
       </div>
     </div>
   </nav>
 
   <main class="auth-layout">
     <section class="auth-card">
-      <h1 class="auth-title">Iniciar sessao</h1>
-      <p class="auth-subtitle">Acesse sua conta para criar e gerenciar seu evento de casamento.</p>
+      <h1 class="auth-title">Iniciar sessão</h1>
+      <p class="auth-subtitle">Acesse sua conta para criar evento e gerenciar presentes.</p>
 
       <form id="login-form" class="form">
-        <div class="field">
-          <label for="email-input">Email</label>
-          <input class="input" id="email-input" type="email" placeholder="maria@email.com" required />
-        </div>
-
-        <div class="field">
-          <label for="password-input">Senha</label>
-          <input class="input" id="password-input" type="password" placeholder="Sua senha" required />
-        </div>
-
-        <div class="field">
-          <label for="api-base-input">API base</label>
-          <input class="input" id="api-base-input" type="text" value="http://localhost:5298" required />
-        </div>
-
+        <div class="field"><label for="email-input">E-mail</label><input class="input" id="email-input" type="email" placeholder="maria@email.com" required /></div>
+        <div class="field"><label for="password-input">Senha</label><input class="input" id="password-input" type="password" placeholder="Sua senha" required /></div>
         <button id="submit-button" class="btn btn-primary" type="submit">Entrar</button>
       </form>
 
       <p id="status" class="status status-info">Informe suas credenciais para continuar.</p>
-
-      <p class="auth-footer">
-        Ainda nao tem conta?
-        <a href="./register.html">Criar conta</a>
-      </p>
+      <p class="auth-footer">Ainda não tem conta? <a href="./register.html">Criar conta</a></p>
     </section>
   </main>
 

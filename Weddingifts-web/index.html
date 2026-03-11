@@ -3,82 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weddingifts | Lista de Casamento Moderna</title>
+  <title>Weddingifts | Experiências para o seu casamento</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <nav class="shell-nav">
     <div class="shell-nav-inner">
-      <a class="shell-brand" href="./index.html">
-        <span class="shell-dot"></span>
-        <span>Weddingifts</span>
-      </a>
-      <div class="shell-links">
-        <a href="./event.html">Evento publico</a>
-        <a href="./login.html">Entrar</a>
-        <a href="./register.html" class="active">Criar conta</a>
+      <a class="shell-brand" href="./index.html"><span class="shell-dot"></span><span>Weddingifts</span></a>
+      <div class="shell-nav-right">
+        <div class="shell-links">
+          <a href="./event.html">Evento público</a>
+          <a href="./register.html" class="active">Criar conta</a>
+          <a href="./login.html">Entrar</a>
+        </div>
       </div>
     </div>
   </nav>
 
   <main class="page">
     <section class="hero-panel">
-      <p class="hero-eyebrow">Weddingifts Platform</p>
-      <h1 class="hero-title">Sua lista de casamento, simples, elegante e viva.</h1>
-      <p class="hero-subtitle">
-        Crie seu evento, organize presentes em minutos e compartilhe um link publico para os convidados reservarem em tempo real.
-        Tudo conectado diretamente a API do projeto.
-      </p>
+      <p class="hero-eyebrow">Weddingifts</p>
+      <h1 class="hero-title">Transforme sua lista de casamento em uma experiência afetiva.</h1>
+      <p class="hero-subtitle">Organize presentes com leveza, compartilhe seu link público e acompanhe as reservas em tempo real. Mais do que produtos, cada item representa um momento da história de vocês.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="./register.html">Comecar agora</a>
-        <a class="btn btn-secondary" href="./login.html">Ja tenho conta</a>
-        <a class="btn btn-ghost" href="./event.html">Ver pagina publica</a>
+        <a class="btn btn-primary" href="./register.html">Começar agora</a>
+        <a class="btn btn-secondary" href="./login.html">Entrar no painel</a>
+        <a class="btn btn-ghost" href="./event.html">Ver página pública</a>
       </div>
     </section>
 
     <section class="section grid-3">
-      <article class="card card-pad">
-        <h3 class="feature-title">Cadastro e acesso rapido</h3>
-        <p class="feature-copy">Crie sua conta em poucos segundos e acesse seu painel privado com autenticacao JWT.</p>
-      </article>
-      <article class="card card-pad">
-        <h3 class="feature-title">Painel do casal</h3>
-        <p class="feature-copy">Cadastre eventos, adicione presentes e copie o link publico com um clique.</p>
-      </article>
-      <article class="card card-pad">
-        <h3 class="feature-title">Experiencia para convidados</h3>
-        <p class="feature-copy">Reserva e cancelamento de presentes usando os endpoints reais ja integrados.</p>
-      </article>
+      <article class="card card-pad"><h3 class="feature-title">Cadastro rápido e humano</h3><p class="feature-copy">Crie sua conta em poucos segundos, sem perder o tom sensível e elegante do momento.</p></article>
+      <article class="card card-pad"><h3 class="feature-title">Painel do casal</h3><p class="feature-copy">Crie o evento, cadastre presentes e compartilhe o link público com um clique.</p></article>
+      <article class="card card-pad"><h3 class="feature-title">Convidados com autonomia</h3><p class="feature-copy">Reservas e cancelamentos acontecem no fluxo público com clareza e transparência.</p></article>
     </section>
 
     <section class="section card card-pad">
-      <p class="kicker">Como funciona</p>
-      <h2 class="h2">Um fluxo direto, do cadastro ao evento publico.</h2>
-      <p class="copy muted">
-        Toda a jornada roda em HTML, CSS e JavaScript puro, com arquitetura simples e integrada ao backend ASP.NET.
-      </p>
-
+      <p class="kicker">Jornada</p>
+      <h2 class="h2">Do cadastro ao “sim” com um fluxo simples.</h2>
+      <p class="copy muted">Toda a experiência roda em HTML, CSS e JavaScript puro, integrada ao backend ASP.NET.</p>
       <div class="flow-grid">
-        <article class="flow-step">
-          <strong>1. Criar conta</strong>
-          <span class="muted">Informe nome, email e senha para registrar o usuario.</span>
-        </article>
-        <article class="flow-step">
-          <strong>2. Fazer login</strong>
-          <span class="muted">Receba token JWT e entre no painel privado.</span>
-        </article>
-        <article class="flow-step">
-          <strong>3. Montar lista</strong>
-          <span class="muted">Crie evento e presentes vinculados ao seu usuario.</span>
-        </article>
-        <article class="flow-step">
-          <strong>4. Compartilhar link</strong>
-          <span class="muted">Convidados reservam presentes na pagina publica.</span>
-        </article>
+        <article class="flow-step"><strong>1. Criar conta</strong><span class="muted">Informe nome, e-mail e senha para registrar o usuário.</span></article>
+        <article class="flow-step"><strong>2. Entrar</strong><span class="muted">Acesse seu painel privado com autenticação JWT.</span></article>
+        <article class="flow-step"><strong>3. Montar lista</strong><span class="muted">Crie evento e presentes conectados ao seu perfil.</span></article>
+        <article class="flow-step"><strong>4. Compartilhar</strong><span class="muted">Convidados reservam presentes pela página pública.</span></article>
       </div>
     </section>
 
-    <p class="page-footer">Weddingifts Front MVP evoluido | Multi paginas + autenticacao + dashboard</p>
+    <p class="page-footer">Weddingifts | Tecnologia com afeto para celebrar relações</p>
   </main>
 
   <script type="module" src="./js/landing.js"></script>

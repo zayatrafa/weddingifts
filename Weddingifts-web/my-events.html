@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weddingifts | Meus eventos</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <nav class="shell-nav">
+    <div class="shell-nav-inner">
+      <a class="shell-brand" href="./index.html"><span class="shell-dot"></span><span>Weddingifts</span></a>
+      <div class="shell-nav-right">
+        <div class="shell-links">
+          <a href="./event.html">Evento público</a>
+        </div>
+        <div class="user-menu-wrap">
+          <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
+          <div id="user-menu" class="user-menu" hidden>
+            <a href="./create-event.html">Criar evento</a>
+            <a href="./my-event.html">Gerenciar presentes</a>
+            <a href="./my-events.html">Gerenciar meus eventos</a>
+            <a href="./account.html">Minha conta</a>
+            <button id="logout-action" type="button">Sair</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+    <section class="card card-pad">
+      <p class="kicker">Meus eventos</p>
+      <h1 class="h2">Gerencie seus eventos</h1>
+      <p class="card-subtitle">Você pode editar nome/data, excluir e abrir o gerenciamento de presentes.</p>
+      <div class="top-gap"><button id="refresh-events-button" class="btn btn-ghost" type="button">Atualizar lista</button></div>
+      <p id="status" class="status status-info">Carregando seus eventos.</p>
+    </section>
+
+    <section class="section card card-pad">
+      <div id="events-list" class="events-list"></div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/my-events.js"></script>
+</body>
+</html>

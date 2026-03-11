@@ -1,44 +1,10 @@
 ﻿export const DEFAULT_API_BASE = "http://localhost:5298";
-const API_BASE_KEY = "wg_api_base";
 const AUTH_KEY = "wg_auth_session";
 
 const STATUS_CLASSES = ["status-info", "status-success", "status-error", "status-loading"];
 
-export function normalizeApiBase(raw) {
-  return String(raw || "").trim().replace(/\/+$/, "");
-}
-
 export function getApiBase() {
-  const stored = localStorage.getItem(API_BASE_KEY);
-  return normalizeApiBase(stored) || DEFAULT_API_BASE;
-}
-
-export function setApiBase(raw) {
-  const normalized = normalizeApiBase(raw);
-  if (!normalized) {
-    localStorage.removeItem(API_BASE_KEY);
-    return "";
-  }
-
-  localStorage.setItem(API_BASE_KEY, normalized);
-  return normalized;
-}
-
-export function attachApiBaseInput(inputElement) {
-  if (!inputElement) return;
-
-  inputElement.value = getApiBase();
-
-  const persist = () => {
-    const value = setApiBase(inputElement.value);
-    if (!value) {
-      inputElement.value = DEFAULT_API_BASE;
-      setApiBase(inputElement.value);
-    }
-  };
-
-  inputElement.addEventListener("change", persist);
-  inputElement.addEventListener("blur", persist);
+  return DEFAULT_API_BASE;
 }
 
 export function extractErrorMessage(raw) {
@@ -94,8 +60,13 @@ export function getAuthSession() {
 
   try {
     const parsed = JSON.parse(raw);
-    if (!parsed?.token) return null;
-    return parsed;
+    const token = parsed?.token || parsed?.Token;
+    const user = parsed?.user || parsed?.User;
+    const expiresAt = parsed?.expiresAt || parsed?.ExpiresAt;
+
+    if (!token) return null;
+
+    return { token, user, expiresAt };
   } catch {
     return null;
   }
@@ -113,6 +84,48 @@ export function requireAuth() {
   }
 
   return session;
+}
+
+export function initUserDropdown({ session, onLogout }) {
+  const menuButton = document.getElementById("user-menu-button");
+  const menu = document.getElementById("user-menu");
+  const logoutButton = document.getElementById("logout-action");
+
+  if (!menuButton || !menu) return;
+
+  const displayName = session?.user?.name || session?.user?.email || "Minha conta";
+  menuButton.textContent = displayName;
+
+  const closeMenu = () => {
+    menu.hidden = true;
+    menuButton.setAttribute("aria-expanded", "false");
+  };
+
+  const openMenu = () => {
+    menu.hidden = false;
+    menuButton.setAttribute("aria-expanded", "true");
+  };
+
+  menuButton.addEventListener("click", () => {
+    if (menu.hidden) openMenu(); else closeMenu();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!menu.hidden && !menu.contains(event.target) && !menuButton.contains(event.target)) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMenu();
+  });
+
+  if (logoutButton) {
+    logoutButton.addEventListener("click", () => {
+      closeMenu();
+      onLogout?.();
+    });
+  }
 }
 
 export function formatDate(dateString) {

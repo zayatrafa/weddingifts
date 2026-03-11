@@ -1,5 +1,4 @@
 ﻿import {
-  attachApiBaseInput,
   getApiBase,
   getAuthSession,
   requestJson,
@@ -8,17 +7,14 @@
 } from "./common.js";
 
 const form = document.getElementById("login-form");
-const apiBaseInput = document.getElementById("api-base-input");
 const emailInput = document.getElementById("email-input");
 const status = document.getElementById("status");
 const submitButton = document.getElementById("submit-button");
 
 const session = getAuthSession();
 if (session?.token) {
-  window.location.replace("./my-event.html");
+  window.location.replace("./create-event.html");
 }
-
-attachApiBaseInput(apiBaseInput);
 
 const params = new URLSearchParams(window.location.search);
 const prefilledEmail = params.get("email");
@@ -34,7 +30,7 @@ form.addEventListener("submit", async (event) => {
   const apiBase = getApiBase();
 
   if (!email || !password) {
-    setStatus(status, "status-error", "Informe email e senha.");
+    setStatus(status, "status-error", "Informe e-mail e senha.");
     return;
   }
 
@@ -53,10 +49,10 @@ form.addEventListener("submit", async (event) => {
     setStatus(status, "status-success", "Login realizado com sucesso. Redirecionando...");
 
     window.setTimeout(() => {
-      window.location.href = "./my-event.html";
+      window.location.href = "./create-event.html";
     }, 420);
   } catch (error) {
-    setStatus(status, "status-error", `Nao foi possivel entrar: ${error.message}`);
+    setStatus(status, "status-error", `N\u00e3o foi poss\u00edvel entrar: ${error.message}`);
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Entrar";

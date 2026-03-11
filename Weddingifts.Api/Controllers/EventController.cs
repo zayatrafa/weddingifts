@@ -30,6 +30,27 @@ public class EventController : ControllerBase
     }
 
     [Authorize]
+    [HttpPut("{eventId:int}")]
+    public async Task<IActionResult> UpdateEvent(int eventId, [FromBody] UpdateEventRequest request)
+    {
+        var userId = GetAuthenticatedUserId();
+        var ev = await _eventService.UpdateEventForUser(userId, eventId, request);
+        var response = EventResponse.FromEntity(ev);
+
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpDelete("{eventId:int}")]
+    public async Task<IActionResult> DeleteEvent(int eventId)
+    {
+        var userId = GetAuthenticatedUserId();
+        await _eventService.DeleteEventForUser(userId, eventId);
+
+        return NoContent();
+    }
+
+    [Authorize]
     [HttpGet("mine")]
     public async Task<IActionResult> GetMyEvents()
     {
@@ -61,4 +82,3 @@ public class EventController : ControllerBase
         return userId;
     }
 }
-
