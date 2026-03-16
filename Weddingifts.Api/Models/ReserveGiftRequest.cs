@@ -2,5 +2,5 @@
 
 public sealed class ReserveGiftRequest
 {
-    public string? GuestName { get; set; }
+    public string GuestCpf { get; set; } = string.Empty;
 }

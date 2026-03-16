@@ -19,8 +19,10 @@
           <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
           <div id="user-menu" class="user-menu" hidden>
             <a href="./create-event.html">Criar evento</a>
-            <a href="./my-event.html">Gerenciar presentes</a>
             <a href="./my-events.html">Gerenciar meus eventos</a>
+            <span class="menu-group">Gerenciar eventos</span>
+            <a class="menu-subitem" href="./my-guests.html">Gerenciar convidados</a>
+            <a class="menu-subitem" href="./my-event.html">Gerenciar presentes</a>
             <a href="./account.html">Minha conta</a>
             <button id="logout-action" type="button">Sair</button>
           </div>
@@ -34,12 +36,12 @@
       <p class="kicker">Painel privado</p>
       <h1 class="h2">Crie e publique o seu evento</h1>
       <p class="card-subtitle">Depois de criar, você pode gerenciar tudo em "Gerenciar meus eventos".</p>
-      <p id="status" class="status status-info">Preencha os dados para criar seu evento.</p>
+      <p id="status" class="status status-info" hidden></p>
 
       <form id="create-event-form" class="form form-compact">
         <div class="field"><label for="event-name-input">Nome do evento</label><input class="input" id="event-name-input" type="text" placeholder="Casamento Maria e João" required /></div>
         <div class="field"><label for="event-date-input">Data</label><input class="input" id="event-date-input" type="date" required /></div>
-        <div class="row row-tight fit-content">
+        <div class="row row-tight">
           <button id="event-submit-button" class="btn btn-primary btn-lg" type="submit">Criar evento</button>
           <a class="btn btn-secondary btn-lg" href="./my-events.html">Ver meus eventos</a>
         </div>

@@ -33,6 +33,7 @@ async function createEvent(event) {
   const submitButton = document.getElementById("event-submit-button");
 
   if (!name || !eventDate) {
+    status.hidden = false;
     setStatus(status, "status-error", "Informe nome e data do evento.");
     return;
   }
@@ -40,18 +41,19 @@ async function createEvent(event) {
   try {
     submitButton.disabled = true;
     submitButton.textContent = "Criando...";
+    status.hidden = false;
     setStatus(status, "status-loading", "Criando evento...");
 
     const apiBase = getApiBase();
-    await requestJson(`${apiBase}/api/events`, {
+    const createdEvent = await requestJson(`${apiBase}/api/events`, {
       method: "POST",
       headers: authHeaders(token, true),
       body: JSON.stringify({ name, eventDate })
     });
 
-    createEventForm.reset();
-    setStatus(status, "status-success", "Evento criado com sucesso. Agora vá em 'Gerenciar meus eventos'.");
+    window.location.href = `./my-event.html?eventId=${encodeURIComponent(String(createdEvent.id))}`;
   } catch (error) {
+    status.hidden = false;
     setStatus(status, "status-error", `Falha ao criar evento: ${error.message}`);
   } finally {
     submitButton.disabled = false;

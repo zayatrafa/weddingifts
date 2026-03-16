@@ -1,160 +1,86 @@
-# Coding Standards
+﻿# Coding Standards
 
-This document defines coding practices for the Weddingifts project.
+Padrões de código para manter o projeto consistente e sustentável.
 
-The goal is to keep code:
+## Princípios gerais
 
-- readable
-- consistent
-- easy to maintain
+- priorizar simplicidade
+- manter legibilidade
+- evitar abstrações prematuras
+- preservar a arquitetura existente
 
----
+## Backend (.NET)
 
-# General Principles
+### Arquitetura
 
-Prefer simple solutions.
+- Controllers devem ser enxutos
+- regras de negócio ficam em Services
+- acesso a dados via `AppDbContext`
+- entidades representam tabelas
+- models representam contratos HTTP
 
-Avoid unnecessary abstractions.
+### Controllers
 
-Keep functions small and focused.
+- validar formato básico de entrada
+- delegar lógica para service
+- retornar DTOs, nunca entidade sensível
 
----
+### Services
 
-# Naming Conventions
+- concentrar validações de domínio
+- lançar exceções semânticas (`DomainValidationException`, `ResourceNotFoundException`)
+- evitar lógica de apresentação
 
-Use descriptive names.
+### Erros e HTTP
 
-Examples:
+- usar middleware global de exceção
+- mensagens de erro devem ser claras
+- mapear corretamente 400/404/500
 
-Good:
+### Segurança
 
-- CreateGift
-- GetGiftsByEvent
+- senha sempre com hash
+- rotas privadas protegidas com JWT
+- nunca retornar `PasswordHash`
 
-Avoid:
+## Frontend (Weddingifts-web)
 
-- ProcessData
-- HandleStuff
+### Stack obrigatória atual
 
----
+- HTML/CSS/JS puro
+- sem build step
+- sem framework adicional
 
-# Backend Controllers
+### Organização
 
-Controllers should:
+- uma página por responsabilidade
+- lógica JS separada por tela em `Weddingifts-web/js`
+- utilitários compartilhados em `js/common.js`
 
-- remain thin
-- contain minimal logic
-- delegate work to services
+### Integração API
 
-Pattern:
+- API base fixa local: `http://localhost:5298`
+- requests centralizados em helper quando possível
+- exibir mensagens do backend (`ProblemDetails.detail`) para feedback de erro
+- sempre ter estados de loading/success/error
 
-Controller
--> Service
--> Database
+### UX e acessibilidade
 
----
+- botões e inputs com estados claros
+- navegação consistente entre telas pública/privada
+- responsividade obrigatória desktop/mobile
 
-# Backend Services
+## Testes
 
-Services contain business rules.
+- preferir testes de integração para fluxos críticos
+- cada novo fluxo relevante deve ter:
+  - caminho de sucesso
+  - caminho de falha
+- manter testes determinísticos
 
-Examples:
+## Git e manutenção
 
-- GiftService
-- UserService
-- EventService
-
-Responsibilities:
-
-- validate operations
-- coordinate database actions
-
----
-
-# Entities
-
-Entities represent database tables.
-
-Avoid placing business logic inside entities.
-
----
-
-# Models
-
-Models represent request and response payloads.
-
-Examples:
-
-- CreateGiftRequest
-- ReserveGiftRequest
-- GiftResponse
-
-Models should not contain database logic.
-
----
-
-# Frontend MVP (Weddingifts-web)
-
-Use plain HTML/CSS/JavaScript (no build step).
-
-Keep frontend code simple:
-
-- UI structure in `index.html`
-- page logic and API calls in `app.js`
-- visual styles in `styles.css`
-
-When calling backend:
-
-- prefer centralized request helpers
-- always surface backend error messages (`ProblemDetails.detail`) to users
-- provide explicit loading/success/error feedback
-
-Do not introduce extra frontend frameworks unless explicitly requested.
-
----
-
-# Error Handling
-
-Return meaningful HTTP responses.
-
-Examples:
-
-- 404 - resource not found
-- 400 - invalid input
-- 500 - server error
-
----
-
-# Validation
-
-All user input should be validated.
-
-Examples:
-
-- price must be >= 0
-- quantity must be >= 1
-- password must have at least 6 characters
-
----
-
-# Tests
-
-Prefer integration tests for API behavior-critical flows.
-
-Each new business-critical flow should include:
-
-- at least one success path
-- at least one failure path
-
-Keep tests deterministic and isolated.
-
----
-
-# Logging (future)
-
-Important operations should be logged.
-
-Examples:
-
-- event creation
-- gift reservation
+- mudanças pequenas e objetivas
+- não quebrar fluxos já existentes
+- evitar refatorações arquiteturais sem necessidade explícita
+- atualizar documentação quando endpoint, fluxo ou tela mudar

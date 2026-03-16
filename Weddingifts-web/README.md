@@ -1,44 +1,50 @@
-﻿# Weddingifts Front MVP+ (Multi-page)
+﻿# Weddingifts Frontend MVP+ (Multi-page)
 
-Frontend em HTML/CSS/JavaScript puro, com layout responsivo e páginas separadas por fluxo.
+Frontend em HTML/CSS/JavaScript puro, sem framework e sem build step.
 
-## Páginas
+## Estrutura de telas
 
 - `index.html` - Landing page
-- `register.html` - Cadastro de usuário
-- `login.html` - Login (JWT)
-- `create-event.html` - Área privada para criar evento
-- `my-events.html` - Área privada para gerenciar eventos
-- `my-event.html` - Área privada para gerenciar presentes
-- `account.html` - Área privada de conta
+- `register.html` - Criar conta
+- `login.html` - Entrar
+- `create-event.html` - Criar evento (privado)
+- `my-events.html` - Gerenciar meus eventos (privado)
+- `my-event.html` - Gerenciar presentes de um evento (privado)
+- `account.html` - Minha conta (privado)
 - `event.html` - Página pública do evento por slug
 
-## Como rodar
+## Organização dos scripts
 
-1. Suba a API (`Weddingifts.Api`) na porta padrão local: `http://localhost:5298`.
+- `js/common.js` - helpers compartilhados (API, sessão, status, dropdown)
+- `js/landing.js`
+- `js/register.js`
+- `js/login.js`
+- `js/create-event.js`
+- `js/my-events.js`
+- `js/my-event.js`
+- `js/account.js`
+- `js/event.js`
+
+## Como rodar localmente
+
+1. Subir API (porta 5298)
 
 ```powershell
 cd ../Weddingifts.Api
 dotnet run
 ```
 
-2. Suba o servidor estático do frontend:
+2. Subir frontend estático (porta 5500)
 
 ```powershell
 cd ../Weddingifts-web
 py -m http.server 5500
 ```
 
-3. Abra no navegador:
+3. Acessar no navegador
 
 - Landing: [http://localhost:5500](http://localhost:5500)
-- Cadastro: [http://localhost:5500/register.html](http://localhost:5500/register.html)
-- Login: [http://localhost:5500/login.html](http://localhost:5500/login.html)
-- Criar evento: [http://localhost:5500/create-event.html](http://localhost:5500/create-event.html)
-- Meus eventos: [http://localhost:5500/my-events.html](http://localhost:5500/my-events.html)
-- Gerenciar presentes: [http://localhost:5500/my-event.html](http://localhost:5500/my-event.html)
-- Minha conta: [http://localhost:5500/account.html](http://localhost:5500/account.html)
-- Evento público: [http://localhost:5500/event.html](http://localhost:5500/event.html)
+- Evento público por slug: [http://localhost:5500/event.html?slug=SEU_SLUG](http://localhost:5500/event.html?slug=SEU_SLUG)
 
 ## Fluxos implementados
 
@@ -46,24 +52,35 @@ py -m http.server 5500
 
 - carregar evento por slug (`GET /api/events/{slug}`)
 - listar presentes (`GET /api/events/{eventId}/gifts`)
-- reservar presente (`POST /api/gifts/{giftId}/reserve`)
+- reservar (`POST /api/gifts/{giftId}/reserve`)
 - cancelar reserva (`POST /api/gifts/{giftId}/unreserve`)
 
-### Privado (JWT)
+### Conta e autenticação
 
+- cadastrar usuário (`POST /api/users`)
 - login (`POST /api/auth/login`)
-- listar eventos do usuário (`GET /api/events/mine`)
+- sessão JWT em `localStorage`
+
+### Eventos (privado)
+
 - criar evento (`POST /api/events`)
-- criar presente no próprio evento (`POST /api/events/{eventId}/gifts`)
+- listar meus eventos (`GET /api/events/mine`)
+- editar evento (`PUT /api/events/{eventId}`)
+- excluir evento (`DELETE /api/events/{eventId}`)
 
-### Cadastro
+### Presentes (privado)
 
-- criar usuário (`POST /api/users`)
-- exibir erros de backend via `ProblemDetails.detail`
+- criar presente (`POST /api/events/{eventId}/gifts`)
+- listar presentes por evento (`GET /api/events/{eventId}/gifts`)
 
-## Notas
+## Navegação e UX
 
-- sem framework e sem build step
-- API do frontend fixada em `http://localhost:5298`
-- sessão JWT armazenada em `localStorage`
-- layout responsivo para desktop e mobile
+- menu no topo com estados logado/deslogado
+- ações privadas em dropdown do usuário
+- feedback visual para loading/sucesso/erro
+- mensagens de erro exibem `ProblemDetails.detail` quando disponível
+- layout responsivo desktop/mobile
+
+## Observação importante
+
+Se aparecer erro `501 Unsupported method ('POST')` no browser, normalmente a API não está rodando e apenas o servidor estático foi iniciado. Garanta que o backend esteja ativo em `http://localhost:5298`.

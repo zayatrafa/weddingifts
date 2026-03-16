@@ -32,6 +32,7 @@ builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<GiftService>();
+builder.Services.AddScoped<EventGuestService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PasswordHasherService>();
 
@@ -130,3 +131,4 @@ app.Run();
 public partial class Program
 {
 }
+

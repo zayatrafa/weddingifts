@@ -19,8 +19,10 @@
           <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
           <div id="user-menu" class="user-menu" hidden>
             <a href="./create-event.html">Criar evento</a>
-            <a href="./my-event.html">Gerenciar presentes</a>
             <a href="./my-events.html">Gerenciar meus eventos</a>
+            <span class="menu-group">Gerenciar eventos</span>
+            <a class="menu-subitem" href="./my-guests.html">Gerenciar convidados</a>
+            <a class="menu-subitem" href="./my-event.html">Gerenciar presentes</a>
             <a href="./account.html">Minha conta</a>
             <button id="logout-action" type="button">Sair</button>
           </div>
@@ -33,7 +35,7 @@
     <section class="card card-pad">
       <p class="kicker">Meus eventos</p>
       <h1 class="h2">Gerencie seus eventos</h1>
-      <p class="card-subtitle">Você pode editar nome/data, excluir e abrir o gerenciamento de presentes.</p>
+      <p class="card-subtitle">Você pode editar nome/data, excluir e abrir o gerenciamento de convidados e presentes.</p>
       <div class="top-gap"><button id="refresh-events-button" class="btn btn-ghost" type="button">Atualizar lista</button></div>
       <p id="status" class="status status-info">Carregando seus eventos.</p>
     </section>
@@ -46,3 +48,11 @@
   <script type="module" src="./js/my-events.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+

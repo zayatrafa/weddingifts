@@ -10,6 +10,10 @@ public class User
 
     public string PasswordHash { get; set; } = string.Empty;
 
+    public string? Cpf { get; set; }
+
+    public DateTime? BirthDate { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public List<Event> Events { get; set; } = new();

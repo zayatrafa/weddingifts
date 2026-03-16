@@ -63,19 +63,25 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     }
 
     [Fact]
-    public async Task ReserveGift_ShouldReturnOk_WhenGiftHasAvailability()
+    public async Task ReserveGift_ShouldReturnOk_WhenGuestCpfIsInvited()
     {
         await _factory.ResetDatabaseAsync();
-        var giftId = await CreateGiftAsync(quantity: 2);
 
-        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestName = "Carlos" });
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 2);
+        const string guestCpf = "12345678901";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<GiftResponseContract>(JsonOptions);
         Assert.NotNull(payload);
         Assert.Equal(1, payload.ReservedQuantity);
-        Assert.Equal("Carlos", payload.ReservedBy);
+        Assert.Equal(guestCpf, payload.ReservedBy);
         Assert.False(payload.IsFullyReserved);
     }
 
@@ -83,10 +89,16 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     public async Task ReserveGift_ShouldReturnBadRequest_WhenGiftIsFullyReserved()
     {
         await _factory.ResetDatabaseAsync();
-        var giftId = await CreateGiftAsync(quantity: 1);
 
-        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestName = "Ana" });
-        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestName = "Bruno" });
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
+        const string guestCpf = "12345678901";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -97,12 +109,37 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     }
 
     [Fact]
+    public async Task ReserveGift_ShouldReturnBadRequest_WhenCpfIsNotInvited()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
+
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf = "12345678901" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Validation error", payload.Title);
+        Assert.Equal("CPF is not invited to this event.", payload.Detail);
+    }
+
+    [Fact]
     public async Task UnreserveGift_ShouldReturnOk_WhenGiftHasReservation()
     {
         await _factory.ResetDatabaseAsync();
-        var giftId = await CreateGiftAsync(quantity: 1);
 
-        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestName = "Marina" });
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
+        const string guestCpf = "12345678901";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
         var response = await _client.PostAsync($"/api/gifts/{giftId}/unreserve", content: null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -118,7 +155,9 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     public async Task UnreserveGift_ShouldReturnBadRequest_WhenGiftHasNoReservation()
     {
         await _factory.ResetDatabaseAsync();
-        var giftId = await CreateGiftAsync(quantity: 1);
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
 
         var response = await _client.PostAsync($"/api/gifts/{giftId}/unreserve", content: null);
 
@@ -131,8 +170,10 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     }
 
     [Theory]
-    [InlineData(-1, 1, "Price must be greater than or equal to zero.")]
+    [InlineData(0, 1, "Price must be greater than zero.")]
+    [InlineData(1000000, 1, "Price must be less than 1000000.")]
     [InlineData(10, 0, "Quantity must be greater than or equal to 1.")]
+    [InlineData(10, 100001, "Quantity must be less than or equal to 100000.")]
     public async Task CreateGift_ShouldReturnBadRequest_WhenValidationFails(decimal price, int quantity, string expectedDetail)
     {
         await _factory.ResetDatabaseAsync();
@@ -155,23 +196,33 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         Assert.Equal(expectedDetail, payload.Detail);
     }
 
-    private async Task<int> CreateGiftAsync(int quantity)
+    private async Task<int> CreateGiftAsync(string token, int eventId, int quantity)
     {
-        var session = await CreateAuthenticatedUserSessionAsync();
-        var eventId = await CreateEventAsync(session.Token);
-
         var response = await PostAuthorizedJsonAsync($"/api/events/{eventId}/gifts", new
         {
             name = "Jogo de pratos",
             description = "6 pecas",
             price = 299.90m,
             quantity
-        }, session.Token);
+        }, token);
 
         response.EnsureSuccessStatusCode();
 
         var payload = await response.Content.ReadFromJsonAsync<GiftResponseContract>(JsonOptions);
         return payload!.Id;
+    }
+
+    private async Task CreateGuestAsync(string token, int eventId, string cpf)
+    {
+        var response = await PostAuthorizedJsonAsync($"/api/events/{eventId}/guests", new
+        {
+            cpf,
+            name = "Convidado Teste",
+            email = "convidado@weddingifts.local",
+            phoneNumber = "11999990000"
+        }, token);
+
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task<int> CreateEventAsync(string token, string? eventName = null)
@@ -192,11 +243,14 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     {
         var password = "123456";
         var email = $"test-{Guid.NewGuid():N}@weddingifts.local";
+        var cpf = GenerateUniqueCpf();
 
         var createUserResponse = await _client.PostAsJsonAsync("/api/users", new
         {
             name = "Usuario Teste",
             email,
+            cpf,
+            birthDate = new DateTime(1990, 1, 1),
             password
         });
 
@@ -219,6 +273,11 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
             UserId = createdUser!.Id,
             Token = loginPayload!.Token
         };
+    }
+
+    private static string GenerateUniqueCpf()
+    {
+        return Random.Shared.NextInt64(0, 99999999999).ToString("D11");
     }
 
     private async Task<HttpResponseMessage> PostAuthorizedJsonAsync(string url, object body, string token)
@@ -262,3 +321,13 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         public DateTime? ReservedAt { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+
+

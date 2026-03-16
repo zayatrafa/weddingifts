@@ -1,109 +1,76 @@
-# Weddingifts Development Roadmap
+﻿# Weddingifts Development Roadmap
 
-This document tracks the development stages of the Weddingifts project.
+Este roadmap reflete o estado real atual e os próximos passos sugeridos.
 
----
+## Fase 1 - Núcleo backend (Concluída)
 
-# Phase 1 - Backend Core (Completed)
+- criação/listagem de usuários
+- criação de evento
+- criação/listagem de presentes
+- recuperação de evento público por slug
 
-- User creation
-- Event creation
-- Gift creation
-- Gift listing
-- Public event retrieval
+## Fase 2 - Reserva de presentes (Concluída)
 
-Endpoints implemented:
+- reservar presente
+- cancelar reserva
+- bloqueio de over-reservation
 
-- POST /api/users
-- GET /api/users
-- POST /api/events
-- GET /api/events/{slug}
-- POST /api/events/{eventId}/gifts
-- GET /api/events/{eventId}/gifts
+## Fase 3 - Qualidade de API (Concluída)
 
----
+- validações de domínio
+- middleware global com `ProblemDetails`
+- CORS para frontend local
 
-# Phase 2 - Gift Reservation System (Completed)
+## Fase 4 - Qualidade automatizada (Concluída)
 
-- Reserve a gift
-- Cancel reservation
-- Prevent over-reservation
-- Validate quantities
+- testes de integração backend
+- CI GitHub Actions (restore/build/test)
 
-Endpoints implemented:
+## Fase 5 - Frontend MVP multi-página (Concluída)
 
-- POST /api/gifts/{giftId}/reserve
-- POST /api/gifts/{giftId}/unreserve
+- landing page
+- cadastro de usuário
+- login com JWT
+- criação de evento
+- gerenciamento de presentes
+- página pública do evento
 
----
+## Fase 6 - Painel privado de eventos (Concluída)
 
-# Phase 3 - Backend Validation and Error Handling (Completed)
+- listar eventos do usuário (`GET /api/events/mine`)
+- editar evento (`PUT /api/events/{eventId}`)
+- excluir evento (`DELETE /api/events/{eventId}`)
+- UX de copiar link público e navegar para gestão de presentes
 
-Implemented validation rules:
+## Fase 7 - Conta do usuário (Em andamento)
 
-- event must exist when creating gifts
-- user must exist when creating events
-- price must be >= 0
-- quantity must be >= 1
+Já implementado:
 
-Implemented global error handling with ProblemDetails.
+- tela `account.html` com dados da sessão
 
----
+Pendente:
 
-# Phase 4 - Frontend Public Event MVP (Completed)
+- endpoint real para alterar senha
+- endpoint real para atualizar dados cadastrais
 
-Implemented in static HTML/CSS/JavaScript:
+## Fase 8 - Hardening e observabilidade (Próxima)
 
-- public event page
-- real API integration for loading event and gifts
-- reserve/cancel actions integrated with backend
-- basic loading/success/error feedback
+- ampliar testes de integração para editar/excluir evento
+- revisar cenários de concorrência de reserva
+- melhorar logs e rastreabilidade
 
----
+## Fase 9 - Evolução de produto (Planejada)
 
-# Phase 5 - Automated Quality (Completed)
+- experiência de onboarding do casal
+- melhorias visuais e de microinterações
+- preparação para migração futura para frontend tipado
 
-- Integration tests for reservation and gift validation flows
-- GitHub Actions CI running restore/build/test on push and pull_request
+## Fase 10 - Deploy e operação (Planejada)
 
----
+- dockerização completa
+- pipeline de entrega
+- ambiente de staging/produção
 
-# Phase 6 - Frontend User Registration Screen (Next)
+## Visão de longo prazo
 
-Implement in `Weddingifts-web`:
-
-- user registration form (name, email, password)
-- integration with POST /api/users
-- clear UX states (loading, success, error)
-- display backend validation errors from ProblemDetails
-
----
-
-# Phase 7 - Backend Hardening (Planned)
-
-- reservation concurrency hardening
-- authentication/authorization
-- rate limiting
-- logging improvements
-
----
-
-# Phase 8 - Frontend Evolution (Planned)
-
-- migrate MVP to Next.js + TypeScript
-- improve UX states (loading/errors/empty)
-- add admin dashboard
-
----
-
-# Phase 9 - Deployment (Planned)
-
-- Dockerized services
-- cloud deployment
-- CI/CD evolution
-
----
-
-# Long-Term Vision
-
-Transform Weddingifts into a SaaS platform that can support multiple events and different celebration types.
+Evoluir Weddingifts para uma plataforma SaaS de listas e experiências para eventos.

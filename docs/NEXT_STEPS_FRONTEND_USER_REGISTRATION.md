@@ -1,51 +1,70 @@
-# Next Steps - Frontend User Registration
+﻿# Next Steps - Frontend e Backend (Estado Atual)
 
-Goal: implement a user registration screen in `Weddingifts-web` without changing project architecture.
+Este documento descreve o próximo incremento recomendado após a entrega do MVP multi-página.
 
-## Scope
+## Contexto atual já entregue
 
-- Add user registration form (name, email, password)
-- Integrate with `POST /api/users`
-- Show loading, success, and error messages
-- Preserve existing event + gifts flow
+- cadastro e login funcionando
+- sessão JWT no frontend
+- criação de evento
+- gerenciamento de eventos (listar, editar, excluir)
+- gerenciamento de presentes
+- página pública com reserva/cancelamento
 
-## Suggested implementation plan
+## Próximo objetivo principal
 
-1. Update `Weddingifts-web/index.html`
+Fechar o ciclo de conta do usuário com backend real e testes.
 
-- add a new panel section for registration
-- include inputs: name, email, password
-- add submit button
-- add area for feedback message
+## Escopo recomendado
 
-2. Update `Weddingifts-web/app.js`
+1. Conta do usuário (backend)
 
-- create helper to submit user registration request
-- reuse API base URL already present on page
-- parse `ProblemDetails` errors and display `detail`
-- disable submit button while request is running
-- clear or keep form fields based on success behavior chosen
+- criar endpoint para alterar senha autenticada
+- validar senha atual + nova senha (mínimo 6)
+- manter padrão de erro via `ProblemDetails`
 
-3. Update `Weddingifts-web/styles.css`
+2. Conta do usuário (frontend)
 
-- style the new registration section consistently with existing visual language
-- keep responsive behavior for mobile
+- integrar `account.html` com endpoint real de troca de senha
+- exibir loading/success/error
+- validar confirmação de senha no cliente
 
-## Acceptance criteria
+3. Qualidade
 
-- valid payload creates user and returns success feedback
-- invalid payload (e.g. short password) shows backend validation message
-- no regressions in event loading and reservation actions
+- adicionar testes de integração para:
+  - atualizar evento
+  - excluir evento
+  - alterar senha
 
-## Quick manual test
+4. UX incremental
 
-1. Start backend (`dotnet run` in `Weddingifts.Api`)
-2. Start frontend static server (`py -m http.server 5500` in `Weddingifts-web`)
-3. Open `http://localhost:5500`
-4. Submit registration form with:
-   - valid data -> expect success
-   - invalid password (< 6 chars) -> expect error message from backend
+- mensagens de confirmação mais claras para ações destrutivas
+- melhoria de estados vazios e feedbacks no painel privado
 
-## Useful endpoint
+## Critérios de aceitação
 
-- `POST /api/users`
+- usuário autenticado altera senha com sucesso
+- senha incorreta ou nova senha inválida retorna erro amigável
+- editar/excluir evento segue funcionando
+- testes novos passam no CI
+
+## Execução local para desenvolvimento
+
+1. Backend
+
+```powershell
+cd Weddingifts.Api
+dotnet run
+```
+
+2. Frontend
+
+```powershell
+cd Weddingifts-web
+py -m http.server 5500
+```
+
+3. URLs base
+
+- Frontend: `http://localhost:5500`
+- API: `http://localhost:5298`

@@ -96,6 +96,7 @@ function renderEvents() {
       <div class="row row-tight top-gap-sm">
         <button class="btn btn-ghost" data-action="copy">Copiar link público</button>
         <button class="btn btn-secondary" data-action="edit">Editar evento</button>
+        <button class="btn btn-ghost" data-action="manage-guests">Gerenciar convidados</button>
         <button class="btn btn-primary" data-action="manage">Gerenciar presentes</button>
       </div>
     `;
@@ -111,6 +112,10 @@ function renderEvents() {
       } catch (error) {
         setStatus(status, "status-error", `Falha ao copiar link: ${error.message}`);
       }
+    });
+
+    item.querySelector('[data-action="manage-guests"]').addEventListener("click", () => {
+      window.location.href = `./my-guests.html?eventId=${encodeURIComponent(String(eventData.id))}`;
     });
 
     item.querySelector('[data-action="manage"]').addEventListener("click", () => {

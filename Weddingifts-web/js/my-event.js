@@ -9,6 +9,11 @@
   setStatus
 } from "./common.js";
 
+const MIN_GIFT_PRICE = 0;
+const MAX_GIFT_PRICE_EXCLUSIVE = 1_000_000;
+const MIN_GIFT_QUANTITY = 1;
+const MAX_GIFT_QUANTITY = 100_000;
+
 const session = requireAuth();
 if (!session) throw new Error("Authentication required.");
 
@@ -18,6 +23,7 @@ const createGiftForm = document.getElementById("create-gift-form");
 const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
 const status = document.getElementById("status");
+const giftPriceInput = document.getElementById("gift-price-input");
 
 const state = { events: [], selectedEventId: null, gifts: [] };
 
@@ -34,6 +40,14 @@ createGiftForm.addEventListener("submit", createGift);
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
   await loadSelectedEventGifts();
+});
+
+giftPriceInput.addEventListener("input", () => {
+  giftPriceInput.value = formatCurrencyInput(giftPriceInput.value);
+});
+
+giftPriceInput.addEventListener("blur", () => {
+  giftPriceInput.value = formatCurrencyInput(giftPriceInput.value);
 });
 
 loadMyEvents();
@@ -80,13 +94,27 @@ async function createGift(event) {
   const eventId = Number(eventSelect.value);
   const name = document.getElementById("gift-name-input").value.trim();
   const description = document.getElementById("gift-description-input").value.trim();
-  const price = Number(document.getElementById("gift-price-input").value);
+  const price = parseCurrencyToNumber(giftPriceInput.value);
   const quantity = Number(document.getElementById("gift-quantity-input").value);
 
   if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o presente.");
   if (!name) return setStatus(status, "status-error", "Informe o nome do presente.");
-  if (!Number.isFinite(price) || price < 0) return setStatus(status, "status-error", "Informe um preço válido (>= 0).");
-  if (!Number.isInteger(quantity) || quantity < 1) return setStatus(status, "status-error", "Informe uma quantidade válida (>= 1).");
+
+  if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
+    return setStatus(status, "status-error", "O preço deve ser maior que R$ 0,00.");
+  }
+
+  if (price >= MAX_GIFT_PRICE_EXCLUSIVE) {
+    return setStatus(status, "status-error", "O preço deve ser menor que R$ 1.000.000,00.");
+  }
+
+  if (!Number.isInteger(quantity) || quantity < MIN_GIFT_QUANTITY) {
+    return setStatus(status, "status-error", "A quantidade mínima é 1.");
+  }
+
+  if (quantity > MAX_GIFT_QUANTITY) {
+    return setStatus(status, "status-error", "A quantidade máxima é 100.000.");
+  }
 
   try {
     submitButton.disabled = true;
@@ -101,6 +129,7 @@ async function createGift(event) {
     });
 
     createGiftForm.reset();
+    giftPriceInput.value = "R$ 0,00";
     document.getElementById("gift-quantity-input").value = "1";
     await loadSelectedEventGifts();
     await loadMyEvents();
@@ -179,6 +208,17 @@ function renderGifts() {
 
     giftsList.appendChild(item);
   });
+}
+
+function parseCurrencyToNumber(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
+}
+
+function formatCurrencyInput(value) {
+  const amount = parseCurrencyToNumber(value);
+  return formatCurrency(amount);
 }
 
 function escapeHtml(text) {

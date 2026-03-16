@@ -18,8 +18,18 @@ if (session?.token) {
 
 const params = new URLSearchParams(window.location.search);
 const prefilledEmail = params.get("email");
+const fromRegistration = params.get("registered") === "1";
+
 if (prefilledEmail) {
   emailInput.value = prefilledEmail;
+}
+
+if (fromRegistration) {
+  setStatus(
+    status,
+    "status-info",
+    "Cadastro concluído. Você recebeu um e-mail para validar sua conta. Em breve essa validação estará ativa no sistema."
+  );
 }
 
 form.addEventListener("submit", async (event) => {
@@ -52,7 +62,15 @@ form.addEventListener("submit", async (event) => {
       window.location.href = "./create-event.html";
     }, 420);
   } catch (error) {
-    setStatus(status, "status-error", `N\u00e3o foi poss\u00edvel entrar: ${error.message}`);
+    const backendMessage = String(error.message || "");
+    const normalizedMessage = backendMessage.toLowerCase();
+
+    if (normalizedMessage.includes("invalid email or password")) {
+      setStatus(status, "status-error", "⚠️ E-mail ou senha inválidos.");
+      return;
+    }
+
+    setStatus(status, "status-error", `⚠️ Não foi possível entrar: ${backendMessage}`);
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Entrar";

@@ -17,4 +17,5 @@ public class Event
     public User User { get; set; } = null!;
 
     public List<Gift> Gifts { get; set; } = new();
+    public List<EventGuest> Guests { get; set; } = new();
 }

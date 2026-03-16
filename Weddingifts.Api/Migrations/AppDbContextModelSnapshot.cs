@@ -54,6 +54,46 @@ namespace Weddingifts.Api.Migrations
                     b.ToTable("Events");
                 });
 
+            modelBuilder.Entity("Weddingifts.Api.Entities.EventGuest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Cpf")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("EventId", "Cpf")
+                        .IsUnique();
+
+                    b.ToTable("EventGuests");
+                });
+
             modelBuilder.Entity("Weddingifts.Api.Entities.Gift", b =>
                 {
                     b.Property<int>("Id")
@@ -106,8 +146,14 @@ namespace Weddingifts.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("BirthDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Cpf")
+                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -123,6 +169,10 @@ namespace Weddingifts.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Cpf")
+                        .IsUnique()
+                        .HasFilter("\"Cpf\" IS NOT NULL");
+
                     b.ToTable("Users");
                 });
 
@@ -135,6 +185,17 @@ namespace Weddingifts.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Weddingifts.Api.Entities.EventGuest", b =>
+                {
+                    b.HasOne("Weddingifts.Api.Entities.Event", "Event")
+                        .WithMany("Guests")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
                 });
 
             modelBuilder.Entity("Weddingifts.Api.Entities.Gift", b =>
@@ -151,6 +212,7 @@ namespace Weddingifts.Api.Migrations
             modelBuilder.Entity("Weddingifts.Api.Entities.Event", b =>
                 {
                     b.Navigation("Gifts");
+                    b.Navigation("Guests");
                 });
 
             modelBuilder.Entity("Weddingifts.Api.Entities.User", b =>
@@ -161,5 +223,3 @@ namespace Weddingifts.Api.Migrations
         }
     }
 }
-
-

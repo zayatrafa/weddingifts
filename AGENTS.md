@@ -1,272 +1,201 @@
-# Weddingifts - Project Context for AI Agents
+﻿# Weddingifts - Contexto do Projeto para Agentes de Código
 
-This document provides context about the Weddingifts project.
-Any AI coding agent (Codex, Copilot, etc.) should read this file before making changes.
-
----
-
-# Project Overview
-
-Weddingifts is a web application for managing wedding gift lists.
-
-The system allows couples to create an event and publish a public page where guests can reserve gifts.
-
-This project is being developed as:
-
-- a learning project for modern backend technologies
-- a portfolio project
-- a potential SaaS product
-
-The project priorities are:
-
-- simple architecture
-- clean code
-- backend best practices
-- modern development stack
+Este arquivo descreve o estado atual do projeto Weddingifts.
+Qualquer agente (Codex, Copilot, etc.) deve ler este documento antes de alterar código.
 
 ---
 
-# Current Development Stage
+## Visão Geral
 
-Backend core, reservation flow, integration tests, and CI are implemented.
-A frontend MVP is implemented and integrated end-to-end with the backend.
+Weddingifts é uma aplicação para criação e gerenciamento de listas de presentes de casamento.
 
-Implemented backend features:
+Fluxo principal:
 
-- user creation
-- user listing (without exposing PasswordHash)
-- event creation (with user existence validation)
-- public event retrieval by slug
-- gift creation (with validation)
-- gift listing by event
-- gift reservation
-- gift unreservation
-- global API error handling (ProblemDetails)
-- CORS for local frontend integration
-- startup migration application (`Database.Migrate()`)
+- casal cria conta
+- casal faz login
+- casal cria eventos
+- casal cadastra presentes por evento
+- convidados acessam página pública por slug e reservam/cancelam presentes
 
-Implemented quality features:
+Objetivos do projeto:
 
-- integration test project (`Weddingifts.Api.IntegrationTests`)
-- integration tests for reservation, unreservation, and gift creation validations
-- GitHub Actions CI workflow (`.github/workflows/dotnet-ci.yml`) running restore/build/test on push and pull_request
-
-Implemented frontend MVP (static):
-
-- public event visual page
-- load event by slug from real backend API
-- list gifts from real backend API
-- reserve and unreserve gifts through real endpoints
-- basic status and feedback messages
+- aprendizado técnico com boas práticas modernas
+- portfólio profissional
+- base para evolução futura como SaaS
 
 ---
 
-# Tech Stack
+## Estado Atual (Mar/2026)
+
+### Backend implementado
+
+- criação de usuário (`POST /api/users`)
+- listagem de usuários (`GET /api/users`, sem expor `PasswordHash`)
+- login com JWT (`POST /api/auth/login`)
+- criação de evento autenticado (`POST /api/events`)
+- listagem de eventos do usuário autenticado (`GET /api/events/mine`)
+- atualização de evento do usuário autenticado (`PUT /api/events/{eventId}`)
+- exclusão de evento do usuário autenticado (`DELETE /api/events/{eventId}`)
+- recuperação pública de evento por slug (`GET /api/events/{slug}`)
+- criação de presente por evento (`POST /api/events/{eventId}/gifts`)
+- listagem de presentes por evento (`GET /api/events/{eventId}/gifts`)
+- reserva de presente (`POST /api/gifts/{giftId}/reserve`)
+- cancelamento de reserva (`POST /api/gifts/{giftId}/unreserve`)
+
+### Qualidade e plataforma
+
+- middleware global para erros com `ProblemDetails`
+- CORS para frontend local (`http://localhost:5500` e `http://127.0.0.1:5500`)
+- aplicação automática de migrations com `Database.Migrate()`
+- testes de integração backend (`Weddingifts.Api.IntegrationTests`)
+- CI com GitHub Actions em push e pull request (`restore/build/test`)
+
+### Frontend MVP+ implementado (HTML/CSS/JS puro)
+
+- landing page (`index.html`)
+- cadastro (`register.html`)
+- login (`login.html`)
+- criação de evento (`create-event.html`)
+- gerenciamento de eventos (`my-events.html`)
+  - editar nome/data
+  - excluir evento
+  - copiar link público
+  - abrir gerenciamento de presentes
+- gerenciamento de presentes (`my-event.html`)
+- minha conta (`account.html`)
+- evento público (`event.html`)
+
+Layout atual:
+
+- menu com estado logado/deslogado
+- menu dropdown do usuário logado com ações privadas
+- interface responsiva desktop/mobile
+- API base fixa no frontend: `http://localhost:5298`
+
+---
+
+## Stack
 
 Backend:
 
 - .NET 8
-- ASP.NET Web API
+- ASP.NET Core Web API
 - Entity Framework Core
 - PostgreSQL
+- JWT Bearer
 
-Frontend (current MVP):
+Frontend:
 
-- static HTML/CSS/JavaScript (no build step)
+- HTML/CSS/JavaScript puro
+- sem framework
+- sem build step
 
-Frontend (planned evolution):
+Ferramentas:
 
-- Next.js
-- React
-- TypeScript
-
-Development tools:
-
-- Git
-- GitHub
-- Swagger / OpenAPI
-- GitHub Actions (CI)
-- Docker Desktop (planned use)
+- Git + GitHub
+- Swagger/OpenAPI
+- GitHub Actions
 
 ---
 
-# Project Architecture
+## Arquitetura
 
-Backend layered architecture:
+Arquitetura em camadas no backend:
 
-Controllers
--> Services
--> Data Access (DbContext)
--> Database
+Controllers -> Services -> DbContext -> Database
 
-Folder structure:
+Responsabilidades:
 
-Weddingifts.Api
-- Controllers
-- Services
-- Entities
-- Models
-- Data
-- Migrations
-- Middleware
-- Exceptions
-- Security
+- Controllers: HTTP, autenticação/autorização, DTOs, resposta
+- Services: regras de negócio e validações
+- Entities: mapeamento de persistência
+- Models: requests/responses da API
 
-Testing:
+Estrutura principal:
 
-Weddingifts.Api.IntegrationTests
-- `IntegrationTestWebApplicationFactory`
-- `GiftReservationIntegrationTests`
+- `Weddingifts.Api/Controllers`
+- `Weddingifts.Api/Services`
+- `Weddingifts.Api/Entities`
+- `Weddingifts.Api/Models`
+- `Weddingifts.Api/Data`
+- `Weddingifts.Api/Middleware`
+- `Weddingifts.Api/Security`
+- `Weddingifts.Api/Migrations`
 
-CI:
+Frontend organizado por páginas + JS por responsabilidade:
 
-.github/workflows
-- `dotnet-ci.yml`
+- `Weddingifts-web/*.html`
+- `Weddingifts-web/js/common.js` (helpers compartilhados)
+- `Weddingifts-web/js/*.js` (lógica por tela)
 
 ---
 
-# Database Model
+## Modelo de Dados
 
-Current entities:
+Entidades:
 
-User
-Event
-Gift
+- `User`
+- `Event`
+- `Gift`
 
-Relationships:
+Relacionamentos:
 
-User
-  -> Event (1:N)
+- `User` 1:N `Event`
+- `Event` 1:N `Gift`
 
-Event
-  -> Gift (1:N)
+Observação:
 
----
-
-# Entity Descriptions
-
-## User
-
-Represents a user who creates wedding events.
-
-Fields:
-
-- Id
-- Name
-- Email
-- PasswordHash
-- CreatedAt
-
-## Event
-
-Represents a wedding event.
-
-Fields:
-
-- Id
-- UserId
-- Name
-- EventDate
-- Slug
-- CreatedAt
-
-Slug is used for public URLs.
-Example: `/events/abc123`
-
-## Gift
-
-Represents a gift in the wedding list.
-
-Fields:
-
-- Id
-- EventId
-- Name
-- Description
-- Price
-- Quantity
-- ReservedQuantity
-- ReservedBy
-- ReservedAt
-- CreatedAt
+- exclusão de evento remove presentes relacionados (cascade)
 
 ---
 
-# API Endpoints
+## Regras de Negócio
 
-User
+Usuário:
 
-- POST /api/users
-- GET /api/users
+- senha obrigatoriamente hash (PBKDF2)
 
-Event
+Evento:
 
-- POST /api/events
-- GET /api/events/{slug}
+- usuário deve existir
+- nome obrigatório
+- data obrigatória
+- slug único gerado automaticamente
+- editar/excluir permitido apenas para o dono autenticado
 
-Gift
+Presente:
 
-- POST /api/events/{eventId}/gifts
-- GET /api/events/{eventId}/gifts
+- evento deve existir
+- `price >= 0`
+- `quantity >= 1`
 
-Gift reservation
+Reserva:
 
-- POST /api/gifts/{giftId}/reserve
-- POST /api/gifts/{giftId}/unreserve
-
----
-
-# Business Rules
-
-Gift creation:
-
-- price must be >= 0
-- quantity must be >= 1
-- event must exist
-
-Event creation:
-
-- user must exist
-
-Gift reservation:
-
-- cannot reserve if quantity <= 0
-- cannot reserve if reserved quantity reached total quantity
-- increments ReservedQuantity by 1
-
-Cancel reservation:
-
-- cannot unreserve when ReservedQuantity is 0
-- decrements ReservedQuantity by 1
-- clears ReservedBy and ReservedAt when ReservedQuantity reaches 0
+- não pode reservar se indisponível
+- incrementa `ReservedQuantity`
+- não pode cancelar quando `ReservedQuantity == 0`
+- decrementa `ReservedQuantity`
+- limpa `ReservedBy`/`ReservedAt` quando volta a zero
 
 ---
 
-# Security and API Standards
+## Padrões de API e Segurança
 
-- Passwords are hashed before persistence (PBKDF2 service).
-- Controllers should return response DTOs, not raw entities, when sensitive or cyclical data may leak.
-- API errors are mapped via global middleware:
-  - 400 for domain validation errors
-  - 404 for missing resources
-  - 500 for unexpected failures
+- autenticação JWT para rotas privadas
+- erro de domínio -> HTTP 400
+- recurso não encontrado -> HTTP 404
+- erro inesperado -> HTTP 500
+- frontend deve exibir `ProblemDetails.detail` quando existir
 
 ---
 
-# Local Run and Test (Windows)
+## Execução Local (Windows)
 
-Preferred command:
+Opção 1 (recomendada):
 
 - `run.bat`
 
-What `run.bat` does:
-
-- stops old API/web processes on local ports
-- starts backend (`dotnet run`)
-- starts frontend static server (`py -m http.server 5500`)
-- opens browser at `http://localhost:5500/?slug=62b74666`
-
-Manual run option:
+Opção 2 (manual):
 
 Backend:
 
@@ -282,7 +211,16 @@ cd Weddingifts-web
 py -m http.server 5500
 ```
 
-Run tests:
+URLs:
+
+- frontend: `http://localhost:5500`
+- API: `http://localhost:5298`
+
+Importante:
+
+- erro `501 Unsupported method ('POST')` no navegador costuma indicar que apenas o servidor estático foi iniciado e a API não está rodando.
+
+Testes:
 
 ```powershell
 dotnet restore Weddingifts.Api/Weddingifts.Api.sln --configfile Weddingifts.Api/NuGet.Config
@@ -291,70 +229,22 @@ dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
 
 ---
 
-# Migration Notes
+## Diretrizes para Mudanças
 
-- Reservation migration file exists:
-  - `20260309123000_AddGiftReservationFields`
-- Startup applies migrations automatically via `Database.Migrate()`.
-- If schema mismatch occurs, ensure old API processes are stopped and restart backend.
-
----
-
-# Coding Guidelines
-
-When modifying this project:
-
-1. Maintain current folder structure.
-2. Follow ASP.NET dependency injection patterns.
-3. Services contain business logic.
-4. Controllers should remain thin.
-5. Entities represent database tables.
-6. Models represent API requests/responses.
-7. Prefer explicit validation and meaningful error messages.
-
-Avoid introducing unnecessary frameworks.
-Prefer simple and readable code.
+1. Manter arquitetura atual e simplicidade.
+2. Não introduzir framework frontend sem pedido explícito.
+3. Manter controllers enxutos e regras nos services.
+4. Não expor campos sensíveis em responses.
+5. Preservar compatibilidade com fluxos já existentes.
+6. Sempre validar impacto em login, eventos, presentes e página pública.
 
 ---
 
-# Next Task (Frontend)
+## Próxima Janela de Evolução (Sugestão)
 
-Primary next task for a new coding window:
+Prioridade recomendada:
 
-Implement a user registration screen in `Weddingifts-web` using the existing backend endpoint:
-
-- `POST /api/users`
-
-Request body:
-
-```json
-{
-  "name": "Maria Silva",
-  "email": "maria@email.com",
-  "password": "123456"
-}
-```
-
-Expected behavior:
-
-- show a registration form (name, email, password)
-- submit using real API URL configured in the page
-- show loading state while request is running
-- on success, show confirmation message with created user info (without password)
-- on error, show `ProblemDetails.detail` message returned by backend
-- keep existing event loading + gift reservation flows working
-
-Do not refactor architecture unless explicitly instructed.
-
----
-
-# Purpose of this Document
-
-This file exists to provide context for AI coding agents.
-
-Agents should:
-
-- understand the architecture
-- follow the defined patterns
-- avoid breaking the project structure
-- generate code consistent with existing patterns
+1. Backend de conta do usuário (alterar senha e perfil).
+2. Refinar UX do painel privado (feedbacks, estados vazios, confirmações).
+3. Adicionar testes de integração para editar/excluir evento.
+4. Planejar versionamento de API e observabilidade básica (logs estruturados).

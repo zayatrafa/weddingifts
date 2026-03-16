@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weddingifts | Gerenciar presentes</title>
+  <title>Weddingifts | Gerenciar convidados</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -34,35 +34,34 @@
   <main class="page">
     <section class="card card-pad">
       <p class="kicker">Painel privado</p>
-      <h1 class="h2">Organize os presentes do seu evento</h1>
-      <p class="card-subtitle">Selecione um evento para adicionar itens e acompanhar disponibilidade.</p>
+      <h1 class="h2">Gerencie convidados do evento</h1>
+      <p class="card-subtitle">Adicione convidados por CPF e mantenha a lista de participantes aptos a reservar presentes.</p>
       <div class="top-gap"><button id="refresh-events-button" class="btn btn-secondary" type="button">Atualizar eventos</button></div>
       <p id="status" class="status status-info">Selecione um evento para começar.</p>
     </section>
 
     <section class="dashboard-grid">
       <article class="card card-pad">
-        <h2 class="card-title">Adicionar presente</h2>
-        <p class="card-subtitle">Os presentes são vinculados ao evento selecionado.</p>
-        <form id="create-gift-form" class="form form-compact">
+        <h2 class="card-title">Adicionar convidado</h2>
+        <p class="card-subtitle">O CPF é obrigatório e precisa ter 11 dígitos.</p>
+        <form id="create-guest-form" class="form form-compact">
           <div class="field"><label for="event-select">Evento</label><select id="event-select" class="select" required><option value="">Selecione um evento</option></select></div>
-          <div class="field"><label for="gift-name-input">Nome do presente</label><input class="input" id="gift-name-input" type="text" placeholder="Jogo de jantar" required /></div>
-          <div class="field"><label for="gift-description-input">Descrição</label><textarea class="textarea" id="gift-description-input" placeholder="Detalhes opcionais"></textarea></div>
-          <div class="row row-tight">
-            <div class="field field-flat"><label for="gift-price-input">Preço</label><input class="input" id="gift-price-input" type="text" inputmode="decimal" placeholder="R$ 0,00" value="R$ 0,00" required /></div>
-            <div class="field field-flat"><label for="gift-quantity-input">Quantidade</label><input class="input" id="gift-quantity-input" type="number" min="1" max="100000" step="1" value="1" required /></div>
-          </div>
-          <button id="gift-submit-button" class="btn btn-primary" type="submit">Adicionar presente</button>
+          <div class="field"><label for="guest-cpf-input">CPF</label><input class="input" id="guest-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required /></div>
+          <div class="field"><label for="guest-name-input">Nome</label><input class="input" id="guest-name-input" type="text" placeholder="Nome completo" required /></div>
+          <div class="field"><label for="guest-email-input">Email</label><input class="input" id="guest-email-input" type="email" placeholder="convidado@email.com" required /></div>
+          <div class="field"><label for="guest-phone-input">Celular</label><input class="input" id="guest-phone-input" type="text" inputmode="tel" placeholder="(11) 99999-9999" required /></div>
+          <button id="guest-submit-button" class="btn btn-primary" type="submit">Adicionar convidado</button>
         </form>
       </article>
 
       <article class="card card-pad">
-        <h2 class="card-title">Presentes do evento selecionado</h2>
-        <div id="gifts-list" class="gifts-list"></div>
+        <h2 class="card-title">Convidados do evento selecionado</h2>
+        <div id="guests-list" class="gifts-list"></div>
       </article>
     </section>
   </main>
 
-  <script type="module" src="./js/my-event.js"></script>
+  <script type="module" src="./js/my-guests.js"></script>
 </body>
 </html>
+

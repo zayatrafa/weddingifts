@@ -9,7 +9,7 @@
 const state = { event: null, gifts: [], filter: "all", loading: false, actionGiftId: null };
 
 const slugInput = document.getElementById("slug-input");
-const guestNameInput = document.getElementById("guest-name-input");
+const guestCpfInput = document.getElementById("guest-cpf-input");
 const loadButton = document.getElementById("load-button");
 const status = document.getElementById("status");
 const giftGrid = document.getElementById("gift-grid");
@@ -19,6 +19,10 @@ const filters = document.querySelectorAll(".filter-button");
 const query = new URLSearchParams(window.location.search);
 const querySlug = query.get("slug");
 if (querySlug) slugInput.value = querySlug;
+
+guestCpfInput.addEventListener("input", () => {
+  guestCpfInput.value = formatCpfInput(guestCpfInput.value);
+});
 
 filters.forEach((button) => {
   button.addEventListener("click", () => {
@@ -34,7 +38,12 @@ filters.forEach((button) => {
 });
 
 loadButton.addEventListener("click", loadEvent);
-if (querySlug) loadEvent(); else { render(); setStatus(status, "status-info", "Informe o slug para carregar o evento p\u00fablico."); }
+if (querySlug) {
+  loadEvent();
+} else {
+  render();
+  setStatus(status, "status-info", "Informe o slug para carregar o evento público.");
+}
 
 function availableUnits(gift) {
   if (typeof gift.availableQuantity === "number") return gift.availableQuantity;
@@ -50,8 +59,8 @@ function reservedUnits(gift) {
 function badgeForGift(gift) {
   const available = availableUnits(gift);
   if (available === 0) return { label: "Reservado", className: "tag-muted" };
-  if (available === 1) return { label: "\u00daltima unidade", className: "tag-warning" };
-  return { label: "Dispon\u00edvel", className: "tag-ok" };
+  if (available === 1) return { label: "Última unidade", className: "tag-warning" };
+  return { label: "Disponível", className: "tag-ok" };
 }
 
 function filteredGifts() {
@@ -68,8 +77,8 @@ function refreshHeader() {
   const total = document.getElementById("event-total");
 
   if (!state.event) {
-    title.textContent = "Evento n\u00e3o carregado";
-    subtitle.textContent = "Use o slug p\u00fablico para buscar os dados reais no backend.";
+    title.textContent = "Evento não carregado";
+    subtitle.textContent = "Use o slug público para buscar os dados reais no backend.";
     date.textContent = "--";
     slug.textContent = "--";
     total.textContent = "0 itens";
@@ -77,7 +86,7 @@ function refreshHeader() {
   }
 
   title.textContent = state.event.name;
-  subtitle.textContent = "Lista p\u00fablica atualizada em tempo real via API.";
+  subtitle.textContent = "Lista pública atualizada em tempo real via API.";
   date.textContent = formatDate(state.event.eventDate);
   slug.textContent = state.event.slug;
   total.textContent = `${state.gifts.length} itens`;
@@ -106,10 +115,10 @@ function renderGiftList() {
 
     giftName.textContent = gift.name;
     giftPrice.textContent = formatCurrency(gift.price);
-    giftDescription.textContent = gift.description || "Sem descri\u00e7\u00e3o.";
+    giftDescription.textContent = gift.description || "Sem descrição.";
     giftBadge.textContent = badge.label;
     giftBadge.classList.add("tag", badge.className);
-    giftMeta.textContent = `${available} dispon\u00edveis | ${reserved} reservados`;
+    giftMeta.textContent = `${available} disponíveis | ${reserved} reservados`;
 
     reserveButton.disabled = busy || available === 0;
     reserveButton.textContent = busy ? "Aguarde..." : "Reservar";
@@ -156,7 +165,12 @@ async function loadEvent() {
 async function reserveGift(giftId) {
   if (!state.event || state.actionGiftId) return;
   const apiBase = getApiBase();
-  const guestName = guestNameInput.value.trim();
+  const guestCpf = digitsOnly(guestCpfInput.value);
+
+  if (guestCpf.length !== 11) {
+    setStatus(status, "status-error", "Informe um CPF válido com 11 dígitos para reservar.");
+    return;
+  }
 
   try {
     state.actionGiftId = giftId;
@@ -166,7 +180,7 @@ async function reserveGift(giftId) {
     await requestJson(`${apiBase}/api/gifts/${giftId}/reserve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guestName })
+      body: JSON.stringify({ guestCpf })
     });
 
     await refreshGifts();
@@ -198,6 +212,18 @@ async function unreserveGift(giftId) {
     state.actionGiftId = null;
     renderGiftList();
   }
+}
+
+function digitsOnly(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function formatCpfInput(value) {
+  const digits = digitsOnly(value).slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
 function render() {

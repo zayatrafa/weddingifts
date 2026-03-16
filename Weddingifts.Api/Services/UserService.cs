@@ -29,17 +29,30 @@ public class UserService
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             throw new DomainValidationException("Password must contain at least 6 characters.");
 
+        var normalizedCpf = NormalizeCpf(request.Cpf);
+
+        if (request.BirthDate == default)
+            throw new DomainValidationException("Birth date is required.");
+
+        var normalizedBirthDate = NormalizeBirthDate(request.BirthDate);
+
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
         var emailInUse = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (emailInUse)
             throw new DomainValidationException("Email is already registered.");
 
+        var cpfInUse = await _context.Users.AnyAsync(u => u.Cpf == normalizedCpf);
+        if (cpfInUse)
+            throw new DomainValidationException("CPF is already registered.");
+
         var user = new User
         {
             Name = request.Name.Trim(),
             Email = normalizedEmail,
-            PasswordHash = _passwordHasher.Hash(request.Password)
+            PasswordHash = _passwordHasher.Hash(request.Password),
+            Cpf = normalizedCpf,
+            BirthDate = normalizedBirthDate
         };
 
         _context.Users.Add(user);
@@ -54,5 +67,30 @@ public class UserService
             .AsNoTracking()
             .OrderByDescending(u => u.Id)
             .ToListAsync();
+    }
+
+    private static string NormalizeCpf(string? rawCpf)
+    {
+        var digits = new string((rawCpf ?? string.Empty).Where(char.IsDigit).ToArray());
+
+        if (digits.Length != 11)
+            throw new DomainValidationException("CPF must contain exactly 11 digits.");
+
+        return digits;
+    }
+
+    private static DateTime NormalizeBirthDate(DateTime birthDate)
+    {
+        var utcDate = birthDate.Kind switch
+        {
+            DateTimeKind.Utc => birthDate.Date,
+            DateTimeKind.Local => birthDate.ToUniversalTime().Date,
+            _ => DateTime.SpecifyKind(birthDate, DateTimeKind.Utc).Date
+        };
+
+        if (utcDate > DateTime.UtcNow.Date)
+            throw new DomainValidationException("Birth date cannot be in the future.");
+
+        return utcDate;
     }
 }

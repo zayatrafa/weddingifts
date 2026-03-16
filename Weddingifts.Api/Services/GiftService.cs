@@ -8,6 +8,11 @@ namespace Weddingifts.Api.Services;
 
 public class GiftService
 {
+    private const decimal MinGiftPrice = 0m;
+    private const decimal MaxGiftPriceExclusive = 1_000_000m;
+    private const int MinGiftQuantity = 1;
+    private const int MaxGiftQuantity = 100_000;
+
     private readonly AppDbContext _context;
 
     public GiftService(AppDbContext context)
@@ -77,6 +82,8 @@ public class GiftService
         if (giftId <= 0)
             throw new DomainValidationException("GiftId must be greater than zero.");
 
+        var normalizedCpf = EventGuestService.NormalizeCpf(request.GuestCpf);
+
         var gift = await _context.Gifts.FirstOrDefaultAsync(g => g.Id == giftId);
         if (gift is null)
             throw new ResourceNotFoundException("Gift not found.");
@@ -87,10 +94,14 @@ public class GiftService
         if (gift.ReservedQuantity >= gift.Quantity)
             throw new DomainValidationException("Gift is already fully reserved.");
 
+        var guestIsInvited = await _context.EventGuests
+            .AnyAsync(g => g.EventId == gift.EventId && g.Cpf == normalizedCpf);
+
+        if (!guestIsInvited)
+            throw new DomainValidationException("CPF is not invited to this event.");
+
         gift.ReservedQuantity += 1;
-        gift.ReservedBy = string.IsNullOrWhiteSpace(request.GuestName)
-            ? "Convidado"
-            : request.GuestName.Trim();
+        gift.ReservedBy = normalizedCpf;
         gift.ReservedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -131,11 +142,17 @@ public class GiftService
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new DomainValidationException("Gift name is required.");
 
-        if (request.Price < 0)
-            throw new DomainValidationException("Price must be greater than or equal to zero.");
+        if (request.Price <= MinGiftPrice)
+            throw new DomainValidationException("Price must be greater than zero.");
 
-        if (request.Quantity < 1)
+        if (request.Price >= MaxGiftPriceExclusive)
+            throw new DomainValidationException("Price must be less than 1000000.");
+
+        if (request.Quantity < MinGiftQuantity)
             throw new DomainValidationException("Quantity must be greater than or equal to 1.");
+
+        if (request.Quantity > MaxGiftQuantity)
+            throw new DomainValidationException("Quantity must be less than or equal to 100000.");
     }
 
     private static Gift BuildGift(int eventId, CreateGiftRequest request)

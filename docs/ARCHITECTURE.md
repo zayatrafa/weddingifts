@@ -1,162 +1,127 @@
-# Weddingifts Architecture
+﻿# Weddingifts Architecture
 
-This document explains the system architecture of the Weddingifts project.
+Este documento descreve a arquitetura atual do Weddingifts.
 
-The goal is to keep a simple and scalable architecture.
+## Visão de alto nível
 
----
+Frontend estático (Weddingifts-web)
+-> API REST (.NET 8)
+-> PostgreSQL
 
-# System Overview
+## Backend
 
-Weddingifts is a backend-driven web application for managing wedding gift lists.
-
-The system allows:
-
-- users to create wedding events
-- couples to create gift lists
-- guests to reserve gifts through a public page
-
----
-
-# High-Level Architecture (Current)
-
-Static Frontend (Weddingifts-web)
--> REST API (.NET 8)
--> PostgreSQL Database
-
----
-
-# Backend Architecture
-
-The backend follows a layered architecture:
+### Camadas
 
 Controllers
 -> Services
--> Data Access (DbContext)
+-> Data Access (AppDbContext)
 -> Database
 
----
+### Responsabilidades
 
-# Layer Responsibilities
+Controllers:
 
-Controllers
+- recebem requisições HTTP
+- aplicam autenticação/autorização quando necessário
+- delegam regras para Services
+- retornam DTOs de resposta
 
-- handle HTTP requests
-- validate basic request format
-- call services
-- return response DTOs
+Services:
 
-Controllers should contain minimal business logic.
+- concentram regras de negócio
+- validam regras de domínio
+- coordenam leitura/escrita no banco
 
-Services
+Data (EF Core):
 
-- implement business rules
-- coordinate operations
-- interact with database through DbContext
+- mapeamento de entidades
+- consultas e persistência
+- migrations
 
-Services contain core application logic.
+### Entidades
 
-Entities
+- `User`
+- `Event`
+- `Gift`
 
-Entities represent database tables.
+Relacionamentos:
 
-Current entities:
+- `User` 1:N `Event`
+- `Event` 1:N `Gift`
 
-- User
-- Event
-- Gift
+Observação:
 
-Models
+- `Gift` possui relacionamento com `Event` em cascade delete.
 
-Models represent API request and response structures.
+### Endpoints atuais
 
-Examples:
+Auth:
 
-- CreateUserRequest
-- CreateEventRequest
-- CreateGiftRequest
-- ReserveGiftRequest
-- UserResponse / EventResponse / GiftResponse
+- `POST /api/auth/login`
 
-Data Layer
+User:
 
-AppDbContext manages database access.
+- `POST /api/users`
+- `GET /api/users`
 
-Responsibilities:
+Event:
 
-- mapping entities to tables
-- executing queries
-- managing migrations
+- `POST /api/events` (auth)
+- `GET /api/events/mine` (auth)
+- `PUT /api/events/{eventId}` (auth)
+- `DELETE /api/events/{eventId}` (auth)
+- `GET /api/events/{slug}` (public)
 
----
+Gift:
 
-# Database Schema
+- `POST /api/events/{eventId}/gifts` (auth)
+- `GET /api/events/{eventId}/gifts` (public)
 
-User
-  -> Event (1:N)
+Reservation:
 
-Event
-  -> Gift (1:N)
+- `POST /api/gifts/{giftId}/reserve` (public)
+- `POST /api/gifts/{giftId}/unreserve` (public)
 
----
+### Segurança e tratamento de erro
 
-# Public Event Access
+- JWT Bearer para rotas privadas
+- senha com hash PBKDF2
+- middleware global para `ProblemDetails`
 
-Events are accessed publicly through a slug.
+## Frontend (MVP+)
 
-Example:
+Stack:
 
-`/events/abc123`
+- HTML/CSS/JavaScript puro
+- sem framework
+- sem build step
 
-The slug is generated automatically when the event is created.
+Estrutura por telas:
 
----
+- `index.html` (landing)
+- `register.html` (cadastro)
+- `login.html` (login)
+- `create-event.html` (criar evento)
+- `my-events.html` (gerenciar eventos)
+- `my-event.html` (gerenciar presentes)
+- `account.html` (conta)
+- `event.html` (evento público)
 
-# Testing Architecture
+JS organizado por responsabilidade:
 
-Integration tests are implemented in a dedicated project:
+- `js/common.js` (helpers compartilhados)
+- `js/*.js` (lógica de cada tela)
 
-- `Weddingifts.Api.IntegrationTests`
+## Qualidade e CI
 
-Approach:
+- testes de integração em `Weddingifts.Api.IntegrationTests`
+- execução em `WebApplicationFactory<Program>` + SQLite in-memory
+- workflow `.github/workflows/dotnet-ci.yml` com restore/build/test
 
-- `WebApplicationFactory<Program>` for in-process API execution
-- SQLite in-memory database for isolated test runs
-- real HTTP calls to API endpoints for end-to-end backend behavior validation
+## Decisões arquiteturais atuais
 
-Covered flows include:
-
-- reserve gift success and failure
-- unreserve gift success and failure
-- gift creation validations (`price >= 0`, `quantity >= 1`)
-
----
-
-# CI Architecture
-
-GitHub Actions workflow:
-
-- `.github/workflows/dotnet-ci.yml`
-
-Pipeline steps:
-
-- restore solution
-- build solution
-- run tests
-
-Triggers:
-
-- push
-- pull_request
-
----
-
-# Future Architecture Considerations
-
-Possible future improvements:
-
-- authentication and authorization
-- caching
-- background jobs
-- email notifications
-- payment integrations
+- simplicidade e clareza primeiro
+- frontend desacoplado do backend via API REST
+- separação por camadas no backend
+- separação por tela no frontend
+- evolução incremental preservando fluxos existentes
