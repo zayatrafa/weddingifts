@@ -11,7 +11,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Authentication required.");
+if (!session) throw new Error("Autenticação obrigatória.");
 
 const token = session.token;
 const refreshEventsButton = document.getElementById("refresh-events-button");
@@ -229,3 +229,4 @@ function escapeHtml(text) {
 function escapeAttribute(text) {
   return escapeHtml(text).replaceAll("`", "&#096;");
 }
+

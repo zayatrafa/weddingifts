@@ -63,14 +63,7 @@ form.addEventListener("submit", async (event) => {
     }, 420);
   } catch (error) {
     const backendMessage = String(error.message || "");
-    const normalizedMessage = backendMessage.toLowerCase();
-
-    if (normalizedMessage.includes("invalid email or password")) {
-      setStatus(status, "status-error", "⚠️ E-mail ou senha inválidos.");
-      return;
-    }
-
-    setStatus(status, "status-error", `⚠️ Não foi possível entrar: ${backendMessage}`);
+    setStatus(status, "status-error", backendMessage || "Não foi possível entrar. Tente novamente.");
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Entrar";

@@ -21,18 +21,18 @@ public class UserService
     public async Task<User> CreateUser(CreateUserRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
-            throw new DomainValidationException("Name is required.");
+            throw new DomainValidationException("Nome é obrigatório.");
 
         if (string.IsNullOrWhiteSpace(request.Email))
-            throw new DomainValidationException("Email is required.");
+            throw new DomainValidationException("E-mail é obrigatório.");
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
-            throw new DomainValidationException("Password must contain at least 6 characters.");
+            throw new DomainValidationException("A senha deve conter pelo menos 6 caracteres.");
 
         var normalizedCpf = NormalizeCpf(request.Cpf);
 
         if (request.BirthDate == default)
-            throw new DomainValidationException("Birth date is required.");
+            throw new DomainValidationException("Data de nascimento é obrigatória.");
 
         var normalizedBirthDate = NormalizeBirthDate(request.BirthDate);
 
@@ -40,11 +40,11 @@ public class UserService
 
         var emailInUse = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (emailInUse)
-            throw new DomainValidationException("Email is already registered.");
+            throw new DomainValidationException("E-mail já cadastrado.");
 
         var cpfInUse = await _context.Users.AnyAsync(u => u.Cpf == normalizedCpf);
         if (cpfInUse)
-            throw new DomainValidationException("CPF is already registered.");
+            throw new DomainValidationException("CPF já cadastrado.");
 
         var user = new User
         {
@@ -71,12 +71,7 @@ public class UserService
 
     private static string NormalizeCpf(string? rawCpf)
     {
-        var digits = new string((rawCpf ?? string.Empty).Where(char.IsDigit).ToArray());
-
-        if (digits.Length != 11)
-            throw new DomainValidationException("CPF must contain exactly 11 digits.");
-
-        return digits;
+        return CpfValidator.NormalizeAndValidate(rawCpf);
     }
 
     private static DateTime NormalizeBirthDate(DateTime birthDate)
@@ -89,7 +84,7 @@ public class UserService
         };
 
         if (utcDate > DateTime.UtcNow.Date)
-            throw new DomainValidationException("Birth date cannot be in the future.");
+            throw new DomainValidationException("Data de nascimento não pode ser futura.");
 
         return utcDate;
     }

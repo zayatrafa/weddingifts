@@ -76,9 +76,10 @@ public class EventController : ControllerBase
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (!int.TryParse(claim, out var userId) || userId <= 0)
         {
-            throw new DomainValidationException("Authenticated user id is invalid.");
+            throw new DomainValidationException("Id do usuário autenticado é inválido.");
         }
 
         return userId;
     }
 }
+

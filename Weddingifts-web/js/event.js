@@ -230,3 +230,4 @@ function render() {
   refreshHeader();
   renderGiftList();
 }
+

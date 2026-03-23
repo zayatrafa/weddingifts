@@ -25,16 +25,16 @@ public sealed class AuthService
     public async Task<LoginResponse> Login(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
-            throw new DomainValidationException("Email is required.");
+            throw new DomainValidationException("E-mail é obrigatório.");
 
         if (string.IsNullOrWhiteSpace(request.Password))
-            throw new DomainValidationException("Password is required.");
+            throw new DomainValidationException("Senha é obrigatória.");
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
-            throw new UnauthorizedRequestException("Invalid email or password.");
+            throw new UnauthorizedRequestException("E-mail ou senha inválidos.");
 
         var (token, expiresAt) = _jwtTokenService.GenerateToken(user);
 
@@ -46,3 +46,5 @@ public sealed class AuthService
         };
     }
 }
+
+

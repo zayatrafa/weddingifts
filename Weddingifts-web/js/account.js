@@ -7,7 +7,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Authentication required.");
+if (!session) throw new Error("Autenticação obrigatória.");
 
 const accountData = document.getElementById("account-data");
 const form = document.getElementById("change-password-form");
@@ -61,3 +61,4 @@ function escapeHtml(text) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+

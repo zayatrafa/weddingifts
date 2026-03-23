@@ -9,7 +9,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Authentication required.");
+if (!session) throw new Error("Autenticação obrigatória.");
 
 const token = session.token;
 const refreshEventsButton = document.getElementById("refresh-events-button");
@@ -93,9 +93,10 @@ async function createGuest(event) {
   const phoneNumber = guestPhoneInput.value.trim();
 
   if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o convidado.");
-  if (cpf.length !== 11) return setStatus(status, "status-error", "Informe um CPF válido com 11 dígitos.");
+  if (!isValidCpf(cpf)) return setStatus(status, "status-error", "Informe um CPF válido.");
   if (!name) return setStatus(status, "status-error", "Informe o nome do convidado.");
-  if (!email) return setStatus(status, "status-error", "Informe o email do convidado.");
+  if (!email) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
+  if (!isValidEmail(email)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
   if (!phoneNumber) return setStatus(status, "status-error", "Informe o número de celular do convidado.");
 
   try {
@@ -145,7 +146,7 @@ async function autoFillGuestByCpf() {
   if (!state.selectedEventId) return;
 
   const cpf = digitsOnly(guestCpfInput.value);
-  if (cpf.length !== 11) return;
+  if (!isValidCpf(cpf)) return;
 
   try {
     const apiBase = getApiBase();
@@ -214,6 +215,34 @@ function formatCpfInput(value) {
   if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
   if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function isValidCpf(cpf) {
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  const digits = cpf.split("").map(Number);
+
+  const firstVerifier = calculateVerifier(digits, 9, 10);
+  if (digits[9] !== firstVerifier) return false;
+
+  const secondVerifier = calculateVerifier(digits, 10, 11);
+  return digits[10] === secondVerifier;
+}
+
+function calculateVerifier(digits, length, initialWeight) {
+  let sum = 0;
+
+  for (let index = 0; index < length; index += 1) {
+    sum += digits[index] * (initialWeight - index);
+  }
+
+  const remainder = sum % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
+}
+
+function isValidEmail(email) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i.test(email);
 }
 
 function escapeHtml(text) {

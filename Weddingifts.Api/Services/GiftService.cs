@@ -26,7 +26,7 @@ public class GiftService
 
         var eventExists = await _context.Events.AnyAsync(e => e.Id == eventId);
         if (!eventExists)
-            throw new ResourceNotFoundException("Event not found.");
+            throw new ResourceNotFoundException("Evento não encontrado.");
 
         var gift = BuildGift(eventId, request);
 
@@ -41,17 +41,17 @@ public class GiftService
         ValidateCreateGiftRequest(eventId, request);
 
         if (userId <= 0)
-            throw new DomainValidationException("Authenticated user id is invalid.");
+            throw new DomainValidationException("Id do usuário autenticado é inválido.");
 
         var ev = await _context.Events
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (ev is null)
-            throw new ResourceNotFoundException("Event not found.");
+            throw new ResourceNotFoundException("Evento não encontrado.");
 
         if (ev.UserId != userId)
-            throw new ForbiddenOperationException("You do not have permission to modify this event.");
+            throw new ForbiddenOperationException("Você não tem permissão para modificar este evento.");
 
         var gift = BuildGift(eventId, request);
 
@@ -64,11 +64,11 @@ public class GiftService
     public async Task<List<Gift>> GetGiftsByEvent(int eventId)
     {
         if (eventId <= 0)
-            throw new DomainValidationException("EventId must be greater than zero.");
+            throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         var eventExists = await _context.Events.AnyAsync(e => e.Id == eventId);
         if (!eventExists)
-            throw new ResourceNotFoundException("Event not found.");
+            throw new ResourceNotFoundException("Evento não encontrado.");
 
         return await _context.Gifts
             .AsNoTracking()
@@ -80,25 +80,25 @@ public class GiftService
     public async Task<Gift> ReserveGift(int giftId, ReserveGiftRequest request)
     {
         if (giftId <= 0)
-            throw new DomainValidationException("GiftId must be greater than zero.");
+            throw new DomainValidationException("Id do presente deve ser maior que zero.");
 
         var normalizedCpf = EventGuestService.NormalizeCpf(request.GuestCpf);
 
         var gift = await _context.Gifts.FirstOrDefaultAsync(g => g.Id == giftId);
         if (gift is null)
-            throw new ResourceNotFoundException("Gift not found.");
+            throw new ResourceNotFoundException("Presente não encontrado.");
 
         if (gift.Quantity <= 0)
-            throw new DomainValidationException("Cannot reserve a gift with zero quantity.");
+            throw new DomainValidationException("Não é possível reservar um presente com quantidade zero.");
 
         if (gift.ReservedQuantity >= gift.Quantity)
-            throw new DomainValidationException("Gift is already fully reserved.");
+            throw new DomainValidationException("Este presente já está totalmente reservado.");
 
         var guestIsInvited = await _context.EventGuests
             .AnyAsync(g => g.EventId == gift.EventId && g.Cpf == normalizedCpf);
 
         if (!guestIsInvited)
-            throw new DomainValidationException("CPF is not invited to this event.");
+            throw new DomainValidationException("Este CPF não está convidado para este evento.");
 
         gift.ReservedQuantity += 1;
         gift.ReservedBy = normalizedCpf;
@@ -112,14 +112,14 @@ public class GiftService
     public async Task<Gift> UnreserveGift(int giftId)
     {
         if (giftId <= 0)
-            throw new DomainValidationException("GiftId must be greater than zero.");
+            throw new DomainValidationException("Id do presente deve ser maior que zero.");
 
         var gift = await _context.Gifts.FirstOrDefaultAsync(g => g.Id == giftId);
         if (gift is null)
-            throw new ResourceNotFoundException("Gift not found.");
+            throw new ResourceNotFoundException("Presente não encontrado.");
 
         if (gift.ReservedQuantity <= 0)
-            throw new DomainValidationException("Gift has no active reservation.");
+            throw new DomainValidationException("Este presente não possui reserva ativa.");
 
         gift.ReservedQuantity -= 1;
 
@@ -137,22 +137,22 @@ public class GiftService
     private static void ValidateCreateGiftRequest(int eventId, CreateGiftRequest request)
     {
         if (eventId <= 0)
-            throw new DomainValidationException("EventId must be greater than zero.");
+            throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         if (string.IsNullOrWhiteSpace(request.Name))
-            throw new DomainValidationException("Gift name is required.");
+            throw new DomainValidationException("Nome do presente é obrigatório.");
 
         if (request.Price <= MinGiftPrice)
-            throw new DomainValidationException("Price must be greater than zero.");
+            throw new DomainValidationException("Preço deve ser maior que zero.");
 
         if (request.Price >= MaxGiftPriceExclusive)
-            throw new DomainValidationException("Price must be less than 1000000.");
+            throw new DomainValidationException("Preço deve ser menor que 1000000.");
 
         if (request.Quantity < MinGiftQuantity)
-            throw new DomainValidationException("Quantity must be greater than or equal to 1.");
+            throw new DomainValidationException("Quantidade deve ser maior ou igual a 1.");
 
         if (request.Quantity > MaxGiftQuantity)
-            throw new DomainValidationException("Quantity must be less than or equal to 100000.");
+            throw new DomainValidationException("Quantidade deve ser menor ou igual a 100000.");
     }
 
     private static Gift BuildGift(int eventId, CreateGiftRequest request)
@@ -168,3 +168,5 @@ public class GiftService
         };
     }
 }
+
+

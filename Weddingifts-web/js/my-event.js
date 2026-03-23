@@ -15,7 +15,7 @@ const MIN_GIFT_QUANTITY = 1;
 const MAX_GIFT_QUANTITY = 100_000;
 
 const session = requireAuth();
-if (!session) throw new Error("Authentication required.");
+if (!session) throw new Error("Autenticação obrigatória.");
 
 const token = session.token;
 const refreshEventsButton = document.getElementById("refresh-events-button");
@@ -24,6 +24,8 @@ const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
 const status = document.getElementById("status");
 const giftPriceInput = document.getElementById("gift-price-input");
+
+createGiftForm.noValidate = true;
 
 const state = { events: [], selectedEventId: null, gifts: [] };
 
@@ -94,11 +96,13 @@ async function createGift(event) {
   const eventId = Number(eventSelect.value);
   const name = document.getElementById("gift-name-input").value.trim();
   const description = document.getElementById("gift-description-input").value.trim();
-  const price = parseCurrencyToNumber(giftPriceInput.value);
+  const rawPrice = giftPriceInput.value.trim();
+  const price = parseCurrencyToNumber(rawPrice);
   const quantity = Number(document.getElementById("gift-quantity-input").value);
 
   if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o presente.");
   if (!name) return setStatus(status, "status-error", "Informe o nome do presente.");
+  if (!rawPrice) return setStatus(status, "status-error", "Informe o preço do presente.");
 
   if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
     return setStatus(status, "status-error", "O preço deve ser maior que R$ 0,00.");

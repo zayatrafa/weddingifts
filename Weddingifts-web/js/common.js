@@ -2,23 +2,38 @@
 const AUTH_KEY = "wg_auth_session";
 
 const STATUS_CLASSES = ["status-info", "status-success", "status-error", "status-loading"];
+const GENERIC_ERROR_MESSAGE = "Não foi possível concluir a operação. Tente novamente.";
 
 export function getApiBase() {
   return DEFAULT_API_BASE;
 }
 
 export function extractErrorMessage(raw) {
-  if (!raw) return "Erro inesperado.";
+  if (!raw) return GENERIC_ERROR_MESSAGE;
 
   try {
     const payload = JSON.parse(raw);
-    if (payload?.detail) return payload.detail;
-    if (payload?.title) return payload.title;
+
+    if (typeof payload?.detail === "string" && payload.detail.trim()) {
+      return payload.detail;
+    }
+
+    if (payload?.errors && typeof payload.errors === "object") {
+      const first = Object.values(payload.errors)
+        .flat()
+        .find((item) => typeof item === "string" && item.trim());
+
+      if (first) return first;
+    }
+
+    if (typeof payload?.title === "string" && payload.title.trim()) {
+      return payload.title;
+    }
   } catch {
     // ignore parse failures
   }
 
-  return String(raw);
+  return GENERIC_ERROR_MESSAGE;
 }
 
 export async function requestJson(url, options = {}) {
@@ -26,7 +41,7 @@ export async function requestJson(url, options = {}) {
 
   if (!response.ok) {
     const payload = await response.text();
-    throw new Error(extractErrorMessage(payload) || `Erro HTTP ${response.status}`);
+    throw new Error(extractErrorMessage(payload));
   }
 
   if (response.status === 204) {

@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -17,6 +18,27 @@ builder.Services
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var problem = new ValidationProblemDetails(context.ModelState)
+        {
+            Title = "Erro de validação",
+            Status = StatusCodes.Status400BadRequest,
+            Detail = "Não foi possível validar os dados enviados.",
+            Instance = context.HttpContext.Request.Path
+        };
+
+        problem.Errors.Clear();
+        problem.Errors.Add("request", new[] { "Não foi possível validar os dados enviados." });
+
+        var result = new BadRequestObjectResult(problem);
+        result.ContentTypes.Add("application/problem+json");
+        return result;
+    };
+});
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtTokenOptions>()
     ?? throw new InvalidOperationException("JWT options are not configured.");

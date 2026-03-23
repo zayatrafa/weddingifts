@@ -9,19 +9,21 @@ Qualquer agente (Codex, Copilot, etc.) deve ler este documento antes de alterar 
 
 Weddingifts é uma aplicação para criação e gerenciamento de listas de presentes de casamento.
 
-Fluxo principal:
+Fluxo principal atual:
 
 - casal cria conta
 - casal faz login
 - casal cria eventos
+- casal cadastra convidados por evento
 - casal cadastra presentes por evento
-- convidados acessam página pública por slug e reservam/cancelam presentes
+- convidados acessam página pública por slug e reservam/cancelam presentes com CPF
 
 Objetivos do projeto:
 
 - aprendizado técnico com boas práticas modernas
 - portfólio profissional
 - base para evolução futura como SaaS
+- entregar um MVP publicável e utilizável por usuários reais
 
 ---
 
@@ -30,6 +32,9 @@ Objetivos do projeto:
 ### Backend implementado
 
 - criação de usuário (`POST /api/users`)
+  - com `name`, `email`, `password`, `cpf`, `birthDate`
+  - `cpf` obrigatório e único
+  - `birthDate` obrigatório e não pode ser futura
 - listagem de usuários (`GET /api/users`, sem expor `PasswordHash`)
 - login com JWT (`POST /api/auth/login`)
 - criação de evento autenticado (`POST /api/events`)
@@ -39,8 +44,37 @@ Objetivos do projeto:
 - recuperação pública de evento por slug (`GET /api/events/{slug}`)
 - criação de presente por evento (`POST /api/events/{eventId}/gifts`)
 - listagem de presentes por evento (`GET /api/events/{eventId}/gifts`)
-- reserva de presente (`POST /api/gifts/{giftId}/reserve`)
+- criação de convidado por evento (`POST /api/events/{eventId}/guests`)
+- listagem de convidados por evento (`GET /api/events/{eventId}/guests`)
+- busca de convidado por CPF no evento (`GET /api/events/{eventId}/guests/by-cpf/{cpf}`)
+- reserva de presente com CPF (`POST /api/gifts/{giftId}/reserve`)
+  - reserva só permitida para CPF convidado do evento
 - cancelamento de reserva (`POST /api/gifts/{giftId}/unreserve`)
+
+### Regras importantes de negócio (estado atual)
+
+- evento:
+  - usuário deve existir
+  - nome obrigatório
+  - data obrigatória
+  - slug único gerado automaticamente
+  - editar/excluir permitido apenas para o dono autenticado
+- presente:
+  - evento deve existir
+  - `price > 0`
+  - `price < 1000000`
+  - `quantity >= 1`
+  - `quantity <= 100000`
+- convidado:
+  - `cpf` com 11 dígitos
+  - `cpf` único por evento
+  - nome, email e telefone obrigatórios
+- reserva:
+  - exige CPF válido
+  - CPF precisa estar cadastrado como convidado do evento
+  - não reserva se indisponível
+  - incrementa/decrementa `ReservedQuantity`
+  - limpa `ReservedBy`/`ReservedAt` quando volta a zero
 
 ### Qualidade e plataforma
 
@@ -54,21 +88,32 @@ Objetivos do projeto:
 
 - landing page (`index.html`)
 - cadastro (`register.html`)
+  - confirmação de senha
+  - CPF e data de nascimento
+  - redirecionamento para login após sucesso
 - login (`login.html`)
+  - aviso contextual de pós-cadastro (placeholder de confirmação por email)
+  - tratamento amigável de credenciais inválidas
 - criação de evento (`create-event.html`)
+  - redireciona para gerenciamento do evento criado
 - gerenciamento de eventos (`my-events.html`)
   - editar nome/data
   - excluir evento
   - copiar link público
+  - abrir gerenciamento de convidados
   - abrir gerenciamento de presentes
+- gerenciamento de convidados (`my-guests.html`)
 - gerenciamento de presentes (`my-event.html`)
+  - preço em formato BRL no input
+  - validações amigáveis de preço e quantidade
 - minha conta (`account.html`)
 - evento público (`event.html`)
+  - reserva exigindo CPF
 
 Layout atual:
 
 - menu com estado logado/deslogado
-- menu dropdown do usuário logado com ações privadas
+- menu dropdown com agrupamento de subitens para gerenciamento de eventos
 - interface responsiva desktop/mobile
 - API base fixa no frontend: `http://localhost:5298`
 
@@ -137,45 +182,19 @@ Entidades:
 - `User`
 - `Event`
 - `Gift`
+- `EventGuest`
 
 Relacionamentos:
 
 - `User` 1:N `Event`
 - `Event` 1:N `Gift`
+- `Event` 1:N `EventGuest`
 
-Observação:
+Observações:
 
-- exclusão de evento remove presentes relacionados (cascade)
-
----
-
-## Regras de Negócio
-
-Usuário:
-
-- senha obrigatoriamente hash (PBKDF2)
-
-Evento:
-
-- usuário deve existir
-- nome obrigatório
-- data obrigatória
-- slug único gerado automaticamente
-- editar/excluir permitido apenas para o dono autenticado
-
-Presente:
-
-- evento deve existir
-- `price >= 0`
-- `quantity >= 1`
-
-Reserva:
-
-- não pode reservar se indisponível
-- incrementa `ReservedQuantity`
-- não pode cancelar quando `ReservedQuantity == 0`
-- decrementa `ReservedQuantity`
-- limpa `ReservedBy`/`ReservedAt` quando volta a zero
+- exclusão de evento remove presentes e convidados relacionados (cascade)
+- `User.Cpf` único global
+- `EventGuest` possui índice único em `(EventId, Cpf)`
 
 ---
 
@@ -186,6 +205,11 @@ Reserva:
 - recurso não encontrado -> HTTP 404
 - erro inesperado -> HTTP 500
 - frontend deve exibir `ProblemDetails.detail` quando existir
+
+Importante:
+
+- proteção contra SQL injection já é tratada por padrão via EF Core (queries parametrizadas)
+- ainda assim, manter validações de entrada e não concatenar SQL manual
 
 ---
 
@@ -236,7 +260,24 @@ dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
 3. Manter controllers enxutos e regras nos services.
 4. Não expor campos sensíveis em responses.
 5. Preservar compatibilidade com fluxos já existentes.
-6. Sempre validar impacto em login, eventos, presentes e página pública.
+6. Sempre validar impacto em login, eventos, convidados, presentes e página pública.
+7. Preferir mensagens de erro em PT-BR no frontend.
+8. Garantir limites de tamanho em campos de entrada no frontend e backend.
+
+---
+
+## Situação do Produto
+
+Resumo objetivo:
+
+- o fluxo principal do produto já está em forma de MVP funcional
+- o projeto ainda está em pré-produção (MVP publicável em progresso)
+
+Para considerar "MVP publicável", faltam principalmente:
+
+1. acabamento de UX e consistência de validações/mensagens
+2. endurecimento de segurança operacional (rate-limit, headers, etc.)
+3. setup de deploy (staging/produção), observabilidade e backup
 
 ---
 
@@ -244,7 +285,7 @@ dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
 
 Prioridade recomendada:
 
-1. Backend de conta do usuário (alterar senha e perfil).
-2. Refinar UX do painel privado (feedbacks, estados vazios, confirmações).
-3. Adicionar testes de integração para editar/excluir evento.
-4. Planejar versionamento de API e observabilidade básica (logs estruturados).
+1. Sprint de estabilização do MVP publicável (UX, validações, limites, i18n PT-BR).
+2. Sprint de produção mínima (deploy, domínio, HTTPS, banco gerenciado, secrets, logs, backup).
+3. Go-live controlado com poucos usuários e ciclo curto de feedback/correção.
+4. Pós-MVP: confirmação real por email, convites por WhatsApp/email e refino visual amplo.

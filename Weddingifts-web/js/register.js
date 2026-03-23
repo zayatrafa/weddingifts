@@ -29,8 +29,8 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (cpf.length !== 11) {
-    setStatus(status, "status-error", "Informe um CPF válido com 11 dígitos.");
+  if (!isValidCpf(cpf)) {
+    setStatus(status, "status-error", "Informe um CPF válido.");
     return;
   }
 
@@ -47,7 +47,6 @@ form.addEventListener("submit", async (event) => {
   try {
     submitButton.disabled = true;
     submitButton.textContent = "Cadastrando...";
-    setStatus(status, "status-loading", "Enviando cadastro para o backend...");
 
     await requestJson(`${apiBase}/api/users`, {
       method: "POST",
@@ -74,4 +73,28 @@ function formatCpfInput(value) {
   if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
   if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function isValidCpf(cpf) {
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  const digits = cpf.split("").map(Number);
+
+  const firstVerifier = calculateVerifier(digits, 9, 10);
+  if (digits[9] !== firstVerifier) return false;
+
+  const secondVerifier = calculateVerifier(digits, 10, 11);
+  return digits[10] === secondVerifier;
+}
+
+function calculateVerifier(digits, length, initialWeight) {
+  let sum = 0;
+
+  for (let index = 0; index < length; index += 1) {
+    sum += digits[index] * (initialWeight - index);
+  }
+
+  const remainder = sum % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
 }

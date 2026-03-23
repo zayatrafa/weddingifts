@@ -1,6 +1,6 @@
 ﻿# Weddingifts Development Roadmap
 
-Este roadmap reflete o estado real atual e os próximos passos sugeridos.
+Este roadmap reflete o estado real atual e os próximos passos para chegar ao MVP publicável.
 
 ## Fase 1 - Núcleo backend (Concluída)
 
@@ -42,34 +42,54 @@ Este roadmap reflete o estado real atual e os próximos passos sugeridos.
 - excluir evento (`DELETE /api/events/{eventId}`)
 - UX de copiar link público e navegar para gestão de presentes
 
-## Fase 7 - Conta do usuário (Em andamento)
+## Fase 7 - Convidados e reserva por CPF (Concluída)
 
-Já implementado:
+- CRUD inicial de convidados por evento (criar/listar + lookup por CPF)
+- reserva pública exige CPF
+- validação: CPF precisa estar convidado no evento
 
-- tela `account.html` com dados da sessão
+## Fase 8 - Cadastro reforçado (Concluída)
 
-Pendente:
+- cadastro com CPF e data de nascimento
+- CPF único no usuário
+- confirmação de senha no frontend
+- redirecionamento de cadastro para login com aviso contextual
 
-- endpoint real para alterar senha
-- endpoint real para atualizar dados cadastrais
+## Fase 9 - Regras de presentes e UX pontual (Concluída)
 
-## Fase 8 - Hardening e observabilidade (Próxima)
+- preço em BRL no frontend de gestão de presentes
+- limites de preço/quantidade no frontend e backend
+- redirecionamento após criação de evento
+- ajustes de menu com subitens de gerenciamento
 
-- ampliar testes de integração para editar/excluir evento
-- revisar cenários de concorrência de reserva
-- melhorar logs e rastreabilidade
+## Fase 10 - Estabilização MVP publicável (Próxima)
 
-## Fase 9 - Evolução de produto (Planejada)
+- consolidar limites de tamanho em todos os campos de entrada
+- padronizar mensagens de erro em PT-BR
+- revisar redirecionamentos finais de cadastro/login/eventos
+- validar consistência de formatação BR (datas/valores)
+- adicionar rodapé global em todas as páginas
 
-- experiência de onboarding do casal
-- melhorias visuais e de microinterações
-- preparação para migração futura para frontend tipado
+## Fase 11 - Produção mínima (Próxima)
 
-## Fase 10 - Deploy e operação (Planejada)
+- ambiente de staging e produção
+- banco gerenciado e estratégia de backup
+- gestão de secrets e variáveis de ambiente
+- domínio e HTTPS
+- logs e monitoramento básico
 
-- dockerização completa
-- pipeline de entrega
-- ambiente de staging/produção
+## Fase 12 - Go-live controlado (Planejada)
+
+- liberar acesso para grupo pequeno de usuários
+- coletar feedback real
+- corrigir bugs de uso real em ciclos curtos
+
+## Fase 13 - Pós-MVP (Planejada)
+
+- confirmação real por email
+- envio de convites por WhatsApp/email
+- redesign visual completo
+- evolução para produto SaaS
 
 ## Visão de longo prazo
 

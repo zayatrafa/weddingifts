@@ -6,16 +6,11 @@ namespace Weddingifts.Api.Middleware;
 public sealed class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionMiddleware> _logger;
     private readonly IHostEnvironment _environment;
 
-    public GlobalExceptionMiddleware(
-        RequestDelegate next,
-        ILogger<GlobalExceptionMiddleware> logger,
-        IHostEnvironment environment)
+    public GlobalExceptionMiddleware(RequestDelegate next, IHostEnvironment environment)
     {
         _next = next;
-        _logger = logger;
         _environment = environment;
     }
 
@@ -27,28 +22,23 @@ public sealed class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            await HandleExceptionAsync(context, ex);
+            await HandleExceptionAsync(context, ex, _environment);
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception, IHostEnvironment environment)
     {
         var (statusCode, title) = exception switch
         {
-            DomainValidationException => (StatusCodes.Status400BadRequest, "Validation error"),
-            UnauthorizedRequestException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
-            ForbiddenOperationException => (StatusCodes.Status403Forbidden, "Forbidden"),
-            ResourceNotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
-            _ => (StatusCodes.Status500InternalServerError, "Unexpected server error")
+            DomainValidationException => (StatusCodes.Status400BadRequest, "Erro de validação"),
+            UnauthorizedRequestException => (StatusCodes.Status401Unauthorized, "Não autorizado"),
+            ForbiddenOperationException => (StatusCodes.Status403Forbidden, "Acesso negado"),
+            ResourceNotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
+            _ => (StatusCodes.Status500InternalServerError, "Erro inesperado no servidor")
         };
 
-        if (statusCode == StatusCodes.Status500InternalServerError)
-        {
-            _logger.LogError(exception, "Unhandled exception while processing request.");
-        }
-
-        var detail = statusCode == StatusCodes.Status500InternalServerError && !_environment.IsDevelopment()
-            ? "An unexpected error occurred."
+        var detail = statusCode == StatusCodes.Status500InternalServerError
+            ? (environment.IsEnvironment("Testing") ? exception.Message : "Ocorreu um erro inesperado. Tente novamente em instantes.")
             : exception.Message;
 
         context.Response.StatusCode = statusCode;

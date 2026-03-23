@@ -58,8 +58,8 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Forbidden", payload.Title);
-        Assert.Equal("You do not have permission to modify this event.", payload.Detail);
+        Assert.Equal("Acesso negado", payload.Title);
+        Assert.Equal("Você não tem permissão para modificar este evento.", payload.Detail);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         var session = await CreateAuthenticatedUserSessionAsync();
         var eventId = await CreateEventAsync(session.Token);
         var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 2);
-        const string guestCpf = "12345678901";
+        const string guestCpf = "52998224725";
 
         await CreateGuestAsync(session.Token, eventId, guestCpf);
 
@@ -93,7 +93,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         var session = await CreateAuthenticatedUserSessionAsync();
         var eventId = await CreateEventAsync(session.Token);
         var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
-        const string guestCpf = "12345678901";
+        const string guestCpf = "52998224725";
 
         await CreateGuestAsync(session.Token, eventId, guestCpf);
 
@@ -104,8 +104,8 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Validation error", payload.Title);
-        Assert.Equal("Gift is already fully reserved.", payload.Detail);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Este presente já está totalmente reservado.", payload.Detail);
     }
 
     [Fact]
@@ -117,14 +117,14 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         var eventId = await CreateEventAsync(session.Token);
         var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
 
-        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf = "12345678901" });
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf = "52998224725" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Validation error", payload.Title);
-        Assert.Equal("CPF is not invited to this event.", payload.Detail);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Este CPF não está convidado para este evento.", payload.Detail);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         var session = await CreateAuthenticatedUserSessionAsync();
         var eventId = await CreateEventAsync(session.Token);
         var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
-        const string guestCpf = "12345678901";
+        const string guestCpf = "52998224725";
 
         await CreateGuestAsync(session.Token, eventId, guestCpf);
 
@@ -165,15 +165,15 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Validation error", payload.Title);
-        Assert.Equal("Gift has no active reservation.", payload.Detail);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Este presente não possui reserva ativa.", payload.Detail);
     }
 
     [Theory]
-    [InlineData(0, 1, "Price must be greater than zero.")]
-    [InlineData(1000000, 1, "Price must be less than 1000000.")]
-    [InlineData(10, 0, "Quantity must be greater than or equal to 1.")]
-    [InlineData(10, 100001, "Quantity must be less than or equal to 100000.")]
+    [InlineData(0, 1, "Preço deve ser maior que zero.")]
+    [InlineData(1000000, 1, "Preço deve ser menor que 1000000.")]
+    [InlineData(10, 0, "Quantidade deve ser maior ou igual a 1.")]
+    [InlineData(10, 100001, "Quantidade deve ser menor ou igual a 100000.")]
     public async Task CreateGift_ShouldReturnBadRequest_WhenValidationFails(decimal price, int quantity, string expectedDetail)
     {
         await _factory.ResetDatabaseAsync();
@@ -192,7 +192,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Validation error", payload.Title);
+        Assert.Equal("Erro de validação", payload.Title);
         Assert.Equal(expectedDetail, payload.Detail);
     }
 
@@ -247,14 +247,15 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
         var createUserResponse = await _client.PostAsJsonAsync("/api/users", new
         {
-            name = "Usuario Teste",
+            name = "Usuário Teste",
             email,
             cpf,
             birthDate = new DateTime(1990, 1, 1),
             password
         });
 
-        createUserResponse.EnsureSuccessStatusCode();
+        var createUserBody = await createUserResponse.Content.ReadAsStringAsync();
+        Assert.True(createUserResponse.IsSuccessStatusCode, $"Erro ao criar usuário: {createUserBody}");
 
         var createdUser = await createUserResponse.Content.ReadFromJsonAsync<UserResponseContract>(JsonOptions);
 
@@ -264,7 +265,8 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
             password
         });
 
-        loginResponse.EnsureSuccessStatusCode();
+        var loginBody = await loginResponse.Content.ReadAsStringAsync();
+        Assert.True(loginResponse.IsSuccessStatusCode, $"Erro ao autenticar usuário: {loginBody}");
 
         var loginPayload = await loginResponse.Content.ReadFromJsonAsync<LoginResponseContract>(JsonOptions);
 
@@ -277,7 +279,38 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
     private static string GenerateUniqueCpf()
     {
-        return Random.Shared.NextInt64(0, 99999999999).ToString("D11");
+        while (true)
+        {
+            var numbers = new int[11];
+
+            for (var i = 0; i < 9; i++)
+            {
+                numbers[i] = Random.Shared.Next(0, 10);
+            }
+
+            numbers[9] = CalculateCpfVerifier(numbers, 9, 10);
+            numbers[10] = CalculateCpfVerifier(numbers, 10, 11);
+
+            if (numbers.All(number => number == numbers[0]))
+            {
+                continue;
+            }
+
+            return string.Concat(numbers);
+        }
+    }
+
+    private static int CalculateCpfVerifier(int[] numbers, int length, int initialWeight)
+    {
+        var sum = 0;
+
+        for (var i = 0; i < length; i++)
+        {
+            sum += numbers[i] * (initialWeight - i);
+        }
+
+        var remainder = sum % 11;
+        return remainder < 2 ? 0 : 11 - remainder;
     }
 
     private async Task<HttpResponseMessage> PostAuthorizedJsonAsync(string url, object body, string token)
@@ -321,6 +354,13 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         public DateTime? ReservedAt { get; set; }
     }
 }
+
+
+
+
+
+
+
 
 
 

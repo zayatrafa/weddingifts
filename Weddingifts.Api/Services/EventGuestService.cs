@@ -1,4 +1,4 @@
-﻿using System.Net.Mail;
+﻿using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Weddingifts.Api.Data;
 using Weddingifts.Api.Entities;
@@ -9,6 +9,10 @@ namespace Weddingifts.Api.Services;
 
 public sealed class EventGuestService
 {
+    private static readonly Regex GuestEmailRegex = new(
+        @"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private readonly AppDbContext _context;
 
     public EventGuestService(AppDbContext context)
@@ -19,38 +23,38 @@ public sealed class EventGuestService
     public async Task<EventGuest> CreateGuestForUser(int eventId, int userId, CreateEventGuestRequest request)
     {
         if (userId <= 0)
-            throw new DomainValidationException("Authenticated user id is invalid.");
+            throw new DomainValidationException("Id do usuário autenticado é inválido.");
 
         if (eventId <= 0)
-            throw new DomainValidationException("Event id must be greater than zero.");
+            throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         var ev = await _context.Events
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (ev is null)
-            throw new ResourceNotFoundException("Event not found.");
+            throw new ResourceNotFoundException("Evento não encontrado.");
 
         if (ev.UserId != userId)
-            throw new ForbiddenOperationException("You do not have permission to modify this event.");
+            throw new ForbiddenOperationException("Você não tem permissão para modificar este evento.");
 
         var normalizedCpf = NormalizeCpf(request.Cpf);
 
         if (string.IsNullOrWhiteSpace(request.Name))
-            throw new DomainValidationException("Guest name is required.");
+            throw new DomainValidationException("Nome do convidado é obrigatório.");
 
         if (string.IsNullOrWhiteSpace(request.Email))
-            throw new DomainValidationException("Guest email is required.");
+            throw new DomainValidationException("E-mail do convidado é obrigatório.");
 
         if (!IsValidEmail(request.Email))
-            throw new DomainValidationException("Guest email is invalid.");
+            throw new DomainValidationException("E-mail do convidado é inválido.");
 
         if (string.IsNullOrWhiteSpace(request.PhoneNumber))
-            throw new DomainValidationException("Guest phone number is required.");
+            throw new DomainValidationException("Telefone do convidado é obrigatório.");
 
         var guestExists = await _context.EventGuests.AnyAsync(g => g.EventId == eventId && g.Cpf == normalizedCpf);
         if (guestExists)
-            throw new DomainValidationException("Guest with this CPF is already registered in this event.");
+            throw new DomainValidationException("Já existe convidado com este CPF neste evento.");
 
         var guest = new EventGuest
         {
@@ -70,20 +74,20 @@ public sealed class EventGuestService
     public async Task<List<EventGuest>> GetGuestsByEventForUser(int eventId, int userId)
     {
         if (userId <= 0)
-            throw new DomainValidationException("Authenticated user id is invalid.");
+            throw new DomainValidationException("Id do usuário autenticado é inválido.");
 
         if (eventId <= 0)
-            throw new DomainValidationException("Event id must be greater than zero.");
+            throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         var ev = await _context.Events
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (ev is null)
-            throw new ResourceNotFoundException("Event not found.");
+            throw new ResourceNotFoundException("Evento não encontrado.");
 
         if (ev.UserId != userId)
-            throw new ForbiddenOperationException("You do not have permission to view guests from this event.");
+            throw new ForbiddenOperationException("Você não tem permissão para visualizar convidados deste evento.");
 
         return await _context.EventGuests
             .AsNoTracking()
@@ -95,10 +99,10 @@ public sealed class EventGuestService
     public async Task<EventGuest?> FindGuestByCpfInEventForUser(int eventId, int userId, string cpf)
     {
         if (userId <= 0)
-            throw new DomainValidationException("Authenticated user id is invalid.");
+            throw new DomainValidationException("Id do usuário autenticado é inválido.");
 
         if (eventId <= 0)
-            throw new DomainValidationException("Event id must be greater than zero.");
+            throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         var normalizedCpf = NormalizeCpf(cpf);
 
@@ -107,10 +111,10 @@ public sealed class EventGuestService
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (ev is null)
-            throw new ResourceNotFoundException("Event not found.");
+            throw new ResourceNotFoundException("Evento não encontrado.");
 
         if (ev.UserId != userId)
-            throw new ForbiddenOperationException("You do not have permission to view guests from this event.");
+            throw new ForbiddenOperationException("Você não tem permissão para visualizar convidados deste evento.");
 
         return await _context.EventGuests
             .AsNoTracking()
@@ -119,24 +123,11 @@ public sealed class EventGuestService
 
     public static string NormalizeCpf(string? rawCpf)
     {
-        var digits = new string((rawCpf ?? string.Empty).Where(char.IsDigit).ToArray());
-
-        if (digits.Length != 11)
-            throw new DomainValidationException("CPF must contain exactly 11 digits.");
-
-        return digits;
+        return CpfValidator.NormalizeAndValidate(rawCpf);
     }
 
     private static bool IsValidEmail(string email)
     {
-        try
-        {
-            _ = new MailAddress(email.Trim());
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return GuestEmailRegex.IsMatch(email.Trim());
     }
 }
