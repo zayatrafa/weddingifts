@@ -29,6 +29,11 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!isValidEmail(email)) {
+    setStatus(status, "status-error", "Informe um e-mail válido.");
+    return;
+  }
+
   if (!isValidCpf(cpf)) {
     setStatus(status, "status-error", "Informe um CPF válido.");
     return;
@@ -97,4 +102,8 @@ function calculateVerifier(digits, length, initialWeight) {
 
   const remainder = sum % 11;
   return remainder < 2 ? 0 : 11 - remainder;
+}
+
+function isValidEmail(email) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i.test(email);
 }

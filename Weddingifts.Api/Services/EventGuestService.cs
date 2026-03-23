@@ -52,6 +52,8 @@ public sealed class EventGuestService
         if (string.IsNullOrWhiteSpace(request.PhoneNumber))
             throw new DomainValidationException("Telefone do convidado é obrigatório.");
 
+        var normalizedPhoneNumber = NormalizePhoneNumber(request.PhoneNumber);
+
         var guestExists = await _context.EventGuests.AnyAsync(g => g.EventId == eventId && g.Cpf == normalizedCpf);
         if (guestExists)
             throw new DomainValidationException("Já existe convidado com este CPF neste evento.");
@@ -62,7 +64,7 @@ public sealed class EventGuestService
             Cpf = normalizedCpf,
             Name = request.Name.Trim(),
             Email = request.Email.Trim().ToLowerInvariant(),
-            PhoneNumber = request.PhoneNumber.Trim()
+            PhoneNumber = normalizedPhoneNumber
         };
 
         _context.EventGuests.Add(guest);
@@ -129,5 +131,15 @@ public sealed class EventGuestService
     private static bool IsValidEmail(string email)
     {
         return GuestEmailRegex.IsMatch(email.Trim());
+    }
+
+    private static string NormalizePhoneNumber(string phoneNumber)
+    {
+        var digits = new string(phoneNumber.Where(char.IsDigit).ToArray());
+
+        if (digits.Length is < 10 or > 11)
+            throw new DomainValidationException("Telefone do convidado deve conter 10 ou 11 dígitos.");
+
+        return digits;
     }
 }

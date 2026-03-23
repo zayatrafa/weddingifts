@@ -24,6 +24,7 @@ const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
 const status = document.getElementById("status");
 const giftPriceInput = document.getElementById("gift-price-input");
+const giftFormStatus = document.getElementById("gift-form-status");
 
 createGiftForm.noValidate = true;
 
@@ -100,30 +101,30 @@ async function createGift(event) {
   const price = parseCurrencyToNumber(rawPrice);
   const quantity = Number(document.getElementById("gift-quantity-input").value);
 
-  if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o presente.");
-  if (!name) return setStatus(status, "status-error", "Informe o nome do presente.");
-  if (!rawPrice) return setStatus(status, "status-error", "Informe o preço do presente.");
+  if (!eventId) return setGiftFormError("Selecione um evento para adicionar o presente.");
+  if (!name) return setGiftFormError("Informe o nome do presente.");
+  if (!rawPrice) return setGiftFormError("Informe o preço do presente.");
 
   if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
-    return setStatus(status, "status-error", "O preço deve ser maior que R$ 0,00.");
+    return setGiftFormError("O preço deve ser maior que R$ 0,00.");
   }
 
   if (price >= MAX_GIFT_PRICE_EXCLUSIVE) {
-    return setStatus(status, "status-error", "O preço deve ser menor que R$ 1.000.000,00.");
+    return setGiftFormError("O preço deve ser menor que R$ 1.000.000,00.");
   }
 
   if (!Number.isInteger(quantity) || quantity < MIN_GIFT_QUANTITY) {
-    return setStatus(status, "status-error", "A quantidade mínima é 1.");
+    return setGiftFormError("A quantidade mínima é 1.");
   }
 
   if (quantity > MAX_GIFT_QUANTITY) {
-    return setStatus(status, "status-error", "A quantidade máxima é 100.000.");
+    return setGiftFormError("A quantidade máxima é 100.000.");
   }
 
   try {
     submitButton.disabled = true;
     submitButton.textContent = "Salvando...";
-    setStatus(status, "status-loading", "Criando presente...");
+    setGiftFormStatus("status-loading", "Criando presente...");
 
     const apiBase = getApiBase();
     await requestJson(`${apiBase}/api/events/${eventId}/gifts`, {
@@ -137,9 +138,9 @@ async function createGift(event) {
     document.getElementById("gift-quantity-input").value = "1";
     await loadSelectedEventGifts();
     await loadMyEvents();
-    setStatus(status, "status-success", "Presente adicionado com sucesso.");
+    setGiftFormStatus("status-success", "Presente adicionado com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao criar presente: ${error.message}`);
+    setGiftFormError(`Falha ao criar presente: ${error.message}`);
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Adicionar presente";
@@ -223,6 +224,17 @@ function parseCurrencyToNumber(value) {
 function formatCurrencyInput(value) {
   const amount = parseCurrencyToNumber(value);
   return formatCurrency(amount);
+}
+
+function setGiftFormError(message) {
+  setGiftFormStatus("status-error", message);
+}
+
+function setGiftFormStatus(type, message) {
+  if (giftFormStatus) {
+    giftFormStatus.hidden = false;
+    setStatus(giftFormStatus, type, message);
+  }
 }
 
 function escapeHtml(text) {

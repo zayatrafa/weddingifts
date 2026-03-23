@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 using Weddingifts.Api.Data;
 using Weddingifts.Api.Entities;
 using Weddingifts.Api.Exceptions;
@@ -9,6 +10,10 @@ namespace Weddingifts.Api.Services;
 
 public class UserService
 {
+    private static readonly Regex EmailRegex = new(
+        @"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private readonly AppDbContext _context;
     private readonly PasswordHasherService _passwordHasher;
 
@@ -25,6 +30,9 @@ public class UserService
 
         if (string.IsNullOrWhiteSpace(request.Email))
             throw new DomainValidationException("E-mail é obrigatório.");
+
+        if (!IsValidEmail(request.Email))
+            throw new DomainValidationException("E-mail inválido.");
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
             throw new DomainValidationException("A senha deve conter pelo menos 6 caracteres.");
@@ -87,5 +95,10 @@ public class UserService
             throw new DomainValidationException("Data de nascimento não pode ser futura.");
 
         return utcDate;
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        return EmailRegex.IsMatch(email.Trim());
     }
 }

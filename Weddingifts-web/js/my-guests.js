@@ -43,6 +43,10 @@ guestCpfInput.addEventListener("input", () => {
   guestCpfInput.value = formatCpfInput(guestCpfInput.value);
 });
 
+guestPhoneInput.addEventListener("input", () => {
+  guestPhoneInput.value = formatPhoneInput(guestPhoneInput.value);
+});
+
 guestCpfInput.addEventListener("blur", autoFillGuestByCpf);
 
 loadMyEvents();
@@ -90,14 +94,14 @@ async function createGuest(event) {
   const cpf = digitsOnly(guestCpfInput.value);
   const name = guestNameInput.value.trim();
   const email = guestEmailInput.value.trim();
-  const phoneNumber = guestPhoneInput.value.trim();
+  const phoneDigits = digitsOnly(guestPhoneInput.value);
 
   if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o convidado.");
   if (!isValidCpf(cpf)) return setStatus(status, "status-error", "Informe um CPF válido.");
   if (!name) return setStatus(status, "status-error", "Informe o nome do convidado.");
   if (!email) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
   if (!isValidEmail(email)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
-  if (!phoneNumber) return setStatus(status, "status-error", "Informe o número de celular do convidado.");
+  if (!isValidPhone(phoneDigits)) return setStatus(status, "status-error", "Informe um celular válido com 10 ou 11 dígitos.");
 
   try {
     submitButton.disabled = true;
@@ -108,7 +112,7 @@ async function createGuest(event) {
     await requestJson(`${apiBase}/api/events/${eventId}/guests`, {
       method: "POST",
       headers: authHeaders(token, true),
-      body: JSON.stringify({ cpf, name, email, phoneNumber })
+      body: JSON.stringify({ cpf, name, email, phoneNumber: phoneDigits })
     });
 
     createGuestForm.reset();
@@ -156,7 +160,7 @@ async function autoFillGuestByCpf() {
 
     if (!guestNameInput.value.trim()) guestNameInput.value = guest.name || "";
     if (!guestEmailInput.value.trim()) guestEmailInput.value = guest.email || "";
-    if (!guestPhoneInput.value.trim()) guestPhoneInput.value = guest.phoneNumber || "";
+    if (!guestPhoneInput.value.trim()) guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
   } catch {
     // Não exibe erro em lookup de preenchimento automático.
   }
@@ -198,7 +202,7 @@ function renderGuests() {
         </div>
         <span class="tag tag-ok">Convidado</span>
       </div>
-      <p class="meta">Email: ${escapeHtml(guest.email)} | Celular: ${escapeHtml(guest.phoneNumber)}</p>
+      <p class="meta">Email: ${escapeHtml(guest.email)} | Celular: ${escapeHtml(formatPhoneInput(guest.phoneNumber))}</p>
     `;
 
     guestsList.appendChild(item);
@@ -215,6 +219,16 @@ function formatCpfInput(value) {
   if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
   if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function formatPhoneInput(value) {
+  const digits = digitsOnly(value).slice(0, 11);
+
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 function isValidCpf(cpf) {
@@ -243,6 +257,10 @@ function calculateVerifier(digits, length, initialWeight) {
 
 function isValidEmail(email) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i.test(email);
+}
+
+function isValidPhone(digits) {
+  return digits.length >= 10 && digits.length <= 11;
 }
 
 function escapeHtml(text) {
