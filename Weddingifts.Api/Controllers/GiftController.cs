@@ -29,6 +29,27 @@ public class GiftController : ControllerBase
         return Created($"/api/events/{eventId}/gifts/{response.Id}", response);
     }
 
+    [Authorize]
+    [HttpPut("{eventId:int}/gifts/{giftId:int}")]
+    public async Task<IActionResult> UpdateGift(int eventId, int giftId, [FromBody] UpdateGiftRequest request)
+    {
+        var userId = GetAuthenticatedUserId();
+        var gift = await _giftService.UpdateGiftForUser(eventId, giftId, userId, request);
+        var response = GiftResponse.FromEntity(gift);
+
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpDelete("{eventId:int}/gifts/{giftId:int}")]
+    public async Task<IActionResult> DeleteGift(int eventId, int giftId)
+    {
+        var userId = GetAuthenticatedUserId();
+        await _giftService.DeleteGiftForUser(eventId, giftId, userId);
+
+        return NoContent();
+    }
+
     [AllowAnonymous]
     [HttpGet("{eventId:int}/gifts")]
     public async Task<IActionResult> GetGifts(int eventId)
@@ -50,4 +71,3 @@ public class GiftController : ControllerBase
         return userId;
     }
 }
-

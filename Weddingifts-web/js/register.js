@@ -29,6 +29,11 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!isValidPersonName(name)) {
+    setStatus(status, "status-error", "O nome deve conter apenas letras.");
+    return;
+  }
+
   if (!isValidEmail(email)) {
     setStatus(status, "status-error", "Informe um e-mail válido.");
     return;
@@ -106,4 +111,8 @@ function calculateVerifier(digits, length, initialWeight) {
 
 function isValidEmail(email) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i.test(email);
+}
+
+function isValidPersonName(name) {
+  return /^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$/u.test(String(name || "").trim());
 }

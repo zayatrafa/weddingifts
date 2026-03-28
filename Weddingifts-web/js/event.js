@@ -1,7 +1,10 @@
 ﻿import {
+  clearAuthSession,
   formatCurrency,
   formatDate,
   getApiBase,
+  getAuthSession,
+  initUserDropdown,
   requestJson,
   setStatus
 } from "./common.js";
@@ -15,6 +18,10 @@ const status = document.getElementById("status");
 const giftGrid = document.getElementById("gift-grid");
 const giftTemplate = document.getElementById("gift-template");
 const filters = document.querySelectorAll(".filter-button");
+
+const session = getAuthSession();
+enhanceHeaderForLoggedUser(session);
+prefillGuestCpfForLoggedUser(session);
 
 const query = new URLSearchParams(window.location.search);
 const querySlug = query.get("slug");
@@ -43,6 +50,70 @@ if (querySlug) {
 } else {
   render();
   setStatus(status, "status-info", "Informe o slug para carregar o evento público.");
+}
+
+function enhanceHeaderForLoggedUser(sessionData) {
+  const session = sessionData;
+  if (!session?.token) return;
+
+  const navRight = document.querySelector(".shell-nav-right");
+  if (!navRight) return;
+
+  navRight.innerHTML = `
+    <div class="shell-links">
+      <a href="./event.html" class="active">Evento público</a>
+    </div>
+    <div class="user-menu-wrap">
+      <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
+      <div id="user-menu" class="user-menu" hidden>
+        <a href="./create-event.html">Criar evento</a>
+        <a href="./my-events.html">Gerenciar meus eventos</a>
+        <span class="menu-group">Gerenciar eventos</span>
+        <a class="menu-subitem" href="./my-guests.html">Gerenciar convidados</a>
+        <a class="menu-subitem" href="./my-event.html">Gerenciar presentes</a>
+        <a href="./account.html">Minha conta</a>
+        <button id="logout-action" type="button">Sair</button>
+      </div>
+    </div>
+  `;
+
+  initUserDropdown({
+    session,
+    onLogout: () => {
+      clearAuthSession();
+      window.location.href = "./login.html";
+    }
+  });
+}
+
+function prefillGuestCpfForLoggedUser(sessionData) {
+  if (!guestCpfInput || !sessionData?.token) return;
+
+  const claims = decodeJwtClaims(sessionData.token);
+  const cpfFromToken = typeof claims?.cpf === "string" ? claims.cpf : "";
+  const cpfFromSession = typeof sessionData?.user?.cpf === "string" ? sessionData.user.cpf : "";
+  const cpf = digitsOnly(cpfFromToken || cpfFromSession);
+
+  if (cpf.length !== 11) return;
+
+  guestCpfInput.value = formatCpfInput(cpf);
+  guestCpfInput.readOnly = true;
+  guestCpfInput.setAttribute("aria-readonly", "true");
+  guestCpfInput.title = "CPF preenchido automaticamente pela sua conta logada.";
+}
+
+function decodeJwtClaims(token) {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 }
 
 function availableUnits(gift) {
@@ -230,4 +301,3 @@ function render() {
   refreshHeader();
   renderGiftList();
 }
-

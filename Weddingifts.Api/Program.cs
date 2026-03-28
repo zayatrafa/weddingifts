@@ -1,7 +1,9 @@
 ﻿using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -23,22 +25,146 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
+        var firstError = context.ModelState
+            .FirstOrDefault(entry => entry.Value is not null && entry.Value.Errors.Count > 0);
+
+        var rawField = firstError.Key;
+        var firstErrorMessage = firstError.Value?.Errors.FirstOrDefault()?.ErrorMessage ?? string.Empty;
+        var normalizedField = NormalizeFieldName(rawField, firstErrorMessage);
+        var displayField = GetDisplayFieldName(normalizedField);
+
+        var detail = string.IsNullOrWhiteSpace(displayField)
+            ? "Não foi possível validar os dados enviados."
+            : $"Não foi possível validar o campo '{displayField}'.";
+
         var problem = new ValidationProblemDetails(context.ModelState)
         {
             Title = "Erro de validação",
             Status = StatusCodes.Status400BadRequest,
-            Detail = "Não foi possível validar os dados enviados.",
+            Detail = detail,
             Instance = context.HttpContext.Request.Path
         };
 
         problem.Errors.Clear();
-        problem.Errors.Add("request", new[] { "Não foi possível validar os dados enviados." });
+        problem.Errors.Add(normalizedField, new[] { detail });
 
         var result = new BadRequestObjectResult(problem);
         result.ContentTypes.Add("application/problem+json");
         return result;
     };
 });
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            context.HttpContext.Response.ContentType = "application/problem+json";
+
+            await context.HttpContext.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Title = "Muitas requisições",
+                Status = StatusCodes.Status429TooManyRequests,
+                Detail = "Você excedeu o limite de requisições. Tente novamente em instantes.",
+                Instance = context.HttpContext.Request.Path
+            }, cancellationToken);
+        };
+
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var path = httpContext.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
+
+            var isSensitivePath = path.Contains("/api/auth/login")
+                || (path == "/api/users" && httpContext.Request.Method == HttpMethods.Post);
+
+            if (isSensitivePath)
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: $"sensitive:{remoteIp}",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            }
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: $"default:{remoteIp}",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        });
+    });
+}
+
+static string NormalizeFieldName(string rawField, string errorMessage)
+{
+    if (string.IsNullOrWhiteSpace(rawField))
+        return InferFieldFromErrorMessage(errorMessage);
+
+    var field = rawField.Trim();
+
+    if (field == "$")
+        return InferFieldFromErrorMessage(errorMessage);
+
+    if (field.StartsWith("$.", StringComparison.Ordinal))
+        field = field[2..];
+
+    if (field.Contains('.'))
+        field = field.Split('.').Last();
+
+    return string.IsNullOrWhiteSpace(field) ? InferFieldFromErrorMessage(errorMessage) : field;
+}
+
+static string InferFieldFromErrorMessage(string errorMessage)
+{
+    if (errorMessage.Contains("birthdate", StringComparison.OrdinalIgnoreCase))
+        return "birthDate";
+
+    if (errorMessage.Contains("email", StringComparison.OrdinalIgnoreCase))
+        return "email";
+
+    if (errorMessage.Contains("cpf", StringComparison.OrdinalIgnoreCase))
+        return "cpf";
+
+    if (errorMessage.Contains("eventdate", StringComparison.OrdinalIgnoreCase))
+        return "eventDate";
+
+    if (errorMessage.Contains("phonenumber", StringComparison.OrdinalIgnoreCase)
+        || errorMessage.Contains("phone", StringComparison.OrdinalIgnoreCase)
+        || errorMessage.Contains("celular", StringComparison.OrdinalIgnoreCase)
+        || errorMessage.Contains("telefone", StringComparison.OrdinalIgnoreCase))
+        return "phoneNumber";
+
+    return "request";
+}
+
+static string GetDisplayFieldName(string normalizedField)
+{
+    return normalizedField.ToLowerInvariant() switch
+    {
+        "name" => "nome",
+        "email" => "e-mail",
+        "password" => "senha",
+        "confirmpassword" => "confirmação de senha",
+        "cpf" => "CPF",
+        "birthdate" => "data de nascimento",
+        "eventdate" => "data do evento",
+        "phonenumber" => "celular",
+        "price" => "preço",
+        "quantity" => "quantidade",
+        _ => normalizedField
+    };
+}
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtTokenOptions>()
     ?? throw new InvalidOperationException("JWT options are not configured.");
@@ -134,6 +260,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     dbContext.Database.Migrate();
 }
 
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -144,6 +271,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("WeddingiftsWeb");
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseRateLimiter();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -153,4 +284,3 @@ app.Run();
 public partial class Program
 {
 }
-

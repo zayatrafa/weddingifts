@@ -9,8 +9,16 @@ namespace Weddingifts.Api.Services;
 
 public sealed class EventGuestService
 {
+    private const int MaxNameLength = 120;
+    private const int MaxEmailLength = 160;
+    private const int MaxPhoneLength = 20;
+
     private static readonly Regex GuestEmailRegex = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex NameRegex = new(
+        @"^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly AppDbContext _context;
@@ -22,37 +30,11 @@ public sealed class EventGuestService
 
     public async Task<EventGuest> CreateGuestForUser(int eventId, int userId, CreateEventGuestRequest request)
     {
-        if (userId <= 0)
-            throw new DomainValidationException("Id do usuário autenticado é inválido.");
-
-        if (eventId <= 0)
-            throw new DomainValidationException("Id do evento deve ser maior que zero.");
-
-        var ev = await _context.Events
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == eventId);
-
-        if (ev is null)
-            throw new ResourceNotFoundException("Evento não encontrado.");
-
-        if (ev.UserId != userId)
-            throw new ForbiddenOperationException("Você não tem permissão para modificar este evento.");
+        var ev = await GetEventForUser(eventId, userId, "modificar");
 
         var normalizedCpf = NormalizeCpf(request.Cpf);
 
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new DomainValidationException("Nome do convidado é obrigatório.");
-
-        if (string.IsNullOrWhiteSpace(request.Email))
-            throw new DomainValidationException("E-mail do convidado é obrigatório.");
-
-        if (!IsValidEmail(request.Email))
-            throw new DomainValidationException("E-mail do convidado é inválido.");
-
-        if (string.IsNullOrWhiteSpace(request.PhoneNumber))
-            throw new DomainValidationException("Telefone do convidado é obrigatório.");
-
-        var normalizedPhoneNumber = NormalizePhoneNumber(request.PhoneNumber);
+        ValidateGuestData(request.Name, request.Email, request.PhoneNumber);
 
         var guestExists = await _context.EventGuests.AnyAsync(g => g.EventId == eventId && g.Cpf == normalizedCpf);
         if (guestExists)
@@ -60,11 +42,11 @@ public sealed class EventGuestService
 
         var guest = new EventGuest
         {
-            EventId = eventId,
+            EventId = ev.Id,
             Cpf = normalizedCpf,
             Name = request.Name.Trim(),
             Email = request.Email.Trim().ToLowerInvariant(),
-            PhoneNumber = normalizedPhoneNumber
+            PhoneNumber = NormalizePhoneNumber(request.PhoneNumber)
         };
 
         _context.EventGuests.Add(guest);
@@ -73,23 +55,60 @@ public sealed class EventGuestService
         return guest;
     }
 
+    public async Task<EventGuest> UpdateGuestForUser(int eventId, int guestId, int userId, UpdateEventGuestRequest request)
+    {
+        await GetEventForUser(eventId, userId, "modificar");
+
+        if (guestId <= 0)
+            throw new DomainValidationException("Id do convidado deve ser maior que zero.");
+
+        ValidateGuestData(request.Name, request.Email, request.PhoneNumber);
+
+        var guest = await _context.EventGuests
+            .FirstOrDefaultAsync(g => g.Id == guestId && g.EventId == eventId);
+
+        if (guest is null)
+            throw new ResourceNotFoundException("Convidado não encontrado.");
+
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        var duplicatedEmail = await _context.EventGuests.AnyAsync(g =>
+            g.EventId == eventId &&
+            g.Id != guestId &&
+            g.Email.ToLower() == normalizedEmail);
+
+        if (duplicatedEmail)
+            throw new DomainValidationException("Já existe convidado com este e-mail neste evento.");
+
+        guest.Name = request.Name.Trim();
+        guest.Email = normalizedEmail;
+        guest.PhoneNumber = NormalizePhoneNumber(request.PhoneNumber);
+
+        await _context.SaveChangesAsync();
+
+        return guest;
+    }
+
+    public async Task DeleteGuestForUser(int eventId, int guestId, int userId)
+    {
+        await GetEventForUser(eventId, userId, "modificar");
+
+        if (guestId <= 0)
+            throw new DomainValidationException("Id do convidado deve ser maior que zero.");
+
+        var guest = await _context.EventGuests
+            .FirstOrDefaultAsync(g => g.Id == guestId && g.EventId == eventId);
+
+        if (guest is null)
+            throw new ResourceNotFoundException("Convidado não encontrado.");
+
+        _context.EventGuests.Remove(guest);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<List<EventGuest>> GetGuestsByEventForUser(int eventId, int userId)
     {
-        if (userId <= 0)
-            throw new DomainValidationException("Id do usuário autenticado é inválido.");
-
-        if (eventId <= 0)
-            throw new DomainValidationException("Id do evento deve ser maior que zero.");
-
-        var ev = await _context.Events
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == eventId);
-
-        if (ev is null)
-            throw new ResourceNotFoundException("Evento não encontrado.");
-
-        if (ev.UserId != userId)
-            throw new ForbiddenOperationException("Você não tem permissão para visualizar convidados deste evento.");
+        await GetEventForUser(eventId, userId, "visualizar");
 
         return await _context.EventGuests
             .AsNoTracking()
@@ -100,23 +119,9 @@ public sealed class EventGuestService
 
     public async Task<EventGuest?> FindGuestByCpfInEventForUser(int eventId, int userId, string cpf)
     {
-        if (userId <= 0)
-            throw new DomainValidationException("Id do usuário autenticado é inválido.");
-
-        if (eventId <= 0)
-            throw new DomainValidationException("Id do evento deve ser maior que zero.");
+        await GetEventForUser(eventId, userId, "visualizar");
 
         var normalizedCpf = NormalizeCpf(cpf);
-
-        var ev = await _context.Events
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == eventId);
-
-        if (ev is null)
-            throw new ResourceNotFoundException("Evento não encontrado.");
-
-        if (ev.UserId != userId)
-            throw new ForbiddenOperationException("Você não tem permissão para visualizar convidados deste evento.");
 
         return await _context.EventGuests
             .AsNoTracking()
@@ -128,9 +133,66 @@ public sealed class EventGuestService
         return CpfValidator.NormalizeAndValidate(rawCpf);
     }
 
+    private async Task<Event> GetEventForUser(int eventId, int userId, string action)
+    {
+        if (userId <= 0)
+            throw new DomainValidationException("Id do usuário autenticado é inválido.");
+
+        if (eventId <= 0)
+            throw new DomainValidationException("Id do evento deve ser maior que zero.");
+
+        var ev = await _context.Events
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        if (ev is null)
+            throw new ResourceNotFoundException("Evento não encontrado.");
+
+        if (ev.UserId != userId)
+            throw new ForbiddenOperationException($"Você não tem permissão para {action} convidados deste evento.");
+
+        return ev;
+    }
+
+    private static void ValidateGuestData(string name, string email, string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainValidationException("Nome do convidado é obrigatório.");
+
+        var normalizedName = name.Trim();
+        if (normalizedName.Length > MaxNameLength)
+            throw new DomainValidationException("Nome do convidado excede o tamanho máximo permitido.");
+
+        if (!IsValidPersonName(normalizedName))
+            throw new DomainValidationException("Nome do convidado deve conter apenas letras.");
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new DomainValidationException("E-mail do convidado é obrigatório.");
+
+        var normalizedEmail = email.Trim();
+        if (normalizedEmail.Length > MaxEmailLength)
+            throw new DomainValidationException("E-mail do convidado excede o tamanho máximo permitido.");
+
+        if (!IsValidEmail(normalizedEmail))
+            throw new DomainValidationException("E-mail do convidado é inválido.");
+
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            throw new DomainValidationException("Telefone do convidado é obrigatório.");
+
+        if (phoneNumber.Trim().Length > MaxPhoneLength)
+            throw new DomainValidationException("Telefone do convidado excede o tamanho máximo permitido.");
+
+        _ = NormalizePhoneNumber(phoneNumber);
+    }
+
     private static bool IsValidEmail(string email)
     {
-        return GuestEmailRegex.IsMatch(email.Trim());
+        return GuestEmailRegex.IsMatch(email);
+    }
+
+    private static bool IsValidPersonName(string name)
+    {
+        return NameRegex.IsMatch(name);
     }
 
     private static string NormalizePhoneNumber(string phoneNumber)

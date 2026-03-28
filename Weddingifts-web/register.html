@@ -27,7 +27,7 @@
       <p class="auth-subtitle">Comece seu espaço no Weddingifts para criar eventos e organizar presentes com carinho.</p>
 
       <form id="register-form" class="form">
-        <div class="field"><label for="name-input">Nome</label><input class="input" id="name-input" type="text" placeholder="Maria Silva" required /></div>
+        <div class="field"><label for="name-input">Nome</label><input class="input" id="name-input" type="text" maxlength="120" pattern="[A-Za-zÀ-ÖØ-öø-ÿ' -]+" placeholder="Maria Silva" required /></div>
         <div class="field"><label for="email-input">E-mail</label><input class="input" id="email-input" type="email" placeholder="maria@email.com" required /></div>
         <div class="field"><label for="cpf-input">CPF</label><input class="input" id="cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required /></div>
         <div class="field"><label for="birth-date-input">Data de nascimento</label><input class="input" id="birth-date-input" type="date" required /></div>
@@ -42,5 +42,24 @@
   </main>
 
   <script type="module" src="./js/register.js"></script>
+  <footer class="global-footer">
+    <div class="global-footer-inner">
+      <div class="global-footer-brand">
+        <strong>Weddingifts</strong>
+        <p>Listas de casamento com organização, carinho e clareza para casais e convidados.</p>
+      </div>
+      <div class="global-footer-links">
+        <a href="./index.html">Início</a>
+        <a href="./event.html">Evento público</a>
+        <a href="./register.html">Criar conta</a>
+        <a href="./login.html">Entrar</a>
+      </div>
+      <div class="global-footer-meta">
+        <span>Suporte: suporte@weddingifts.app</span>
+        <span>© 2026 Weddingifts</span>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
+

@@ -18,6 +18,10 @@ const refreshEventsButton = document.getElementById("refresh-events-button");
 const eventsList = document.getElementById("events-list");
 const status = document.getElementById("status");
 
+const query = new URLSearchParams(window.location.search);
+const focusEventIdFromQuery = Number(query.get("focusEventId"));
+let shouldFocusFromQuery = Number.isInteger(focusEventIdFromQuery) && focusEventIdFromQuery > 0;
+
 const state = { events: [] };
 
 initUserDropdown({
@@ -43,11 +47,15 @@ async function loadMyEvents() {
 
     renderEvents();
 
-    setStatus(
-      status,
-      state.events.length ? "status-success" : "status-info",
-      state.events.length ? "Eventos carregados com sucesso." : "Você ainda não possui eventos."
-    );
+    if (applyFocusFromQueryIfNeeded()) {
+      setStatus(status, "status-success", "Evento criado e destacado com sucesso.");
+    } else {
+      setStatus(
+        status,
+        state.events.length ? "status-success" : "status-info",
+        state.events.length ? "Eventos carregados com sucesso." : "Você ainda não possui eventos."
+      );
+    }
   } catch (error) {
     setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
   } finally {
@@ -66,6 +74,8 @@ function renderEvents() {
   state.events.forEach((eventData) => {
     const item = document.createElement("article");
     item.className = "event-item";
+    item.dataset.eventId = String(eventData.id);
+
     const giftCount = Array.isArray(eventData.gifts) ? eventData.gifts.length : 0;
 
     item.innerHTML = `
@@ -194,6 +204,24 @@ function renderEvents() {
   });
 }
 
+function applyFocusFromQueryIfNeeded() {
+  if (!shouldFocusFromQuery) return false;
+
+  const targetCard = eventsList.querySelector(`[data-event-id="${focusEventIdFromQuery}"]`);
+  shouldFocusFromQuery = false;
+
+  if (!targetCard) return false;
+
+  targetCard.classList.add("event-item-focus");
+  targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  window.setTimeout(() => {
+    targetCard.classList.remove("event-item-focus");
+  }, 2600);
+
+  return true;
+}
+
 async function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     await navigator.clipboard.writeText(text);
@@ -229,4 +257,3 @@ function escapeHtml(text) {
 function escapeAttribute(text) {
   return escapeHtml(text).replaceAll("`", "&#096;");
 }
-

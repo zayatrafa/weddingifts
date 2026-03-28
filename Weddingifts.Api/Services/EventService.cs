@@ -8,6 +8,9 @@ namespace Weddingifts.Api.Services;
 
 public class EventService
 {
+    private const int MaxEventNameLength = 120;
+    private const int MaxSlugLength = 24;
+
     private readonly AppDbContext _context;
 
     public EventService(AppDbContext context)
@@ -23,6 +26,10 @@ public class EventService
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new DomainValidationException("Nome do evento é obrigatório.");
 
+        var normalizedName = request.Name.Trim();
+        if (normalizedName.Length > MaxEventNameLength)
+            throw new DomainValidationException("Nome do evento excede o tamanho máximo permitido.");
+
         if (request.EventDate == default)
             throw new DomainValidationException("Data do evento é obrigatória.");
 
@@ -33,7 +40,7 @@ public class EventService
         var ev = new Event
         {
             UserId = request.UserId,
-            Name = request.Name.Trim(),
+            Name = normalizedName,
             EventDate = NormalizeEventDate(request.EventDate),
             Slug = await GenerateUniqueSlug()
         };
@@ -61,6 +68,10 @@ public class EventService
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new DomainValidationException("Nome do evento é obrigatório.");
 
+        var normalizedName = request.Name.Trim();
+        if (normalizedName.Length > MaxEventNameLength)
+            throw new DomainValidationException("Nome do evento excede o tamanho máximo permitido.");
+
         if (request.EventDate == default)
             throw new DomainValidationException("Data do evento é obrigatória.");
 
@@ -68,7 +79,7 @@ public class EventService
         if (ev is null)
             throw new ResourceNotFoundException("Evento não encontrado.");
 
-        ev.Name = request.Name.Trim();
+        ev.Name = normalizedName;
         ev.EventDate = NormalizeEventDate(request.EventDate);
 
         await _context.SaveChangesAsync();
@@ -110,10 +121,14 @@ public class EventService
         if (string.IsNullOrWhiteSpace(slug))
             throw new DomainValidationException("Slug é obrigatório.");
 
+        var normalizedSlug = slug.Trim();
+        if (normalizedSlug.Length > MaxSlugLength)
+            throw new DomainValidationException("Slug excede o tamanho máximo permitido.");
+
         var ev = await _context.Events
             .AsNoTracking()
             .Include(e => e.Gifts)
-            .FirstOrDefaultAsync(e => e.Slug == slug.Trim());
+            .FirstOrDefaultAsync(e => e.Slug == normalizedSlug);
 
         if (ev is null)
             throw new ResourceNotFoundException("Evento não encontrado.");

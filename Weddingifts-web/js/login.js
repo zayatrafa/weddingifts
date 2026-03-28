@@ -1,4 +1,5 @@
 ﻿import {
+  authHeaders,
   getApiBase,
   getAuthSession,
   requestJson,
@@ -56,10 +57,13 @@ form.addEventListener("submit", async (event) => {
     });
 
     saveAuthSession(login);
+
+    const redirectTarget = await resolvePostLoginRedirect(apiBase, login?.token || login?.Token);
+
     setStatus(status, "status-success", "Login realizado com sucesso. Redirecionando...");
 
     window.setTimeout(() => {
-      window.location.href = "./create-event.html";
+      window.location.href = redirectTarget;
     }, 420);
   } catch (error) {
     const backendMessage = String(error.message || "");
@@ -69,3 +73,21 @@ form.addEventListener("submit", async (event) => {
     submitButton.textContent = "Entrar";
   }
 });
+
+async function resolvePostLoginRedirect(apiBase, token) {
+  if (!token) return "./create-event.html";
+
+  try {
+    const events = await requestJson(`${apiBase}/api/events/mine`, {
+      headers: authHeaders(token)
+    });
+
+    if (Array.isArray(events) && events.length > 0) {
+      return "./my-events.html";
+    }
+
+    return "./create-event.html";
+  } catch {
+    return "./create-event.html";
+  }
+}

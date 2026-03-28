@@ -10,8 +10,17 @@ namespace Weddingifts.Api.Services;
 
 public class UserService
 {
+    private const int MaxNameLength = 120;
+    private const int MaxEmailLength = 160;
+    private const int MinPasswordLength = 6;
+    private const int MaxPasswordLength = 72;
+
     private static readonly Regex EmailRegex = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex NameRegex = new(
+        @"^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly AppDbContext _context;
@@ -28,14 +37,28 @@ public class UserService
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new DomainValidationException("Nome é obrigatório.");
 
+        var normalizedName = request.Name.Trim();
+        if (normalizedName.Length > MaxNameLength)
+            throw new DomainValidationException("Nome excede o tamanho máximo permitido.");
+
+        if (!IsValidPersonName(normalizedName))
+            throw new DomainValidationException("Nome deve conter apenas letras.");
+
         if (string.IsNullOrWhiteSpace(request.Email))
             throw new DomainValidationException("E-mail é obrigatório.");
 
-        if (!IsValidEmail(request.Email))
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        if (normalizedEmail.Length > MaxEmailLength)
+            throw new DomainValidationException("E-mail excede o tamanho máximo permitido.");
+
+        if (!IsValidEmail(normalizedEmail))
             throw new DomainValidationException("E-mail inválido.");
 
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < MinPasswordLength)
             throw new DomainValidationException("A senha deve conter pelo menos 6 caracteres.");
+
+        if (request.Password.Length > MaxPasswordLength)
+            throw new DomainValidationException("Senha excede o tamanho máximo permitido.");
 
         var normalizedCpf = NormalizeCpf(request.Cpf);
 
@@ -43,8 +66,6 @@ public class UserService
             throw new DomainValidationException("Data de nascimento é obrigatória.");
 
         var normalizedBirthDate = NormalizeBirthDate(request.BirthDate);
-
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
         var emailInUse = await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (emailInUse)
@@ -56,7 +77,7 @@ public class UserService
 
         var user = new User
         {
-            Name = request.Name.Trim(),
+            Name = normalizedName,
             Email = normalizedEmail,
             PasswordHash = _passwordHasher.Hash(request.Password),
             Cpf = normalizedCpf,
@@ -99,6 +120,11 @@ public class UserService
 
     private static bool IsValidEmail(string email)
     {
-        return EmailRegex.IsMatch(email.Trim());
+        return EmailRegex.IsMatch(email);
+    }
+
+    private static bool IsValidPersonName(string name)
+    {
+        return NameRegex.IsMatch(name);
     }
 }

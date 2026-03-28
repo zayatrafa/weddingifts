@@ -12,7 +12,6 @@ const session = requireAuth();
 if (!session) throw new Error("Autenticação obrigatória.");
 
 const token = session.token;
-const refreshEventsButton = document.getElementById("refresh-events-button");
 const createGuestForm = document.getElementById("create-guest-form");
 const eventSelect = document.getElementById("event-select");
 const guestsList = document.getElementById("guests-list");
@@ -32,7 +31,6 @@ initUserDropdown({
   }
 });
 
-refreshEventsButton.addEventListener("click", loadMyEvents);
 createGuestForm.addEventListener("submit", createGuest);
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
@@ -56,7 +54,6 @@ async function loadMyEvents() {
   const queryEventId = Number(query.get("eventId"));
 
   try {
-    refreshEventsButton.disabled = true;
     setStatus(status, "status-loading", "Carregando seus eventos...");
 
     const apiBase = getApiBase();
@@ -81,8 +78,6 @@ async function loadMyEvents() {
     setStatus(status, "status-success", "Eventos carregados com sucesso.");
   } catch (error) {
     setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
-  } finally {
-    refreshEventsButton.disabled = false;
   }
 }
 
@@ -99,6 +94,7 @@ async function createGuest(event) {
   if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o convidado.");
   if (!isValidCpf(cpf)) return setStatus(status, "status-error", "Informe um CPF válido.");
   if (!name) return setStatus(status, "status-error", "Informe o nome do convidado.");
+  if (!isValidPersonName(name)) return setStatus(status, "status-error", "O nome do convidado deve conter apenas letras.");
   if (!email) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
   if (!isValidEmail(email)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
   if (!isValidPhone(phoneDigits)) return setStatus(status, "status-error", "Informe um celular válido com 10 ou 11 dígitos.");
@@ -123,6 +119,68 @@ async function createGuest(event) {
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Adicionar convidado";
+  }
+}
+
+async function editGuest(guest) {
+  if (!state.selectedEventId) return;
+
+  const name = window.prompt("Nome do convidado:", guest.name);
+  if (name === null) return;
+
+  const trimmedName = name.trim();
+  if (!trimmedName) return setStatus(status, "status-error", "Informe o nome do convidado.");
+  if (!isValidPersonName(trimmedName)) return setStatus(status, "status-error", "O nome do convidado deve conter apenas letras.");
+
+  const email = window.prompt("E-mail do convidado:", guest.email);
+  if (email === null) return;
+
+  const trimmedEmail = email.trim();
+  if (!trimmedEmail) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
+  if (!isValidEmail(trimmedEmail)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
+
+  const phone = window.prompt("Celular do convidado:", formatPhoneInput(guest.phoneNumber));
+  if (phone === null) return;
+
+  const phoneDigits = digitsOnly(phone);
+  if (!isValidPhone(phoneDigits)) return setStatus(status, "status-error", "Informe um celular válido com 10 ou 11 dígitos.");
+
+  try {
+    setStatus(status, "status-loading", "Atualizando convidado...");
+
+    const apiBase = getApiBase();
+    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/guests/${guest.id}`, {
+      method: "PUT",
+      headers: authHeaders(token, true),
+      body: JSON.stringify({ name: trimmedName, email: trimmedEmail, phoneNumber: phoneDigits })
+    });
+
+    await loadSelectedEventGuests();
+    setStatus(status, "status-success", "Convidado atualizado com sucesso.");
+  } catch (error) {
+    setStatus(status, "status-error", `Falha ao atualizar convidado: ${error.message}`);
+  }
+}
+
+async function deleteGuest(guest) {
+  if (!state.selectedEventId) return;
+
+  const confirmed = window.confirm(`Tem certeza que deseja excluir o convidado "${guest.name}"?`);
+  if (!confirmed) return;
+
+  try {
+    setStatus(status, "status-loading", "Excluindo convidado...");
+
+    const apiBase = getApiBase();
+    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/guests/${guest.id}`, {
+      method: "DELETE",
+      headers: authHeaders(token)
+    });
+
+    await loadSelectedEventGuests();
+    setStatus(status, "status-success", "Convidado excluído com sucesso.");
+  } catch (error) {
+    setStatus(status, "status-error", `Falha ao excluir convidado: ${error.message}`);
   }
 }
 
@@ -195,6 +253,7 @@ function renderGuests() {
     item.className = "gift-item";
 
     item.innerHTML = `
+      <button class="icon-button danger guest-delete" type="button" title="Excluir convidado" aria-label="Excluir convidado">${trashIconSvg()}</button>
       <div class="gift-head">
         <div>
           <h3 class="gift-name">${escapeHtml(guest.name)}</h3>
@@ -203,7 +262,18 @@ function renderGuests() {
         <span class="tag tag-ok">Convidado</span>
       </div>
       <p class="meta">Email: ${escapeHtml(guest.email)} | Celular: ${escapeHtml(formatPhoneInput(guest.phoneNumber))}</p>
+      <div class="row row-tight top-gap-sm">
+        <button class="btn btn-secondary guest-edit" type="button">Editar convidado</button>
+      </div>
     `;
+
+    item.querySelector(".guest-edit")?.addEventListener("click", () => {
+      editGuest(guest);
+    });
+
+    item.querySelector(".guest-delete")?.addEventListener("click", () => {
+      deleteGuest(guest);
+    });
 
     guestsList.appendChild(item);
   });
@@ -263,6 +333,10 @@ function isValidPhone(digits) {
   return digits.length >= 10 && digits.length <= 11;
 }
 
+function isValidPersonName(name) {
+  return /^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$/u.test(String(name || "").trim());
+}
+
 function escapeHtml(text) {
   return String(text || "")
     .replaceAll("&", "&amp;")
@@ -271,3 +345,15 @@ function escapeHtml(text) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+function trashIconSvg() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 7h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M10 3h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+  `;
+}
+

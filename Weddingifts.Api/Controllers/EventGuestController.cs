@@ -30,6 +30,27 @@ public class EventGuestController : ControllerBase
     }
 
     [Authorize]
+    [HttpPut("{eventId:int}/guests/{guestId:int}")]
+    public async Task<IActionResult> UpdateGuest(int eventId, int guestId, [FromBody] UpdateEventGuestRequest request)
+    {
+        var userId = GetAuthenticatedUserId();
+        var guest = await _eventGuestService.UpdateGuestForUser(eventId, guestId, userId, request);
+        var response = EventGuestResponse.FromEntity(guest);
+
+        return Ok(response);
+    }
+
+    [Authorize]
+    [HttpDelete("{eventId:int}/guests/{guestId:int}")]
+    public async Task<IActionResult> DeleteGuest(int eventId, int guestId)
+    {
+        var userId = GetAuthenticatedUserId();
+        await _eventGuestService.DeleteGuestForUser(eventId, guestId, userId);
+
+        return NoContent();
+    }
+
+    [Authorize]
     [HttpGet("{eventId:int}/guests")]
     public async Task<IActionResult> GetGuests(int eventId)
     {
@@ -65,4 +86,3 @@ public class EventGuestController : ControllerBase
         return userId;
     }
 }
-

@@ -18,7 +18,6 @@ const session = requireAuth();
 if (!session) throw new Error("Autenticação obrigatória.");
 
 const token = session.token;
-const refreshEventsButton = document.getElementById("refresh-events-button");
 const createGiftForm = document.getElementById("create-gift-form");
 const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
@@ -38,7 +37,6 @@ initUserDropdown({
   }
 });
 
-refreshEventsButton.addEventListener("click", loadMyEvents);
 createGiftForm.addEventListener("submit", createGift);
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
@@ -60,7 +58,6 @@ async function loadMyEvents() {
   const queryEventId = Number(query.get("eventId"));
 
   try {
-    refreshEventsButton.disabled = true;
     setStatus(status, "status-loading", "Carregando seus eventos...");
 
     const apiBase = getApiBase();
@@ -85,8 +82,6 @@ async function loadMyEvents() {
     setStatus(status, "status-success", "Eventos carregados com sucesso.");
   } catch (error) {
     setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
-  } finally {
-    refreshEventsButton.disabled = false;
   }
 }
 
@@ -165,6 +160,87 @@ async function loadSelectedEventGifts() {
   }
 }
 
+async function editGift(gift) {
+  if (!state.selectedEventId) return;
+
+  const name = window.prompt("Nome do presente:", gift.name);
+  if (name === null) return;
+
+  const trimmedName = name.trim();
+  if (!trimmedName) return setGiftFormError("Informe o nome do presente.");
+
+  const description = window.prompt("Descrição do presente:", gift.description || "");
+  if (description === null) return;
+
+  const currentPrice = Number(gift.price) || 0;
+  const pricePrompt = window.prompt("Preço (R$):", currentPrice.toFixed(2).replace(".", ","));
+  if (pricePrompt === null) return;
+
+  const price = parsePricePromptToNumber(pricePrompt);
+  if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
+    return setGiftFormError("O preço deve ser maior que R$ 0,00.");
+  }
+
+  if (price >= MAX_GIFT_PRICE_EXCLUSIVE) {
+    return setGiftFormError("O preço deve ser menor que R$ 1.000.000,00.");
+  }
+
+  const quantityPrompt = window.prompt("Quantidade:", String(gift.quantity ?? 1));
+  if (quantityPrompt === null) return;
+
+  const quantity = Number(quantityPrompt);
+  if (!Number.isInteger(quantity) || quantity < MIN_GIFT_QUANTITY) {
+    return setGiftFormError("A quantidade mínima é 1.");
+  }
+
+  if (quantity > MAX_GIFT_QUANTITY) {
+    return setGiftFormError("A quantidade máxima é 100.000.");
+  }
+
+  try {
+    setGiftFormStatus("status-loading", "Atualizando presente...");
+
+    const apiBase = getApiBase();
+    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/${gift.id}`, {
+      method: "PUT",
+      headers: authHeaders(token, true),
+      body: JSON.stringify({
+        name: trimmedName,
+        description: description.trim(),
+        price,
+        quantity
+      })
+    });
+
+    await loadSelectedEventGifts();
+    setGiftFormStatus("status-success", "Presente atualizado com sucesso.");
+  } catch (error) {
+    setGiftFormError(`Falha ao atualizar presente: ${error.message}`);
+  }
+}
+
+async function deleteGift(gift) {
+  if (!state.selectedEventId) return;
+
+  const confirmed = window.confirm(`Tem certeza que deseja excluir o presente "${gift.name}"?`);
+  if (!confirmed) return;
+
+  try {
+    setGiftFormStatus("status-loading", "Excluindo presente...");
+
+    const apiBase = getApiBase();
+    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/${gift.id}`, {
+      method: "DELETE",
+      headers: authHeaders(token)
+    });
+
+    await loadSelectedEventGifts();
+    setGiftFormStatus("status-success", "Presente excluído com sucesso.");
+  } catch (error) {
+    setGiftFormError(`Falha ao excluir presente: ${error.message}`);
+  }
+}
+
 function renderGiftSelect() {
   const options = ['<option value="">Selecione um evento</option>'];
 
@@ -201,6 +277,7 @@ function renderGifts() {
     const badgeText = available === 0 ? "Reservado" : available === 1 ? "Última unidade" : "Disponível";
 
     item.innerHTML = `
+      <button class="icon-button danger gift-delete" type="button" title="Excluir presente" aria-label="Excluir presente">${trashIconSvg()}</button>
       <div class="gift-head">
         <div>
           <h3 class="gift-name">${escapeHtml(gift.name)}</h3>
@@ -209,7 +286,18 @@ function renderGifts() {
         <span class="tag ${badgeClass}">${badgeText}</span>
       </div>
       <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${gift.reservedQuantity || 0} reservados</p>
+      <div class="row row-tight top-gap-sm">
+        <button class="btn btn-secondary gift-edit" type="button">Editar presente</button>
+      </div>
     `;
+
+    item.querySelector(".gift-edit")?.addEventListener("click", () => {
+      editGift(gift);
+    });
+
+    item.querySelector(".gift-delete")?.addEventListener("click", () => {
+      deleteGift(gift);
+    });
 
     giftsList.appendChild(item);
   });
@@ -219,6 +307,24 @@ function parseCurrencyToNumber(value) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return 0;
   return Number(digits) / 100;
+}
+
+function parsePricePromptToNumber(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return 0;
+
+  const normalized = raw
+    .replaceAll("R$", "")
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".");
+
+  const parsed = Number(normalized);
+  if (Number.isFinite(parsed)) {
+    return parsed;
+  }
+
+  return parseCurrencyToNumber(raw);
 }
 
 function formatCurrencyInput(value) {
@@ -245,3 +351,15 @@ function escapeHtml(text) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+function trashIconSvg() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 7h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M10 3h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+  `;
+}
+

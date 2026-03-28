@@ -8,6 +8,9 @@ namespace Weddingifts.Api.Services;
 
 public sealed class AuthService
 {
+    private const int MaxEmailLength = 160;
+    private const int MaxPasswordLength = 72;
+
     private readonly AppDbContext _context;
     private readonly PasswordHasherService _passwordHasher;
     private readonly JwtTokenService _jwtTokenService;
@@ -27,8 +30,14 @@ public sealed class AuthService
         if (string.IsNullOrWhiteSpace(request.Email))
             throw new DomainValidationException("E-mail é obrigatório.");
 
+        if (request.Email.Trim().Length > MaxEmailLength)
+            throw new DomainValidationException("E-mail excede o tamanho máximo permitido.");
+
         if (string.IsNullOrWhiteSpace(request.Password))
             throw new DomainValidationException("Senha é obrigatória.");
+
+        if (request.Password.Length > MaxPasswordLength)
+            throw new DomainValidationException("Senha excede o tamanho máximo permitido.");
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
@@ -46,5 +55,3 @@ public sealed class AuthService
         };
     }
 }
-
-

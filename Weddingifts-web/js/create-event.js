@@ -60,7 +60,8 @@ async function createEvent(event) {
       body: JSON.stringify({ name, eventDate })
     });
 
-    window.location.href = `./my-event.html?eventId=${encodeURIComponent(String(createdEvent.id))}`;
+    const focusEventId = encodeURIComponent(String(createdEvent.id));
+    window.location.href = `./my-events.html?focusEventId=${focusEventId}`;
   } catch (error) {
     status.hidden = false;
     setStatus(status, "status-error", `Falha ao criar evento: ${error.message}`);

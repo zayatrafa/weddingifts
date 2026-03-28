@@ -25,7 +25,8 @@ public sealed class JwtTokenService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Name),
-            new(ClaimTypes.Email, user.Email)
+            new(ClaimTypes.Email, user.Email),
+            new("cpf", user.Cpf ?? string.Empty)
         };
 
         var credentials = new SigningCredentials(GetSigningKey(), SecurityAlgorithms.HmacSha256);
