@@ -34,7 +34,7 @@
         
         <div class="field"><label for="password-input">Senha</label><input class="input" id="password-input" type="password" minlength="8" maxlength="72" pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$" placeholder="Mínimo de 8 caracteres" title="Use no mínimo 8 caracteres com letra, número e caractere especial." required /></div>
 
-        <div class="field"><label for="confirm-password-input">Confirmar senha</label><input class="input" id="confirm-password-input" type="password" placeholder="Repita a senha" required /></div>
+        <div class="field"><label for="confirm-password-input">Confirmar senha</label><input class="input" id="confirm-password-input" type="password" minlength="8" maxlength="72" pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$" placeholder="Repita a senha" title="Use no mínimo 8 caracteres com letra, número e caractere especial." required /></div>
         <button id="submit-button" class="btn btn-primary" type="submit">Criar conta</button>
       </form>
 

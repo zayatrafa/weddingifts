@@ -43,16 +43,20 @@
       <article class="card card-pad">
         <h2 class="card-title">Adicionar presente</h2>
         <p class="card-subtitle">Os presentes são vinculados ao evento selecionado.</p>
+        <p id="gift-form-mode" class="status status-info" hidden></p>
         <form id="create-gift-form" class="form form-compact">
           <div class="field"><label for="event-select">Evento</label><select id="event-select" class="select" required><option value="">Selecione um evento</option></select></div>
-          <div class="field"><label for="gift-name-input">Nome do presente</label><input class="input" id="gift-name-input" type="text" placeholder="Jogo de jantar" required /></div>
-          <div class="field"><label for="gift-description-input">Descrição</label><textarea class="textarea" id="gift-description-input" placeholder="Detalhes opcionais"></textarea></div>
+          <div class="field"><label for="gift-name-input">Nome do presente</label><input class="input" id="gift-name-input" type="text" maxlength="255" placeholder="Jogo de jantar" required /></div>
+          <div class="field"><label for="gift-description-input">Descrição</label><textarea class="textarea" id="gift-description-input" maxlength="255" placeholder="Detalhes opcionais"></textarea></div>
           <div class="row row-tight">
             <div class="field field-flat"><label for="gift-price-input">Preço</label><input class="input" id="gift-price-input" type="text" inputmode="decimal" placeholder="R$ 0,00" value="R$ 0,00" required /></div>
             <div class="field field-flat"><label for="gift-quantity-input">Quantidade</label><input class="input" id="gift-quantity-input" type="number" min="1" max="100000" step="1" value="1" required /></div>
           </div>
           <p id="gift-form-status" class="status status-info" hidden></p>
-          <button id="gift-submit-button" class="btn btn-primary" type="submit">Adicionar presente</button>
+          <div class="row row-tight fit-content">
+            <button id="gift-submit-button" class="btn btn-primary" type="submit">Adicionar presente</button>
+            <button id="gift-cancel-edit-button" class="btn btn-secondary" type="button" hidden>Cancelar edição</button>
+          </div>
         </form>
       </article>
 

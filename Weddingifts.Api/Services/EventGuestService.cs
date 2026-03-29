@@ -10,7 +10,7 @@ namespace Weddingifts.Api.Services;
 public sealed class EventGuestService
 {
     private const int MaxNameLength = 120;
-    private const int MaxEmailLength = 160;
+    private const int MaxEmailLength = 255;
     private const int MaxPhoneLength = 20;
 
     private static readonly Regex GuestEmailRegex = new(

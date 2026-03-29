@@ -25,6 +25,15 @@ public class AppDbContext : DbContext
             .HasMaxLength(120)
             .IsRequired();
 
+        modelBuilder.Entity<Gift>()
+            .Property(g => g.Name)
+            .HasMaxLength(255)
+            .IsRequired();
+        
+        modelBuilder.Entity<Gift>()
+            .Property(g => g.Description)
+            .HasMaxLength(255);
+
         modelBuilder.Entity<EventGuest>()
             .HasIndex(g => new { g.EventId, g.Cpf })
             .IsUnique();

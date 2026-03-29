@@ -1,4 +1,4 @@
-﻿import {
+import {
   authHeaders,
   clearAuthSession,
   getApiBase,
@@ -11,6 +11,8 @@
 const session = requireAuth();
 if (!session) throw new Error("Autenticação obrigatória.");
 
+const MAX_GUEST_EMAIL_LENGTH = 255;
+
 const token = session.token;
 const createGuestForm = document.getElementById("create-guest-form");
 const eventSelect = document.getElementById("event-select");
@@ -20,8 +22,11 @@ const guestCpfInput = document.getElementById("guest-cpf-input");
 const guestNameInput = document.getElementById("guest-name-input");
 const guestEmailInput = document.getElementById("guest-email-input");
 const guestPhoneInput = document.getElementById("guest-phone-input");
+const guestSubmitButton = document.getElementById("guest-submit-button");
+const guestCancelEditButton = document.getElementById("guest-cancel-edit-button");
+const guestFormMode = document.getElementById("guest-form-mode");
 
-const state = { events: [], selectedEventId: null, guests: [] };
+const state = { events: [], selectedEventId: null, guests: [], editingGuestId: null };
 
 initUserDropdown({
   session,
@@ -31,9 +36,14 @@ initUserDropdown({
   }
 });
 
-createGuestForm.addEventListener("submit", createGuest);
+createGuestForm.addEventListener("submit", submitGuestForm);
+guestCancelEditButton.addEventListener("click", () => {
+  resetGuestFormMode();
+  setStatus(status, "status-info", "Edição cancelada. Você pode adicionar um novo convidado.");
+});
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
+  resetGuestFormMode({ silent: true });
   await loadSelectedEventGuests();
 });
 
@@ -81,30 +91,45 @@ async function loadMyEvents() {
   }
 }
 
-async function createGuest(event) {
+async function submitGuestForm(event) {
   event.preventDefault();
 
-  const submitButton = document.getElementById("guest-submit-button");
   const eventId = Number(eventSelect.value);
   const cpf = digitsOnly(guestCpfInput.value);
   const name = guestNameInput.value.trim();
   const email = guestEmailInput.value.trim();
   const phoneDigits = digitsOnly(guestPhoneInput.value);
+  const editing = state.editingGuestId !== null;
 
-  if (!eventId) return setStatus(status, "status-error", "Selecione um evento para adicionar o convidado.");
-  if (!isValidCpf(cpf)) return setStatus(status, "status-error", "Informe um CPF válido.");
+  if (!eventId) return setStatus(status, "status-error", "Selecione um evento para continuar.");
+  if (!editing && !isValidCpf(cpf)) return setStatus(status, "status-error", "Informe um CPF válido.");
   if (!name) return setStatus(status, "status-error", "Informe o nome do convidado.");
   if (!isValidPersonName(name)) return setStatus(status, "status-error", "O nome do convidado deve conter apenas letras.");
   if (!email) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
+  if (email.length > MAX_GUEST_EMAIL_LENGTH) return setStatus(status, "status-error", "O e-mail do convidado deve ter no máximo 255 caracteres.");
   if (!isValidEmail(email)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
   if (!isValidPhone(phoneDigits)) return setStatus(status, "status-error", "Informe um celular válido com 10 ou 11 dígitos.");
 
   try {
-    submitButton.disabled = true;
-    submitButton.textContent = "Salvando...";
-    setStatus(status, "status-loading", "Adicionando convidado...");
+    guestSubmitButton.disabled = true;
+    guestSubmitButton.textContent = "Salvando...";
 
     const apiBase = getApiBase();
+
+    if (editing) {
+      setStatus(status, "status-loading", "Atualizando convidado...");
+      await requestJson(`${apiBase}/api/events/${eventId}/guests/${state.editingGuestId}`, {
+        method: "PUT",
+        headers: authHeaders(token, true),
+        body: JSON.stringify({ name, email, phoneNumber: phoneDigits })
+      });
+      await loadSelectedEventGuests();
+      resetGuestFormMode({ silent: true });
+      setStatus(status, "status-success", "Convidado atualizado com sucesso.");
+      return;
+    }
+
+    setStatus(status, "status-loading", "Adicionando convidado...");
     await requestJson(`${apiBase}/api/events/${eventId}/guests`, {
       method: "POST",
       headers: authHeaders(token, true),
@@ -112,54 +137,58 @@ async function createGuest(event) {
     });
 
     createGuestForm.reset();
+    eventSelect.value = String(state.selectedEventId || "");
     await loadSelectedEventGuests();
     setStatus(status, "status-success", "Convidado adicionado com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao adicionar convidado: ${error.message}`);
+    setStatus(status, "status-error", `Falha ao salvar convidado: ${error.message}`);
   } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Adicionar convidado";
+    guestSubmitButton.disabled = false;
+    guestSubmitButton.textContent = state.editingGuestId !== null ? "Salvar alterações" : "Adicionar convidado";
   }
 }
 
-async function editGuest(guest) {
+function startGuestEditMode(guest) {
   if (!state.selectedEventId) return;
 
-  const name = window.prompt("Nome do convidado:", guest.name);
-  if (name === null) return;
+  state.editingGuestId = guest.id;
+  guestCpfInput.value = formatCpfInput(guest.cpf || "");
+  guestCpfInput.disabled = true;
+  guestNameInput.value = guest.name || "";
+  guestEmailInput.value = guest.email || "";
+  guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
+  guestSubmitButton.textContent = "Salvar alterações";
+  guestCancelEditButton.hidden = false;
+  showGuestFormMode(`Você está editando o convidado "${guest.name}".`);
+  setStatus(status, "status-info", "Modo de edição ativo. Salve para confirmar as alterações.");
+  guestNameInput.focus();
+}
 
-  const trimmedName = name.trim();
-  if (!trimmedName) return setStatus(status, "status-error", "Informe o nome do convidado.");
-  if (!isValidPersonName(trimmedName)) return setStatus(status, "status-error", "O nome do convidado deve conter apenas letras.");
+function resetGuestFormMode(options = {}) {
+  const { silent = false } = options;
 
-  const email = window.prompt("E-mail do convidado:", guest.email);
-  if (email === null) return;
+  state.editingGuestId = null;
+  createGuestForm.reset();
+  guestCpfInput.disabled = false;
+  guestSubmitButton.textContent = "Adicionar convidado";
+  guestCancelEditButton.hidden = true;
+  hideGuestFormMode();
+  eventSelect.value = String(state.selectedEventId || "");
 
-  const trimmedEmail = email.trim();
-  if (!trimmedEmail) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
-  if (!isValidEmail(trimmedEmail)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
-
-  const phone = window.prompt("Celular do convidado:", formatPhoneInput(guest.phoneNumber));
-  if (phone === null) return;
-
-  const phoneDigits = digitsOnly(phone);
-  if (!isValidPhone(phoneDigits)) return setStatus(status, "status-error", "Informe um celular válido com 10 ou 11 dígitos.");
-
-  try {
-    setStatus(status, "status-loading", "Atualizando convidado...");
-
-    const apiBase = getApiBase();
-    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/guests/${guest.id}`, {
-      method: "PUT",
-      headers: authHeaders(token, true),
-      body: JSON.stringify({ name: trimmedName, email: trimmedEmail, phoneNumber: phoneDigits })
-    });
-
-    await loadSelectedEventGuests();
-    setStatus(status, "status-success", "Convidado atualizado com sucesso.");
-  } catch (error) {
-    setStatus(status, "status-error", `Falha ao atualizar convidado: ${error.message}`);
+  if (!silent) {
+    setStatus(status, "status-info", "Modo de criação ativo.");
   }
+}
+
+function showGuestFormMode(message) {
+  if (!guestFormMode) return;
+  guestFormMode.hidden = false;
+  setStatus(guestFormMode, "status-info", message);
+}
+
+function hideGuestFormMode() {
+  if (!guestFormMode) return;
+  guestFormMode.hidden = true;
 }
 
 async function deleteGuest(guest) {
@@ -176,6 +205,10 @@ async function deleteGuest(guest) {
       method: "DELETE",
       headers: authHeaders(token)
     });
+
+    if (state.editingGuestId === guest.id) {
+      resetGuestFormMode({ silent: true });
+    }
 
     await loadSelectedEventGuests();
     setStatus(status, "status-success", "Convidado excluído com sucesso.");
@@ -205,7 +238,7 @@ async function loadSelectedEventGuests() {
 }
 
 async function autoFillGuestByCpf() {
-  if (!state.selectedEventId) return;
+  if (!state.selectedEventId || state.editingGuestId !== null) return;
 
   const cpf = digitsOnly(guestCpfInput.value);
   if (!isValidCpf(cpf)) return;
@@ -268,7 +301,7 @@ function renderGuests() {
     `;
 
     item.querySelector(".guest-edit")?.addEventListener("click", () => {
-      editGuest(guest);
+      startGuestEditMode(guest);
     });
 
     item.querySelector(".guest-delete")?.addEventListener("click", () => {
@@ -356,4 +389,3 @@ function trashIconSvg() {
     </svg>
   `;
 }
-

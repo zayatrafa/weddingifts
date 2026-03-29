@@ -57,7 +57,6 @@ public class UserService
         if (!IsStrongPassword(request.Password))
             throw new DomainValidationException("A senha deve ter no mínimo 8 caracteres e conter letras, números e caractere especial.");
 
-
         if (request.Password.Length > MaxPasswordLength)
             throw new DomainValidationException("Senha excede o tamanho máximo permitido.");
 

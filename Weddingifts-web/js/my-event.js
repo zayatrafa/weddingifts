@@ -1,4 +1,4 @@
-﻿import {
+import {
   authHeaders,
   clearAuthSession,
   formatCurrency,
@@ -13,6 +13,8 @@ const MIN_GIFT_PRICE = 0;
 const MAX_GIFT_PRICE_EXCLUSIVE = 1_000_000;
 const MIN_GIFT_QUANTITY = 1;
 const MAX_GIFT_QUANTITY = 100_000;
+const MAX_GIFT_NAME_LENGTH = 255;
+const MAX_GIFT_DESCRIPTION_LENGTH = 255;
 
 const session = requireAuth();
 if (!session) throw new Error("Autenticação obrigatória.");
@@ -22,12 +24,17 @@ const createGiftForm = document.getElementById("create-gift-form");
 const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
 const status = document.getElementById("status");
+const giftNameInput = document.getElementById("gift-name-input");
+const giftDescriptionInput = document.getElementById("gift-description-input");
 const giftPriceInput = document.getElementById("gift-price-input");
 const giftFormStatus = document.getElementById("gift-form-status");
+const giftFormMode = document.getElementById("gift-form-mode");
+const giftSubmitButton = document.getElementById("gift-submit-button");
+const giftCancelEditButton = document.getElementById("gift-cancel-edit-button");
 
 createGiftForm.noValidate = true;
 
-const state = { events: [], selectedEventId: null, gifts: [] };
+const state = { events: [], selectedEventId: null, gifts: [], editingGiftId: null };
 
 initUserDropdown({
   session,
@@ -37,14 +44,31 @@ initUserDropdown({
   }
 });
 
-createGiftForm.addEventListener("submit", createGift);
+createGiftForm.addEventListener("submit", submitGiftForm);
+giftCancelEditButton.addEventListener("click", () => {
+  resetGiftFormMode();
+  setStatus(status, "status-info", "Edição cancelada. Você pode adicionar um novo presente.");
+});
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
+  resetGiftFormMode({ silent: true });
   await loadSelectedEventGifts();
 });
 
 giftPriceInput.addEventListener("input", () => {
   giftPriceInput.value = formatCurrencyInput(giftPriceInput.value);
+});
+
+giftNameInput.addEventListener("input", () => {
+  if (giftNameInput.value.length > MAX_GIFT_NAME_LENGTH) {
+    giftNameInput.value = giftNameInput.value.slice(0, MAX_GIFT_NAME_LENGTH);
+  }
+});
+
+giftDescriptionInput.addEventListener("input", () => {
+  if (giftDescriptionInput.value.length > MAX_GIFT_DESCRIPTION_LENGTH) {
+    giftDescriptionInput.value = giftDescriptionInput.value.slice(0, MAX_GIFT_DESCRIPTION_LENGTH);
+  }
 });
 
 giftPriceInput.addEventListener("blur", () => {
@@ -85,19 +109,21 @@ async function loadMyEvents() {
   }
 }
 
-async function createGift(event) {
+async function submitGiftForm(event) {
   event.preventDefault();
 
-  const submitButton = document.getElementById("gift-submit-button");
   const eventId = Number(eventSelect.value);
   const name = document.getElementById("gift-name-input").value.trim();
   const description = document.getElementById("gift-description-input").value.trim();
   const rawPrice = giftPriceInput.value.trim();
   const price = parseCurrencyToNumber(rawPrice);
   const quantity = Number(document.getElementById("gift-quantity-input").value);
+  const editing = state.editingGiftId !== null;
 
-  if (!eventId) return setGiftFormError("Selecione um evento para adicionar o presente.");
+  if (!eventId) return setGiftFormError("Selecione um evento para continuar.");
   if (!name) return setGiftFormError("Informe o nome do presente.");
+  if (name.length > MAX_GIFT_NAME_LENGTH) return setGiftFormError("O nome do presente deve ter no máximo 255 caracteres.");
+  if (description.length > MAX_GIFT_DESCRIPTION_LENGTH) return setGiftFormError("A descrição do presente deve ter no máximo 255 caracteres.");
   if (!rawPrice) return setGiftFormError("Informe o preço do presente.");
 
   if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
@@ -117,11 +143,25 @@ async function createGift(event) {
   }
 
   try {
-    submitButton.disabled = true;
-    submitButton.textContent = "Salvando...";
-    setGiftFormStatus("status-loading", "Criando presente...");
+    giftSubmitButton.disabled = true;
+    giftSubmitButton.textContent = "Salvando...";
 
     const apiBase = getApiBase();
+
+    if (editing) {
+      setGiftFormStatus("status-loading", "Atualizando presente...");
+      await requestJson(`${apiBase}/api/events/${eventId}/gifts/${state.editingGiftId}`, {
+        method: "PUT",
+        headers: authHeaders(token, true),
+        body: JSON.stringify({ name, description, price, quantity })
+      });
+      await loadSelectedEventGifts();
+      resetGiftFormMode({ silent: true });
+      setGiftFormStatus("status-success", "Presente atualizado com sucesso.");
+      return;
+    }
+
+    setGiftFormStatus("status-loading", "Criando presente...");
     await requestJson(`${apiBase}/api/events/${eventId}/gifts`, {
       method: "POST",
       headers: authHeaders(token, true),
@@ -131,14 +171,84 @@ async function createGift(event) {
     createGiftForm.reset();
     giftPriceInput.value = "R$ 0,00";
     document.getElementById("gift-quantity-input").value = "1";
+    eventSelect.value = String(state.selectedEventId || "");
     await loadSelectedEventGifts();
     await loadMyEvents();
     setGiftFormStatus("status-success", "Presente adicionado com sucesso.");
   } catch (error) {
-    setGiftFormError(`Falha ao criar presente: ${error.message}`);
+    setGiftFormError(`Falha ao salvar presente: ${error.message}`);
   } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Adicionar presente";
+    giftSubmitButton.disabled = false;
+    giftSubmitButton.textContent = state.editingGiftId !== null ? "Salvar alterações" : "Adicionar presente";
+  }
+}
+
+function startGiftEditMode(gift) {
+  if (!state.selectedEventId) return;
+
+  state.editingGiftId = gift.id;
+  document.getElementById("gift-name-input").value = gift.name || "";
+  document.getElementById("gift-description-input").value = gift.description || "";
+  giftPriceInput.value = formatCurrency(Number(gift.price) || 0);
+  document.getElementById("gift-quantity-input").value = String(gift.quantity || 1);
+  giftSubmitButton.textContent = "Salvar alterações";
+  giftCancelEditButton.hidden = false;
+  showGiftFormMode(`Você está editando o presente "${gift.name}".`);
+  setGiftFormStatus("status-info", "Modo de edição ativo. Salve para confirmar as alterações.");
+  document.getElementById("gift-name-input").focus();
+}
+
+function resetGiftFormMode(options = {}) {
+  const { silent = false } = options;
+
+  state.editingGiftId = null;
+  createGiftForm.reset();
+  giftPriceInput.value = "R$ 0,00";
+  document.getElementById("gift-quantity-input").value = "1";
+  eventSelect.value = String(state.selectedEventId || "");
+  giftSubmitButton.textContent = "Adicionar presente";
+  giftCancelEditButton.hidden = true;
+  hideGiftFormMode();
+
+  if (!silent) {
+    setGiftFormStatus("status-info", "Modo de criação ativo.");
+  }
+}
+
+function showGiftFormMode(message) {
+  if (!giftFormMode) return;
+  giftFormMode.hidden = false;
+  setStatus(giftFormMode, "status-info", message);
+}
+
+function hideGiftFormMode() {
+  if (!giftFormMode) return;
+  giftFormMode.hidden = true;
+}
+
+async function deleteGift(gift) {
+  if (!state.selectedEventId) return;
+
+  const confirmed = window.confirm(`Tem certeza que deseja excluir o presente "${gift.name}"?`);
+  if (!confirmed) return;
+
+  try {
+    setGiftFormStatus("status-loading", "Excluindo presente...");
+
+    const apiBase = getApiBase();
+    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/${gift.id}`, {
+      method: "DELETE",
+      headers: authHeaders(token)
+    });
+
+    if (state.editingGiftId === gift.id) {
+      resetGiftFormMode({ silent: true });
+    }
+
+    await loadSelectedEventGifts();
+    setGiftFormStatus("status-success", "Presente excluído com sucesso.");
+  } catch (error) {
+    setGiftFormError(`Falha ao excluir presente: ${error.message}`);
   }
 }
 
@@ -157,87 +267,6 @@ async function loadSelectedEventGifts() {
     state.gifts = [];
     renderGifts();
     setStatus(status, "status-error", `Falha ao carregar presentes: ${error.message}`);
-  }
-}
-
-async function editGift(gift) {
-  if (!state.selectedEventId) return;
-
-  const name = window.prompt("Nome do presente:", gift.name);
-  if (name === null) return;
-
-  const trimmedName = name.trim();
-  if (!trimmedName) return setGiftFormError("Informe o nome do presente.");
-
-  const description = window.prompt("Descrição do presente:", gift.description || "");
-  if (description === null) return;
-
-  const currentPrice = Number(gift.price) || 0;
-  const pricePrompt = window.prompt("Preço (R$):", currentPrice.toFixed(2).replace(".", ","));
-  if (pricePrompt === null) return;
-
-  const price = parsePricePromptToNumber(pricePrompt);
-  if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
-    return setGiftFormError("O preço deve ser maior que R$ 0,00.");
-  }
-
-  if (price >= MAX_GIFT_PRICE_EXCLUSIVE) {
-    return setGiftFormError("O preço deve ser menor que R$ 1.000.000,00.");
-  }
-
-  const quantityPrompt = window.prompt("Quantidade:", String(gift.quantity ?? 1));
-  if (quantityPrompt === null) return;
-
-  const quantity = Number(quantityPrompt);
-  if (!Number.isInteger(quantity) || quantity < MIN_GIFT_QUANTITY) {
-    return setGiftFormError("A quantidade mínima é 1.");
-  }
-
-  if (quantity > MAX_GIFT_QUANTITY) {
-    return setGiftFormError("A quantidade máxima é 100.000.");
-  }
-
-  try {
-    setGiftFormStatus("status-loading", "Atualizando presente...");
-
-    const apiBase = getApiBase();
-    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/${gift.id}`, {
-      method: "PUT",
-      headers: authHeaders(token, true),
-      body: JSON.stringify({
-        name: trimmedName,
-        description: description.trim(),
-        price,
-        quantity
-      })
-    });
-
-    await loadSelectedEventGifts();
-    setGiftFormStatus("status-success", "Presente atualizado com sucesso.");
-  } catch (error) {
-    setGiftFormError(`Falha ao atualizar presente: ${error.message}`);
-  }
-}
-
-async function deleteGift(gift) {
-  if (!state.selectedEventId) return;
-
-  const confirmed = window.confirm(`Tem certeza que deseja excluir o presente "${gift.name}"?`);
-  if (!confirmed) return;
-
-  try {
-    setGiftFormStatus("status-loading", "Excluindo presente...");
-
-    const apiBase = getApiBase();
-    await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/${gift.id}`, {
-      method: "DELETE",
-      headers: authHeaders(token)
-    });
-
-    await loadSelectedEventGifts();
-    setGiftFormStatus("status-success", "Presente excluído com sucesso.");
-  } catch (error) {
-    setGiftFormError(`Falha ao excluir presente: ${error.message}`);
   }
 }
 
@@ -292,7 +321,7 @@ function renderGifts() {
     `;
 
     item.querySelector(".gift-edit")?.addEventListener("click", () => {
-      editGift(gift);
+      startGiftEditMode(gift);
     });
 
     item.querySelector(".gift-delete")?.addEventListener("click", () => {
@@ -307,24 +336,6 @@ function parseCurrencyToNumber(value) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return 0;
   return Number(digits) / 100;
-}
-
-function parsePricePromptToNumber(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return 0;
-
-  const normalized = raw
-    .replaceAll("R$", "")
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-
-  const parsed = Number(normalized);
-  if (Number.isFinite(parsed)) {
-    return parsed;
-  }
-
-  return parseCurrencyToNumber(raw);
 }
 
 function formatCurrencyInput(value) {
@@ -362,4 +373,3 @@ function trashIconSvg() {
     </svg>
   `;
 }
-
