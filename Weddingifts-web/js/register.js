@@ -44,8 +44,13 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (password.length < 6) {
-    setStatus(status, "status-error", "A senha deve ter pelo menos 6 caracteres.");
+  if (password.length < 8) {
+    setStatus(status, "status-error", "A senha deve ter pelo menos 8 caracteres.");
+    return;
+  }
+
+  if (!isStrongPassword(password)) {
+    setStatus(status, "status-error", "A senha deve conter letra, número e caractere especial.");
     return;
   }
 
@@ -115,4 +120,8 @@ function isValidEmail(email) {
 
 function isValidPersonName(name) {
   return /^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$/u.test(String(name || "").trim());
+}
+
+function isStrongPassword(password) {
+  return /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(String(password || ""));
 }

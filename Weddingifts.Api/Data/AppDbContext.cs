@@ -20,13 +20,27 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Event>()
+            .Property(e => e.Name)
+            .HasMaxLength(120)
+            .IsRequired();
+
         modelBuilder.Entity<EventGuest>()
             .HasIndex(g => new { g.EventId, g.Cpf })
             .IsUnique();
-
+        
+        // User modelBuilder
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Cpf)
             .IsUnique()
             .HasFilter("\"Cpf\" IS NOT NULL");
+
+        modelBuilder.Entity<User>()
+            .Property(u => u.Email)
+            .HasMaxLength(255)
+            .IsRequired();
+
+
+
     }
 }

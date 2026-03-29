@@ -11,7 +11,7 @@ namespace Weddingifts.Api.Services;
 public class UserService
 {
     private const int MaxNameLength = 120;
-    private const int MaxEmailLength = 160;
+    private const int MaxEmailLength = 255;
     private const int MinPasswordLength = 6;
     private const int MaxPasswordLength = 72;
 
@@ -54,8 +54,9 @@ public class UserService
         if (!IsValidEmail(normalizedEmail))
             throw new DomainValidationException("E-mail inválido.");
 
-        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < MinPasswordLength)
-            throw new DomainValidationException("A senha deve conter pelo menos 6 caracteres.");
+        if (!IsStrongPassword(request.Password))
+            throw new DomainValidationException("A senha deve ter no mínimo 8 caracteres e conter letras, números e caractere especial.");
+
 
         if (request.Password.Length > MaxPasswordLength)
             throw new DomainValidationException("Senha excede o tamanho máximo permitido.");
@@ -126,5 +127,17 @@ public class UserService
     private static bool IsValidPersonName(string name)
     {
         return NameRegex.IsMatch(name);
+    }
+
+    private static bool IsStrongPassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+            return false;
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        var hasSpecial = password.Any(ch => !char.IsLetterOrDigit(ch));
+
+        return hasLetter && hasDigit && hasSpecial;
     }
 }
