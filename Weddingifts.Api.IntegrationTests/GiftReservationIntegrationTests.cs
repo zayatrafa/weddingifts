@@ -241,7 +241,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
 
     private async Task<AuthSessionContract> CreateAuthenticatedUserSessionAsync()
     {
-        var password = "123456";
+        var password = "Teste@123";
         var email = $"test-{Guid.NewGuid():N}@weddingifts.local";
         var cpf = GenerateUniqueCpf();
 
