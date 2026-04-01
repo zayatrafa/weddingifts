@@ -1,4 +1,4 @@
-import {
+﻿import {
   authHeaders,
   clearAuthSession,
   getApiBase,
@@ -9,22 +9,28 @@ import {
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatória.");
+if (!session) throw new Error("AutenticaÃ§Ã£o obrigatÃ³ria.");
 
-const MAX_GUEST_EMAIL_LENGTH = 255;
+const MAX_GUEST_NAME_LENGTH = 120;
+const MAX_GUEST_EMAIL_LENGTH = 120;
 
 const token = session.token;
 const createGuestForm = document.getElementById("create-guest-form");
 const eventSelect = document.getElementById("event-select");
 const guestsList = document.getElementById("guests-list");
-const status = document.getElementById("status");
+const status = ensureStatusElement();
 const guestCpfInput = document.getElementById("guest-cpf-input");
 const guestNameInput = document.getElementById("guest-name-input");
 const guestEmailInput = document.getElementById("guest-email-input");
 const guestPhoneInput = document.getElementById("guest-phone-input");
+const guestFormError = document.getElementById("guest-form-error");
 const guestSubmitButton = document.getElementById("guest-submit-button");
 const guestCancelEditButton = document.getElementById("guest-cancel-edit-button");
-const guestFormMode = document.getElementById("guest-form-mode");
+const guestFormTitle = document.getElementById("guest-form-title");
+const ICON_USER_PLUS = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 12a5 5 0 1 0-6 0 7 7 0 0 0-5 6.7V21h16v-2.3A7 7 0 0 0 15 12zm-3-7a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm-6 14a5 5 0 0 1 10 0H6zm14-8h-2V9h-2V7h2V5h2v2h2v2h-2v2z" fill="currentColor"/></svg></span>';
+const ICON_SAVE = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5V4zm2 2v12h10V8.2L15.2 6H7zm2 6h6v6H9v-6z" fill="currentColor"/></svg></span>';
+const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
+const ICON_EDIT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg></span>';
 
 const state = { events: [], selectedEventId: null, guests: [], editingGuestId: null };
 
@@ -39,7 +45,7 @@ initUserDropdown({
 createGuestForm.addEventListener("submit", submitGuestForm);
 guestCancelEditButton.addEventListener("click", () => {
   resetGuestFormMode();
-  setStatus(status, "status-info", "Edição cancelada. Você pode adicionar um novo convidado.");
+  setStatus(status, "status-info", "EdiÃ§Ã£o cancelada. VocÃª pode adicionar um novo convidado.");
 });
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
@@ -49,14 +55,30 @@ eventSelect.addEventListener("change", async () => {
 
 guestCpfInput.addEventListener("input", () => {
   guestCpfInput.value = formatCpfInput(guestCpfInput.value);
+  clearFieldError(guestCpfInput);
 });
 
 guestPhoneInput.addEventListener("input", () => {
   guestPhoneInput.value = formatPhoneInput(guestPhoneInput.value);
+  clearFieldError(guestPhoneInput);
+});
+
+guestNameInput.addEventListener("input", () => {
+  clearFieldError(guestNameInput);
+});
+
+guestEmailInput.addEventListener("input", () => {
+  clearFieldError(guestEmailInput);
+});
+
+eventSelect.addEventListener("input", () => {
+  clearFieldError(eventSelect);
 });
 
 guestCpfInput.addEventListener("blur", autoFillGuestByCpf);
 
+syncGuestEditUi();
+setGuestSubmitButtonLabel(state.editingGuestId !== null ? "Salvar alteraÃ§Ãµes" : "Adicionar convidado", state.editingGuestId !== null ? ICON_SAVE : ICON_USER_PLUS);
 loadMyEvents();
 
 async function loadMyEvents() {
@@ -74,7 +96,7 @@ async function loadMyEvents() {
       state.guests = [];
       renderEventSelect();
       renderGuests();
-      setStatus(status, "status-info", "Você ainda não possui eventos. Crie um evento primeiro.");
+      setStatus(status, "status-info", "VocÃª ainda nÃ£o possui eventos. Crie um evento primeiro.");
       return;
     }
 
@@ -101,18 +123,20 @@ async function submitGuestForm(event) {
   const phoneDigits = digitsOnly(guestPhoneInput.value);
   const editing = state.editingGuestId !== null;
 
-  if (!eventId) return setStatus(status, "status-error", "Selecione um evento para continuar.");
-  if (!editing && !isValidCpf(cpf)) return setStatus(status, "status-error", "Informe um CPF válido.");
-  if (!name) return setStatus(status, "status-error", "Informe o nome do convidado.");
-  if (!isValidPersonName(name)) return setStatus(status, "status-error", "O nome do convidado deve conter apenas letras.");
-  if (!email) return setStatus(status, "status-error", "Informe o e-mail do convidado.");
-  if (email.length > MAX_GUEST_EMAIL_LENGTH) return setStatus(status, "status-error", "O e-mail do convidado deve ter no máximo 255 caracteres.");
-  if (!isValidEmail(email)) return setStatus(status, "status-error", "Informe um e-mail de convidado válido.");
-  if (!isValidPhone(phoneDigits)) return setStatus(status, "status-error", "Informe um celular válido com 10 ou 11 dígitos.");
+  clearAllFieldErrors();
+  if (!eventId) return showFieldError(eventSelect, "Selecione um evento para continuar.");
+  if (!editing && !isValidCpf(cpf)) return showFieldError(guestCpfInput, "Informe um CPF válido.");
+  if (!name) return showFieldError(guestNameInput, "Informe o nome do convidado.");
+  if (name.length > MAX_GUEST_NAME_LENGTH) return showFieldError(guestNameInput, "O nome do convidado deve ter no máximo 120 caracteres.");
+  if (!isValidPersonName(name)) return showFieldError(guestNameInput, "O nome do convidado deve conter apenas letras.");
+  if (!email) return showFieldError(guestEmailInput, "Informe o e-mail do convidado.");
+  if (email.length > MAX_GUEST_EMAIL_LENGTH) return showFieldError(guestEmailInput, "O e-mail do convidado deve ter no máximo 120 caracteres.");
+  if (!isValidEmail(email)) return showFieldError(guestEmailInput, "Informe um e-mail de convidado válido.");
+  if (!isValidPhone(phoneDigits)) return showFieldError(guestPhoneInput, "Informe um celular válido com 10 ou 11 dígitos.");
 
   try {
     guestSubmitButton.disabled = true;
-    guestSubmitButton.textContent = "Salvando...";
+    setGuestSubmitButtonLabel("Salvando...", ICON_SPINNER);
 
     const apiBase = getApiBase();
 
@@ -141,10 +165,25 @@ async function submitGuestForm(event) {
     await loadSelectedEventGuests();
     setStatus(status, "status-success", "Convidado adicionado com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao salvar convidado: ${error.message}`);
+    const lowerMessage = String(error?.message || "").toLowerCase();
+
+    if (lowerMessage.includes("cpf")) {
+      showFieldError(guestCpfInput, error.message);
+    } else if (lowerMessage.includes("e-mail") || lowerMessage.includes("email")) {
+      showFieldError(guestEmailInput, error.message);
+    } else if (lowerMessage.includes("nome")) {
+      showFieldError(guestNameInput, error.message);
+    } else if (lowerMessage.includes("telefone") || lowerMessage.includes("celular")) {
+      showFieldError(guestPhoneInput, error.message);
+    } else {
+      showFieldError(guestSubmitButton, `Falha ao salvar convidado: ${error.message}`);
+    }
   } finally {
     guestSubmitButton.disabled = false;
-    guestSubmitButton.textContent = state.editingGuestId !== null ? "Salvar alterações" : "Adicionar convidado";
+    setGuestSubmitButtonLabel(
+      state.editingGuestId !== null ? "Salvar alteraÃ§Ãµes" : "Adicionar convidado",
+      state.editingGuestId !== null ? ICON_SAVE : ICON_USER_PLUS
+    );
   }
 }
 
@@ -157,10 +196,9 @@ function startGuestEditMode(guest) {
   guestNameInput.value = guest.name || "";
   guestEmailInput.value = guest.email || "";
   guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
-  guestSubmitButton.textContent = "Salvar alterações";
-  guestCancelEditButton.hidden = false;
-  showGuestFormMode(`Você está editando o convidado "${guest.name}".`);
-  setStatus(status, "status-info", "Modo de edição ativo. Salve para confirmar as alterações.");
+  setGuestSubmitButtonLabel("Salvar alteraÃ§Ãµes", ICON_SAVE);
+  syncGuestEditUi();
+  guestFormTitle.textContent = `VocÃª estÃ¡ editando o convidado "${guest.name}".`;
   guestNameInput.focus();
 }
 
@@ -170,25 +208,17 @@ function resetGuestFormMode(options = {}) {
   state.editingGuestId = null;
   createGuestForm.reset();
   guestCpfInput.disabled = false;
-  guestSubmitButton.textContent = "Adicionar convidado";
-  guestCancelEditButton.hidden = true;
-  hideGuestFormMode();
+  setGuestSubmitButtonLabel("Adicionar convidado", ICON_USER_PLUS);
+  syncGuestEditUi();
+  guestFormTitle.textContent = "Adicionar convidado";
   eventSelect.value = String(state.selectedEventId || "");
-
-  if (!silent) {
-    setStatus(status, "status-info", "Modo de criação ativo.");
-  }
+  clearAllFieldErrors();
 }
 
-function showGuestFormMode(message) {
-  if (!guestFormMode) return;
-  guestFormMode.hidden = false;
-  setStatus(guestFormMode, "status-info", message);
-}
-
-function hideGuestFormMode() {
-  if (!guestFormMode) return;
-  guestFormMode.hidden = true;
+function syncGuestEditUi() {
+  const isEditing = state.editingGuestId !== null;
+  guestCancelEditButton.hidden = !isEditing;
+  guestCancelEditButton.style.display = isEditing ? "" : "none";
 }
 
 async function deleteGuest(guest) {
@@ -211,7 +241,7 @@ async function deleteGuest(guest) {
     }
 
     await loadSelectedEventGuests();
-    setStatus(status, "status-success", "Convidado excluído com sucesso.");
+    setStatus(status, "status-success", "Convidado excluÃ­do com sucesso.");
   } catch (error) {
     setStatus(status, "status-error", `Falha ao excluir convidado: ${error.message}`);
   }
@@ -253,7 +283,7 @@ async function autoFillGuestByCpf() {
     if (!guestEmailInput.value.trim()) guestEmailInput.value = guest.email || "";
     if (!guestPhoneInput.value.trim()) guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
   } catch {
-    // Não exibe erro em lookup de preenchimento automático.
+    // NÃ£o exibe erro em lookup de preenchimento automÃ¡tico.
   }
 }
 
@@ -296,7 +326,7 @@ function renderGuests() {
       </div>
       <p class="meta">Email: ${escapeHtml(guest.email)} | Celular: ${escapeHtml(formatPhoneInput(guest.phoneNumber))}</p>
       <div class="row row-tight top-gap-sm">
-        <button class="btn btn-secondary guest-edit" type="button">Editar convidado</button>
+        <button class="btn btn-secondary with-icon guest-edit" type="button">${ICON_EDIT}Editar convidado</button>
       </div>
     `;
 
@@ -367,7 +397,7 @@ function isValidPhone(digits) {
 }
 
 function isValidPersonName(name) {
-  return /^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$/u.test(String(name || "").trim());
+  return /^[\p{L}'-]+(?:\s+[\p{L}'-]+)*$/u.test(String(name || "").trim());
 }
 
 function escapeHtml(text) {
@@ -379,13 +409,68 @@ function escapeHtml(text) {
     .replaceAll("'", "&#039;");
 }
 
+function setGuestSubmitButtonLabel(label, icon) {
+  guestSubmitButton.innerHTML = `${icon}${label}`;
+}
+
+function ensureStatusElement() {
+  const existing = document.getElementById("status");
+  if (existing) return existing;
+
+  const fallback = document.createElement("p");
+  fallback.id = "status";
+  fallback.hidden = true;
+  fallback.className = "status status-info";
+  document.body.appendChild(fallback);
+  return fallback;
+}
+
+function showFieldError(element, message) {
+  if (!element) return;
+
+  clearAllFieldErrors();
+
+  if ("classList" in element) {
+    element.classList.add("input-invalid");
+  }
+
+  if ("focus" in element && typeof element.focus === "function") {
+    element.focus();
+  }
+
+  if (guestFormError) {
+    guestFormError.textContent = message;
+    guestFormError.hidden = false;
+  }
+}
+
+function clearFieldError(element) {
+  if (!element || !("classList" in element)) return;
+  element.classList.remove("input-invalid");
+}
+
+function clearAllFieldErrors() {
+  clearFieldError(eventSelect);
+  clearFieldError(guestCpfInput);
+  clearFieldError(guestNameInput);
+  clearFieldError(guestEmailInput);
+  clearFieldError(guestPhoneInput);
+
+  if (guestFormError) {
+    guestFormError.hidden = true;
+    guestFormError.textContent = "";
+  }
+}
+
 function trashIconSvg() {
   return `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M4 7h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M10 3h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M4 7h16" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M10 3h4" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
     </svg>
   `;
 }
+
+

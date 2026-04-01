@@ -18,6 +18,9 @@ const status = document.getElementById("status");
 const giftGrid = document.getElementById("gift-grid");
 const giftTemplate = document.getElementById("gift-template");
 const filters = document.querySelectorAll(".filter-button");
+const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
+const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
+const ICON_UNDO = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>';
 
 const session = getAuthSession();
 enhanceHeaderForLoggedUser(session);
@@ -192,10 +195,11 @@ function renderGiftList() {
     giftMeta.textContent = `${available} disponíveis | ${reserved} reservados`;
 
     reserveButton.disabled = busy || available === 0;
-    reserveButton.textContent = busy ? "Aguarde..." : "Reservar";
+    reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}${busy ? "Aguarde..." : "Reservar"}`;
     reserveButton.addEventListener("click", () => reserveGift(gift.id));
 
     unreserveButton.disabled = busy || reserved === 0;
+    unreserveButton.innerHTML = `${ICON_UNDO}Cancelar`;
     unreserveButton.addEventListener("click", () => unreserveGift(gift.id));
 
     giftGrid.appendChild(fragment);

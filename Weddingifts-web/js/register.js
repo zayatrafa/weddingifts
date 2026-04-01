@@ -8,6 +8,8 @@ const form = document.getElementById("register-form");
 const status = document.getElementById("status");
 const submitButton = document.getElementById("submit-button");
 const cpfInput = document.getElementById("cpf-input");
+const REGISTER_BUTTON_DEFAULT = `${accountPlusIcon()}Criar conta`;
+const REGISTER_BUTTON_LOADING = `${spinnerIcon()}Cadastrando...`;
 
 cpfInput.addEventListener("input", () => {
   cpfInput.value = formatCpfInput(cpfInput.value);
@@ -61,7 +63,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     submitButton.disabled = true;
-    submitButton.textContent = "Cadastrando...";
+    submitButton.innerHTML = REGISTER_BUTTON_LOADING;
 
     await requestJson(`${apiBase}/api/users`, {
       method: "POST",
@@ -74,7 +76,7 @@ form.addEventListener("submit", async (event) => {
     setStatus(status, "status-error", `Falha ao cadastrar usuário: ${error.message}`);
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "Criar conta";
+    submitButton.innerHTML = REGISTER_BUTTON_DEFAULT;
   }
 });
 
@@ -124,4 +126,12 @@ function isValidPersonName(name) {
 
 function isStrongPassword(password) {
   return /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(String(password || ""));
+}
+
+function accountPlusIcon() {
+  return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 12a5 5 0 1 0-6 0 7 7 0 0 0-5 6.7V21h16v-2.3A7 7 0 0 0 15 12zm-3-7a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm-6 14a5 5 0 0 1 10 0H6zm14-8h-2V9h-2V7h2V5h2v2h2v2h-2v2z" fill="currentColor"/></svg></span>';
+}
+
+function spinnerIcon() {
+  return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
 }

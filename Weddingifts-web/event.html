@@ -38,8 +38,7 @@
         <div class="field" style="margin: 0;"><label for="slug-input">Slug</label><input class="input" id="slug-input" type="text" placeholder="ex: abc12345" /></div>
         <div class="field" style="margin: 0;"><label for="guest-cpf-input">CPF do convidado</label><input class="input" id="guest-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" /></div>
       </div>
-      <div class="hero-actions" style="margin-top: 14px;"><button id="load-button" class="btn btn-primary" type="button">Carregar evento</button></div>
-      <p id="status" class="status status-info">Aguardando carregamento do evento.</p>
+      <div class="hero-actions" style="margin-top: 14px;"><button id="load-button" class="btn btn-primary with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0-2a8 8 0 1 0 4.9 14.3l4 4 1.4-1.4-4-4A8 8 0 0 0 10 2z" fill="currentColor"/></svg></span>Carregar evento</button></div>
     </section>
 
     <section class="section card card-pad">
@@ -60,11 +59,10 @@
         <div class="gift-head"><h3 class="gift-name"></h3><strong class="gift-price"></strong></div>
         <p class="gift-description muted"></p>
         <div class="row" style="align-items: center; margin-top: 4px;"><span class="gift-badge"></span><span class="gift-meta muted"></span></div>
-        <div class="row" style="margin-top: 10px;"><button class="btn btn-primary reserve-button" type="button">Reservar</button><button class="btn btn-secondary unreserve-button" type="button">Cancelar</button></div>
+        <div class="row" style="margin-top: 10px;"><button class="btn btn-primary reserve-button with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7V5a5 5 0 0 1 10 0v2h2v14H5V7h2zm2 0h6V5a3 3 0 0 0-6 0v2zm2 6h2v5h-2v-5z" fill="currentColor"/></svg></span>Reservar</button><button class="btn btn-secondary unreserve-button with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>Cancelar</button></div>
       </article>
     </template>
 
-    
   </main>
 
   <script type="module" src="./js/event.js"></script>
@@ -88,4 +86,5 @@
   </footer>
 </body>
 </html>
+
 

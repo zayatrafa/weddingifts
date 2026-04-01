@@ -11,6 +11,8 @@ const form = document.getElementById("login-form");
 const emailInput = document.getElementById("email-input");
 const status = document.getElementById("status");
 const submitButton = document.getElementById("submit-button");
+const LOGIN_BUTTON_DEFAULT = `${loginIcon()}Entrar`;
+const LOGIN_BUTTON_LOADING = `${spinnerIcon()}Entrando...`;
 
 const session = getAuthSession();
 if (session?.token) {
@@ -47,7 +49,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     submitButton.disabled = true;
-    submitButton.textContent = "Entrando...";
+    submitButton.innerHTML = LOGIN_BUTTON_LOADING;
     setStatus(status, "status-loading", "Validando suas credenciais...");
 
     const login = await requestJson(`${apiBase}/api/auth/login`, {
@@ -70,7 +72,7 @@ form.addEventListener("submit", async (event) => {
     setStatus(status, "status-error", backendMessage || "Não foi possível entrar. Tente novamente.");
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = "Entrar";
+    submitButton.innerHTML = LOGIN_BUTTON_DEFAULT;
   }
 });
 
@@ -90,4 +92,12 @@ async function resolvePostLoginRedirect(apiBase, token) {
   } catch {
     return "./create-event.html";
   }
+}
+
+function loginIcon() {
+  return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4-2.6-2.6H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z" fill="currentColor"/></svg></span>';
+}
+
+function spinnerIcon() {
+  return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
 }

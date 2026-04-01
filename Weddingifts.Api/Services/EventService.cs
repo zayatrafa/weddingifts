@@ -111,6 +111,7 @@ public class EventService
         return await _context.Events
             .AsNoTracking()
             .Include(e => e.Gifts)
+            .Include(e => e.Guests)
             .Where(e => e.UserId == userId)
             .OrderByDescending(e => e.CreatedAt)
             .ToListAsync();

@@ -11,6 +11,7 @@ public sealed class EventResponse
     public string Slug { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
     public IReadOnlyList<GiftResponse> Gifts { get; init; } = [];
+    public int GuestCount { get; init; }
 
     public static EventResponse FromEntity(Event ev)
     {
@@ -22,7 +23,8 @@ public sealed class EventResponse
             EventDate = ev.EventDate,
             Slug = ev.Slug,
             CreatedAt = ev.CreatedAt,
-            Gifts = ev.Gifts.Select(GiftResponse.FromEntity).ToList()
+            Gifts = ev.Gifts.Select(GiftResponse.FromEntity).ToList(),
+            GuestCount = ev.Guests.Count
         };
     }
 }

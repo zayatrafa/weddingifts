@@ -36,26 +36,23 @@
       <p class="kicker">Painel privado</p>
       <h1 class="h2">Organize os presentes do seu evento</h1>
       <p class="card-subtitle">Selecione um evento para adicionar itens e acompanhar disponibilidade.</p>
-            <p id="status" class="status status-info">Selecione um evento para começar.</p>
     </section>
 
     <section class="dashboard-grid">
       <article class="card card-pad">
-        <h2 class="card-title">Adicionar presente</h2>
+        <h2 id="gift-form-title" class="card-title">Adicionar presente</h2>
         <p class="card-subtitle">Os presentes são vinculados ao evento selecionado.</p>
-        <p id="gift-form-mode" class="status status-info" hidden></p>
         <form id="create-gift-form" class="form form-compact">
           <div class="field"><label for="event-select">Evento</label><select id="event-select" class="select" required><option value="">Selecione um evento</option></select></div>
           <div class="field"><label for="gift-name-input">Nome do presente</label><input class="input" id="gift-name-input" type="text" maxlength="255" placeholder="Jogo de jantar" required /></div>
-          <div class="field"><label for="gift-description-input">Descrição</label><textarea class="textarea" id="gift-description-input" maxlength="255" placeholder="Detalhes opcionais"></textarea></div>
+          <div class="field"><label for="gift-description-input">Descrição</label><textarea class="textarea" id="gift-description-input" maxlength="120" placeholder="Detalhes opcionais"></textarea></div>
           <div class="row row-tight">
             <div class="field field-flat"><label for="gift-price-input">Preço</label><input class="input" id="gift-price-input" type="text" inputmode="decimal" placeholder="R$ 0,00" value="R$ 0,00" required /></div>
             <div class="field field-flat"><label for="gift-quantity-input">Quantidade</label><input class="input" id="gift-quantity-input" type="number" min="1" max="100000" step="1" value="1" required /></div>
           </div>
-          <p id="gift-form-status" class="status status-info" hidden></p>
           <div class="row row-tight fit-content">
-            <button id="gift-submit-button" class="btn btn-primary" type="submit">Adicionar presente</button>
-            <button id="gift-cancel-edit-button" class="btn btn-secondary" type="button" hidden>Cancelar edição</button>
+            <button id="gift-submit-button" class="btn btn-primary with-icon" type="submit"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>Adicionar presente</button>
+            <button id="gift-cancel-edit-button" class="btn btn-secondary with-icon" type="button" hidden><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z" fill="currentColor"/></svg></span>Cancelar edição</button>
           </div>
         </form>
       </article>
@@ -88,5 +85,6 @@
   </footer>
 </body>
 </html>
+
 
 

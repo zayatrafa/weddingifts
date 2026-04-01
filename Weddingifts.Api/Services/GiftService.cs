@@ -9,7 +9,7 @@ namespace Weddingifts.Api.Services;
 public class GiftService
 {
     private const int MaxGiftNameLength = 255;
-    private const int MaxGiftDescriptionLength = 255;
+    private const int MaxGiftDescriptionLength = 120;
     private const decimal MinGiftPrice = 0m;
     private const decimal MaxGiftPriceExclusive = 1_000_000m;
     private const int MinGiftQuantity = 1;

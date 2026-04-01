@@ -14,7 +14,7 @@ const MAX_GIFT_PRICE_EXCLUSIVE = 1_000_000;
 const MIN_GIFT_QUANTITY = 1;
 const MAX_GIFT_QUANTITY = 100_000;
 const MAX_GIFT_NAME_LENGTH = 255;
-const MAX_GIFT_DESCRIPTION_LENGTH = 255;
+const MAX_GIFT_DESCRIPTION_LENGTH = 120;
 
 const session = requireAuth();
 if (!session) throw new Error("Autenticação obrigatória.");
@@ -28,9 +28,13 @@ const giftNameInput = document.getElementById("gift-name-input");
 const giftDescriptionInput = document.getElementById("gift-description-input");
 const giftPriceInput = document.getElementById("gift-price-input");
 const giftFormStatus = document.getElementById("gift-form-status");
-const giftFormMode = document.getElementById("gift-form-mode");
+const giftFormTitle = document.getElementById("gift-form-title");
 const giftSubmitButton = document.getElementById("gift-submit-button");
 const giftCancelEditButton = document.getElementById("gift-cancel-edit-button");
+const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
+const ICON_SAVE = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5V4zm2 2v12h10V8.2L15.2 6H7zm2 6h6v6H9v-6z" fill="currentColor"/></svg></span>';
+const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
+const ICON_EDIT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg></span>';
 
 createGiftForm.noValidate = true;
 
@@ -75,6 +79,8 @@ giftPriceInput.addEventListener("blur", () => {
   giftPriceInput.value = formatCurrencyInput(giftPriceInput.value);
 });
 
+syncGiftEditUi();
+setGiftSubmitButtonLabel(state.editingGiftId !== null ? "Salvar alterações" : "Adicionar presente", state.editingGiftId !== null ? ICON_SAVE : ICON_GIFT);
 loadMyEvents();
 
 async function loadMyEvents() {
@@ -123,7 +129,7 @@ async function submitGiftForm(event) {
   if (!eventId) return setGiftFormError("Selecione um evento para continuar.");
   if (!name) return setGiftFormError("Informe o nome do presente.");
   if (name.length > MAX_GIFT_NAME_LENGTH) return setGiftFormError("O nome do presente deve ter no máximo 255 caracteres.");
-  if (description.length > MAX_GIFT_DESCRIPTION_LENGTH) return setGiftFormError("A descrição do presente deve ter no máximo 255 caracteres.");
+  if (description.length > MAX_GIFT_DESCRIPTION_LENGTH) return setGiftFormError("A descrição do presente deve ter no máximo 120 caracteres.");
   if (!rawPrice) return setGiftFormError("Informe o preço do presente.");
 
   if (!Number.isFinite(price) || price <= MIN_GIFT_PRICE) {
@@ -144,7 +150,7 @@ async function submitGiftForm(event) {
 
   try {
     giftSubmitButton.disabled = true;
-    giftSubmitButton.textContent = "Salvando...";
+    setGiftSubmitButtonLabel("Salvando...", ICON_SPINNER);
 
     const apiBase = getApiBase();
 
@@ -179,7 +185,10 @@ async function submitGiftForm(event) {
     setGiftFormError(`Falha ao salvar presente: ${error.message}`);
   } finally {
     giftSubmitButton.disabled = false;
-    giftSubmitButton.textContent = state.editingGiftId !== null ? "Salvar alterações" : "Adicionar presente";
+    setGiftSubmitButtonLabel(
+      state.editingGiftId !== null ? "Salvar alterações" : "Adicionar presente",
+      state.editingGiftId !== null ? ICON_SAVE : ICON_GIFT
+    );
   }
 }
 
@@ -191,10 +200,9 @@ function startGiftEditMode(gift) {
   document.getElementById("gift-description-input").value = gift.description || "";
   giftPriceInput.value = formatCurrency(Number(gift.price) || 0);
   document.getElementById("gift-quantity-input").value = String(gift.quantity || 1);
-  giftSubmitButton.textContent = "Salvar alterações";
-  giftCancelEditButton.hidden = false;
-  showGiftFormMode(`Você está editando o presente "${gift.name}".`);
-  setGiftFormStatus("status-info", "Modo de edição ativo. Salve para confirmar as alterações.");
+  setGiftSubmitButtonLabel("Salvar alterações", ICON_SAVE);
+  syncGiftEditUi();
+  giftFormTitle.textContent = `Você está editando o presente "${gift.name}".`;
   document.getElementById("gift-name-input").focus();
 }
 
@@ -206,24 +214,15 @@ function resetGiftFormMode(options = {}) {
   giftPriceInput.value = "R$ 0,00";
   document.getElementById("gift-quantity-input").value = "1";
   eventSelect.value = String(state.selectedEventId || "");
-  giftSubmitButton.textContent = "Adicionar presente";
-  giftCancelEditButton.hidden = true;
-  hideGiftFormMode();
-
-  if (!silent) {
-    setGiftFormStatus("status-info", "Modo de criação ativo.");
-  }
+  setGiftSubmitButtonLabel("Adicionar presente", ICON_GIFT);
+  syncGiftEditUi();
+  giftFormTitle.textContent = "Adicionar presente";
 }
 
-function showGiftFormMode(message) {
-  if (!giftFormMode) return;
-  giftFormMode.hidden = false;
-  setStatus(giftFormMode, "status-info", message);
-}
-
-function hideGiftFormMode() {
-  if (!giftFormMode) return;
-  giftFormMode.hidden = true;
+function syncGiftEditUi() {
+  const isEditing = state.editingGiftId !== null;
+  giftCancelEditButton.hidden = !isEditing;
+  giftCancelEditButton.style.display = isEditing ? "" : "none";
 }
 
 async function deleteGift(gift) {
@@ -316,7 +315,7 @@ function renderGifts() {
       </div>
       <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${gift.reservedQuantity || 0} reservados</p>
       <div class="row row-tight top-gap-sm">
-        <button class="btn btn-secondary gift-edit" type="button">Editar presente</button>
+        <button class="btn btn-secondary with-icon gift-edit" type="button">${ICON_EDIT}Editar presente</button>
       </div>
     `;
 
@@ -354,6 +353,10 @@ function setGiftFormStatus(type, message) {
   }
 }
 
+function setGiftSubmitButtonLabel(label, icon) {
+  giftSubmitButton.innerHTML = `${icon}${label}`;
+}
+
 function escapeHtml(text) {
   return String(text || "")
     .replaceAll("&", "&amp;")
@@ -366,10 +369,10 @@ function escapeHtml(text) {
 function trashIconSvg() {
   return `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M4 7h16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M10 3h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M4 7h16" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M10 3h4" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
     </svg>
   `;
 }

@@ -32,7 +32,17 @@ public class AppDbContext : DbContext
         
         modelBuilder.Entity<Gift>()
             .Property(g => g.Description)
-            .HasMaxLength(255);
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<EventGuest>()
+            .Property(g => g.Name)
+            .HasMaxLength(120)
+            .IsRequired();
+
+        modelBuilder.Entity<EventGuest>()
+            .Property(g => g.Email)
+            .HasMaxLength(120)
+            .IsRequired();
 
         modelBuilder.Entity<EventGuest>()
             .HasIndex(g => new { g.EventId, g.Cpf })

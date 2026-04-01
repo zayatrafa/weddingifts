@@ -23,6 +23,11 @@ const focusEventIdFromQuery = Number(query.get("focusEventId"));
 let shouldFocusFromQuery = Number.isInteger(focusEventIdFromQuery) && focusEventIdFromQuery > 0;
 
 const state = { events: [] };
+const ICON_EDIT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg>';
+const ICON_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a1 1 0 0 0-1 1v8.59L8.7 10.3a1 1 0 0 0-1.4 1.4l4 4a1 1 0 0 0 1.4 0l4-4a1 1 0 1 0-1.4-1.4L13 12.59V4a1 1 0 0 0-1-1z" fill="currentColor"/><path d="M5 13a1 1 0 0 0-1 1v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 1 0-2 0v5H6v-5a1 1 0 0 0-1-1z" fill="currentColor"/></svg>';
+const ICON_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M10 3h4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+const ICON_GUESTS = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 2.2-6 5v1h12v-1c0-2.8-2.7-5-6-5zm8-2a3 3 0 1 0-2.2-5 6 6 0 0 1 .4 2c0 1.2-.3 2.3-.9 3.2.8.5 1.7.8 2.7.8zm1 2c-.8 0-1.6.1-2.3.4 1.4 1.1 2.3 2.8 2.3 4.6v1h4v-1c0-2.8-1.8-5-4-5z" fill="currentColor"/></svg></span>';
+const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
 
 initUserDropdown({
   session,
@@ -73,22 +78,36 @@ function renderEvents() {
 
   state.events.forEach((eventData) => {
     const item = document.createElement("article");
-    item.className = "event-item";
+    item.className = "event-item my-event-card";
     item.dataset.eventId = String(eventData.id);
 
     const giftCount = Array.isArray(eventData.gifts) ? eventData.gifts.length : 0;
+    const guestCount = Number.isInteger(eventData.guestCount)
+      ? eventData.guestCount
+      : (Array.isArray(eventData.guests) ? eventData.guests.length : 0);
 
     item.innerHTML = `
-      <button class="icon-button danger event-delete" type="button" title="Excluir evento" aria-label="Excluir evento" data-action="delete">&#128465;</button>
-      <div class="event-head">
-        <div>
+      <div class="my-event-top">
+        <div class="my-event-main">
           <h3 class="event-title">${escapeHtml(eventData.name)}</h3>
-          <p class="meta">Data: ${formatDate(eventData.eventDate)} | Slug: ${escapeHtml(eventData.slug)} | ${giftCount} presente(s)</p>
+          <span class="tag tag-ok my-event-status">Publicado</span>
         </div>
-        <span class="tag tag-ok">Publicado</span>
+        <div class="my-event-quick-actions" aria-label="Ações rápidas do evento">
+          <button class="icon-button" type="button" title="Editar evento" aria-label="Editar evento" data-action="edit">${ICON_EDIT}</button>
+          <button class="icon-button" type="button" title="Copiar link público" aria-label="Copiar link público" data-action="copy">${ICON_SHARE}</button>
+          <button class="icon-button danger event-delete" type="button" title="Excluir evento" aria-label="Excluir evento" data-action="delete">${ICON_TRASH}</button>
+        </div>
       </div>
 
-      <form class="event-edit-form" data-edit-form hidden>
+      <p class="my-event-date">Data do evento: <strong>${formatDate(eventData.eventDate)}</strong></p>
+      <p class="my-event-meta">Slug: <span>${escapeHtml(eventData.slug)}</span> · ${giftCount} presente(s) · ${guestCount} convidado(s)</p>
+
+      <div class="my-event-primary-actions" aria-label="Ações principais do evento">
+        <button class="btn btn-secondary btn-main-action with-icon" type="button" data-action="manage-guests">${ICON_GUESTS}Convidados</button>
+        <button class="btn btn-primary btn-main-action with-icon" type="button" data-action="manage">${ICON_GIFT}Presentes</button>
+      </div>
+
+      <form class="event-edit-form my-event-edit-form" data-edit-form hidden>
         <div class="field field-flat">
           <label>Nome do evento</label>
           <input class="input" type="text" name="name" value="${escapeAttribute(eventData.name)}" required />
@@ -102,13 +121,6 @@ function renderEvents() {
           <button class="btn btn-secondary" type="button" data-action="cancel-edit">Cancelar</button>
         </div>
       </form>
-
-      <div class="row row-tight top-gap-sm">
-        <button class="btn btn-ghost" data-action="copy">Copiar link público</button>
-        <button class="btn btn-secondary" data-action="edit">Editar evento</button>
-        <button class="btn btn-ghost" data-action="manage-guests">Gerenciar convidados</button>
-        <button class="btn btn-primary" data-action="manage">Gerenciar presentes</button>
-      </div>
     `;
 
     const editForm = item.querySelector("[data-edit-form]");
@@ -135,12 +147,18 @@ function renderEvents() {
     editButton.addEventListener("click", () => {
       const nextStateHidden = !editForm.hidden;
       editForm.hidden = nextStateHidden;
-      editButton.textContent = nextStateHidden ? "Editar evento" : "Ocultar edição";
+      editButton.classList.toggle("is-active", !nextStateHidden);
+      editButton.setAttribute("aria-pressed", String(!nextStateHidden));
+      editButton.setAttribute("aria-label", nextStateHidden ? "Editar evento" : "Fechar edição");
+      editButton.setAttribute("title", nextStateHidden ? "Editar evento" : "Fechar edição");
     });
 
     item.querySelector('[data-action="cancel-edit"]').addEventListener("click", () => {
       editForm.hidden = true;
-      editButton.textContent = "Editar evento";
+      editButton.classList.remove("is-active");
+      editButton.setAttribute("aria-pressed", "false");
+      editButton.setAttribute("aria-label", "Editar evento");
+      editButton.setAttribute("title", "Editar evento");
       editForm.reset();
       editForm.elements.name.value = eventData.name;
       editForm.elements.eventDate.value = toInputDate(eventData.eventDate);
