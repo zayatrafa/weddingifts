@@ -16,15 +16,46 @@
           <a href="./event.html">Evento público</a>
         </div>
         <div class="user-menu-wrap">
-          <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
+          <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">
+            <span class="user-chip-name">Minha conta</span>
+            <span class="user-chip-caret" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="currentColor"/></svg>
+            </span>
+          </button>
           <div id="user-menu" class="user-menu" hidden>
-            <a href="./create-event.html">Criar evento</a>
-            <a href="./my-events.html">Gerenciar meus eventos</a>
-            <span class="menu-group">Gerenciar eventos</span>
-            <a class="menu-subitem" href="./my-guests.html">Gerenciar convidados</a>
-            <a class="menu-subitem" href="./my-event.html">Gerenciar presentes</a>
-            <a href="./account.html">Minha conta</a>
-            <button id="logout-action" type="button">Sair</button>
+            <div class="user-menu-header">
+              <span class="user-menu-avatar" aria-hidden="true">♡</span>
+              <div class="user-menu-header-copy">
+                <strong>Sua conta</strong>
+                <span>Acesso rápido</span>
+              </div>
+            </div>
+            <a class="menu-item menu-item-primary" href="./create-event.html">
+              <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z" fill="currentColor"/></svg></span>
+              <span>Novo evento</span>
+            </a>
+            <div class="menu-divider"></div>
+            <span class="menu-group">Gerenciamento</span>
+            <a class="menu-item" href="./my-events.html">
+              <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v3H5V4zm0 6h14v3H5v-3zm0 6h14v3H5v-3z" fill="currentColor"/></svg></span>
+              <span>Meus eventos</span>
+            </a>
+            <a class="menu-item" href="./my-guests.html">
+              <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 2.2-6 5v1h12v-1c0-2.8-2.7-5-6-5zm8-2a3 3 0 1 0-2.2-5 6 6 0 0 1 .4 2c0 1.2-.3 2.3-.9 3.2.8.5 1.7.8 2.7.8zm1 2c-.8 0-1.6.1-2.3.4 1.4 1.1 2.3 2.8 2.3 4.6v1h4v-1c0-2.8-1.8-5-4-5z" fill="currentColor"/></svg></span>
+              <span>Convidados</span>
+            </a>
+            <a class="menu-item" href="./my-event.html">
+              <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>
+              <span>Presentes</span>
+            </a>
+            <a class="menu-item" href="./account.html">
+              <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z" fill="currentColor"/></svg></span>
+              <span>Minha conta</span>
+            </a>
+            <button id="logout-action" class="menu-item menu-item-danger" type="button">
+              <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4-2.6-2.6H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z" fill="currentColor"/></svg></span>
+              <span>Sair</span>
+            </button>
           </div>
         </div>
       </div>
@@ -36,6 +67,7 @@
       <p class="kicker">Painel privado</p>
       <h1 class="h2">Organize os presentes do seu evento</h1>
       <p class="card-subtitle">Selecione um evento para adicionar itens e acompanhar disponibilidade.</p>
+      <p id="status" class="status status-info">Selecione um evento para começar.</p>
     </section>
 
     <section class="dashboard-grid">
@@ -54,6 +86,7 @@
             <button id="gift-submit-button" class="btn btn-primary with-icon" type="submit"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>Adicionar presente</button>
             <button id="gift-cancel-edit-button" class="btn btn-secondary with-icon" type="button" hidden><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18.3 5.7L12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3l6.3 6.3 6.3-6.3z" fill="currentColor"/></svg></span>Cancelar edição</button>
           </div>
+          <p id="gift-form-status" class="status status-info" hidden></p>
         </form>
       </article>
 
@@ -85,6 +118,7 @@
   </footer>
 </body>
 </html>
+
 
 
 

@@ -268,8 +268,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("WeddingiftsWeb");
 if (!app.Environment.IsEnvironment("Testing"))
 {

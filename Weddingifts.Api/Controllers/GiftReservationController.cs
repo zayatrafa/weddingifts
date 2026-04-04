@@ -25,9 +25,9 @@ public class GiftReservationController : ControllerBase
     }
 
     [HttpPost("{giftId:int}/unreserve")]
-    public async Task<IActionResult> UnreserveGift(int giftId)
+    public async Task<IActionResult> UnreserveGift(int giftId, [FromBody] UnreserveGiftRequest? request)
     {
-        var gift = await _giftService.UnreserveGift(giftId);
+        var gift = await _giftService.UnreserveGift(giftId, request ?? new UnreserveGiftRequest());
         var response = GiftResponse.FromEntity(gift);
 
         return Ok(response);

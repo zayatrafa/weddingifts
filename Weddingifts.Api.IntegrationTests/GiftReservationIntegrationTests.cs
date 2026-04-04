@@ -140,7 +140,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         await CreateGuestAsync(session.Token, eventId, guestCpf);
 
         await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
-        var response = await _client.PostAsync($"/api/gifts/{giftId}/unreserve", content: null);
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/unreserve", new { guestCpf });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -159,7 +159,7 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         var eventId = await CreateEventAsync(session.Token);
         var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
 
-        var response = await _client.PostAsync($"/api/gifts/{giftId}/unreserve", content: null);
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/unreserve", new { guestCpf = "52998224725" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -167,6 +167,31 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         Assert.NotNull(payload);
         Assert.Equal("Erro de validação", payload.Title);
         Assert.Equal("Este presente não possui reserva ativa.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task UnreserveGift_ShouldReturnBadRequest_WhenCpfDidNotReserveGift()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 2);
+        const string guestCpfA = "52998224725";
+        const string guestCpfB = "39053344705";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpfA);
+        await CreateGuestAsync(session.Token, eventId, guestCpfB);
+
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf = guestCpfA });
+        var response = await _client.PostAsJsonAsync($"/api/gifts/{giftId}/unreserve", new { guestCpf = guestCpfB });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Este CPF não possui reserva ativa para este presente.", payload.Detail);
     }
 
     [Theory]

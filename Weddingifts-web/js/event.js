@@ -4,6 +4,7 @@
   formatDate,
   getApiBase,
   getAuthSession,
+  getUserMenuMarkup,
   initUserDropdown,
   requestJson,
   setStatus
@@ -66,18 +67,7 @@ function enhanceHeaderForLoggedUser(sessionData) {
     <div class="shell-links">
       <a href="./event.html" class="active">Evento público</a>
     </div>
-    <div class="user-menu-wrap">
-      <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
-      <div id="user-menu" class="user-menu" hidden>
-        <a href="./create-event.html">Criar evento</a>
-        <a href="./my-events.html">Gerenciar meus eventos</a>
-        <span class="menu-group">Gerenciar eventos</span>
-        <a class="menu-subitem" href="./my-guests.html">Gerenciar convidados</a>
-        <a class="menu-subitem" href="./my-event.html">Gerenciar presentes</a>
-        <a href="./account.html">Minha conta</a>
-        <button id="logout-action" type="button">Sair</button>
-      </div>
-    </div>
+    ${getUserMenuMarkup()}
   `;
 
   initUserDropdown({
@@ -272,12 +262,22 @@ async function reserveGift(giftId) {
 async function unreserveGift(giftId) {
   if (!state.event || state.actionGiftId) return;
   const apiBase = getApiBase();
+  const guestCpf = digitsOnly(guestCpfInput.value);
+
+  if (guestCpf.length !== 11) {
+    setStatus(status, "status-error", "Informe o CPF da reserva para cancelar.");
+    return;
+  }
 
   try {
     state.actionGiftId = giftId;
     renderGiftList();
     setStatus(status, "status-loading", "Cancelando reserva...");
-    await requestJson(`${apiBase}/api/gifts/${giftId}/unreserve`, { method: "POST" });
+    await requestJson(`${apiBase}/api/gifts/${giftId}/unreserve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guestCpf })
+    });
     await refreshGifts();
     renderGiftList();
     setStatus(status, "status-success", "Reserva cancelada com sucesso.");

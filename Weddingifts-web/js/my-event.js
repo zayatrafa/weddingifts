@@ -27,7 +27,7 @@ const status = document.getElementById("status");
 const giftNameInput = document.getElementById("gift-name-input");
 const giftDescriptionInput = document.getElementById("gift-description-input");
 const giftPriceInput = document.getElementById("gift-price-input");
-const giftFormStatus = document.getElementById("gift-form-status");
+const giftFormStatus = ensureGiftFormStatusElement();
 const giftFormTitle = document.getElementById("gift-form-title");
 const giftSubmitButton = document.getElementById("gift-submit-button");
 const giftCancelEditButton = document.getElementById("gift-cancel-edit-button");
@@ -344,6 +344,7 @@ function formatCurrencyInput(value) {
 
 function setGiftFormError(message) {
   setGiftFormStatus("status-error", message);
+  setStatus(status, "status-error", message);
 }
 
 function setGiftFormStatus(type, message) {
@@ -351,6 +352,23 @@ function setGiftFormStatus(type, message) {
     giftFormStatus.hidden = false;
     setStatus(giftFormStatus, type, message);
   }
+}
+
+function ensureGiftFormStatusElement() {
+  const existing = document.getElementById("gift-form-status");
+  if (existing) return existing;
+
+  const fallback = document.createElement("p");
+  fallback.id = "gift-form-status";
+  fallback.hidden = true;
+  fallback.className = "status status-info";
+
+  const targetForm = document.getElementById("create-gift-form");
+  if (targetForm) {
+    targetForm.appendChild(fallback);
+  }
+
+  return fallback;
 }
 
 function setGiftSubmitButtonLabel(label, icon) {

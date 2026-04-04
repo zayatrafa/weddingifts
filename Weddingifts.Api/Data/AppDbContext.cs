@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Event> Events => Set<Event>();
     public DbSet<Gift> Gifts => Set<Gift>();
+    public DbSet<GiftReservation> GiftReservations => Set<GiftReservation>();
     public DbSet<EventGuest> EventGuests => Set<EventGuest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -33,6 +34,17 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Gift>()
             .Property(g => g.Description)
             .HasMaxLength(120);
+
+        modelBuilder.Entity<GiftReservation>()
+            .Property(r => r.GuestCpf)
+            .HasMaxLength(11)
+            .IsRequired();
+
+        modelBuilder.Entity<GiftReservation>()
+            .HasIndex(r => new { r.GiftId, r.GuestCpf });
+
+        modelBuilder.Entity<GiftReservation>()
+            .HasIndex(r => new { r.EventId, r.GuestCpf });
 
         modelBuilder.Entity<EventGuest>()
             .Property(g => g.Name)
@@ -58,8 +70,18 @@ public class AppDbContext : DbContext
             .Property(u => u.Email)
             .HasMaxLength(255)
             .IsRequired();
+        
+        modelBuilder.Entity<GiftReservation>()
+            .HasOne(r => r.Event)
+            .WithMany(e => e.GiftReservations)
+            .HasForeignKey(r => r.EventId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-
+        modelBuilder.Entity<GiftReservation>()
+            .HasOne(r => r.Gift)
+            .WithMany(g => g.Reservations)
+            .HasForeignKey(r => r.GiftId)
+            .OnDelete(DeleteBehavior.Cascade);
 
     }
 }

@@ -23,4 +23,5 @@ public class Gift
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Event Event { get; set; } = null!;
+    public List<GiftReservation> Reservations { get; set; } = new();
 }

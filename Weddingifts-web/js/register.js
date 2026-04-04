@@ -5,7 +5,7 @@
 } from "./common.js";
 
 const form = document.getElementById("register-form");
-const status = document.getElementById("status");
+const status = ensureStatusElement();
 const submitButton = document.getElementById("submit-button");
 const cpfInput = document.getElementById("cpf-input");
 const REGISTER_BUTTON_DEFAULT = `${accountPlusIcon()}Criar conta`;
@@ -134,4 +134,16 @@ function accountPlusIcon() {
 
 function spinnerIcon() {
   return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
+}
+
+function ensureStatusElement() {
+  const existing = document.getElementById("status");
+  if (existing) return existing;
+
+  const fallback = document.createElement("p");
+  fallback.id = "status";
+  fallback.className = "status status-info";
+  fallback.textContent = "Preencha os dados para criar sua conta.";
+  form?.appendChild(fallback);
+  return fallback;
 }

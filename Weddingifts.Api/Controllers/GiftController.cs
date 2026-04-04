@@ -60,6 +60,17 @@ public class GiftController : ControllerBase
         return Ok(response);
     }
 
+    [Authorize]
+    [HttpGet("{eventId:int}/gifts/reservations")]
+    public async Task<IActionResult> GetGiftReservations(int eventId)
+    {
+        var userId = GetAuthenticatedUserId();
+        var reservations = await _giftService.GetGiftReservationsByEventForUser(eventId, userId);
+        var response = reservations.Select(GiftReservationResponse.FromEntity);
+
+        return Ok(response);
+    }
+
     private int GetAuthenticatedUserId()
     {
         var claim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

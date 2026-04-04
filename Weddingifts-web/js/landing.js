@@ -1,4 +1,4 @@
-﻿import { clearAuthSession, getAuthSession, initUserDropdown } from "./common.js";
+﻿import { clearAuthSession, getAuthSession, getUserMenuMarkup, initUserDropdown } from "./common.js";
 
 const params = new URLSearchParams(window.location.search);
 const slug = params.get("slug");
@@ -28,18 +28,7 @@ function enhanceHeaderForLoggedUser() {
     <div class="shell-links">
       <a href="./event.html">Evento público</a>
     </div>
-    <div class="user-menu-wrap">
-      <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">Minha conta</button>
-      <div id="user-menu" class="user-menu" hidden>
-        <a href="./create-event.html">Criar evento</a>
-        <a href="./my-events.html">Gerenciar meus eventos</a>
-        <span class="menu-group">Gerenciar eventos</span>
-        <a class="menu-subitem" href="./my-guests.html">Gerenciar convidados</a>
-        <a class="menu-subitem" href="./my-event.html">Gerenciar presentes</a>
-        <a href="./account.html">Minha conta</a>
-        <button id="logout-action" type="button">Sair</button>
-      </div>
-    </div>
+    ${getUserMenuMarkup()}
   `;
 
   initUserDropdown({
@@ -50,3 +39,4 @@ function enhanceHeaderForLoggedUser() {
     }
   });
 }
+

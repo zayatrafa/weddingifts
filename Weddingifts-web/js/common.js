@@ -109,7 +109,12 @@ export function initUserDropdown({ session, onLogout }) {
   if (!menuButton || !menu) return;
 
   const displayName = session?.user?.name || session?.user?.email || "Minha conta";
-  menuButton.textContent = displayName;
+  const nameSlot = menuButton.querySelector(".user-chip-name");
+  if (nameSlot) {
+    nameSlot.textContent = displayName;
+  } else {
+    menuButton.textContent = displayName;
+  }
 
   const closeMenu = () => {
     menu.hidden = true;
@@ -141,6 +146,54 @@ export function initUserDropdown({ session, onLogout }) {
       onLogout?.();
     });
   }
+}
+
+export function getUserMenuMarkup() {
+  return `
+    <div class="user-menu-wrap">
+      <button id="user-menu-button" class="user-chip" type="button" aria-expanded="false" aria-haspopup="menu">
+        <span class="user-chip-name">Minha conta</span>
+        <span class="user-chip-caret" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="currentColor"/></svg>
+        </span>
+      </button>
+      <div id="user-menu" class="user-menu" hidden>
+        <div class="user-menu-header">
+          <span class="user-menu-avatar" aria-hidden="true">♡</span>
+          <div class="user-menu-header-copy">
+            <strong>Sua conta</strong>
+            <span>Acesso rápido</span>
+          </div>
+        </div>
+        <a class="menu-item menu-item-primary" href="./create-event.html">
+          <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z" fill="currentColor"/></svg></span>
+          <span>Novo evento</span>
+        </a>
+        <div class="menu-divider"></div>
+        <span class="menu-group">Gerenciamento</span>
+        <a class="menu-item" href="./my-events.html">
+          <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v3H5V4zm0 6h14v3H5v-3zm0 6h14v3H5v-3z" fill="currentColor"/></svg></span>
+          <span>Meus eventos</span>
+        </a>
+        <a class="menu-item" href="./my-guests.html">
+          <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 2.2-6 5v1h12v-1c0-2.8-2.7-5-6-5zm8-2a3 3 0 1 0-2.2-5 6 6 0 0 1 .4 2c0 1.2-.3 2.3-.9 3.2.8.5 1.7.8 2.7.8zm1 2c-.8 0-1.6.1-2.3.4 1.4 1.1 2.3 2.8 2.3 4.6v1h4v-1c0-2.8-1.8-5-4-5z" fill="currentColor"/></svg></span>
+          <span>Convidados</span>
+        </a>
+        <a class="menu-item" href="./my-event.html">
+          <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>
+          <span>Presentes</span>
+        </a>
+        <a class="menu-item" href="./account.html">
+          <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z" fill="currentColor"/></svg></span>
+          <span>Minha conta</span>
+        </a>
+        <button id="logout-action" class="menu-item menu-item-danger" type="button">
+          <span class="menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4-2.6-2.6H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z" fill="currentColor"/></svg></span>
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 export function formatDate(dateString) {
@@ -175,11 +228,27 @@ export function formatCurrency(value) {
 }
 
 export function setStatus(element, type, message) {
-  if (!element) return;
+  let target = element || document.getElementById("status");
 
-  element.textContent = message;
-  element.classList.remove(...STATUS_CLASSES);
-  element.classList.add(type);
+  if (!target) {
+    target = document.createElement("p");
+    target.id = "status";
+    target.className = "status status-info";
+
+    const main = document.querySelector("main");
+    const preferredContainer =
+      document.querySelector("main .card.card-pad")
+      || document.querySelector("main .card")
+      || main
+      || document.body;
+
+    preferredContainer.appendChild(target);
+  }
+
+  target.hidden = false;
+  target.textContent = message;
+  target.classList.remove(...STATUS_CLASSES);
+  target.classList.add(type);
 }
 
 export function buildPublicEventLink(slug) {
