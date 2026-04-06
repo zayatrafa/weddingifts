@@ -24,7 +24,7 @@ const token = session.token;
 const createGiftForm = document.getElementById("create-gift-form");
 const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
-const reservationsList = document.getElementById("reservations-list") || ensureReservationsPanel();
+const reservationsList = document.getElementById("reservations-list");
 const status = document.getElementById("status");
 const giftNameInput = document.getElementById("gift-name-input");
 const giftDescriptionInput = document.getElementById("gift-description-input");
@@ -397,23 +397,6 @@ function renderReservations() {
 
     reservationsList.appendChild(item);
   });
-}
-
-function ensureReservationsPanel() {
-  const parentCard = giftsList?.closest(".card");
-  if (!parentCard) return document.createElement("div");
-
-  const section = document.createElement("div");
-  section.className = "section";
-  section.id = "reservations-section";
-  section.innerHTML = `
-    <h3 class="card-title">Histórico de reservas do evento</h3>
-    <p class="card-subtitle">Veja quem reservou, quando reservou e quantas unidades seguem ativas.</p>
-    <div id="reservations-list" class="gifts-list"></div>
-  `;
-
-  parentCard.appendChild(section);
-  return section.querySelector("#reservations-list");
 }
 
 function parseCurrencyToNumber(value) {
