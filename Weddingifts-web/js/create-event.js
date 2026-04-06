@@ -1,4 +1,4 @@
-﻿import {
+import {
   authHeaders,
   clearAuthSession,
   getApiBase,
@@ -9,7 +9,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatória.");
+if (!session) throw new Error("Autentica\\u00E7\\u00E3o obrigat\\u00F3ria.");
 
 const token = session.token;
 const createEventForm = document.getElementById("create-event-form");
@@ -44,7 +44,7 @@ async function createEvent(event) {
   }
 
   if (name.length > MAX_EVENT_NAME_LENGTH) {
-    setStatus(status, "status-error", "O nome do evento deve ter no máximo 120 caracteres.");
+    setStatus(status, "status-error", "O nome do evento deve ter no m\\u00E1ximo 120 caracteres.");
     return;
   }
 
@@ -68,7 +68,7 @@ async function createEvent(event) {
     const focusEventId = encodeURIComponent(String(createdEvent.id));
     window.location.href = `./my-events.html?focusEventId=${focusEventId}`;
   } catch (error) {
-    setStatus(status, "status-error", String(error.message || "Não foi possível criar o evento."));
+    setStatus(status, "status-error", String(error.message || "N\\u00E3o foi poss\\u00EDvel criar o evento."));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = EVENT_BUTTON_DEFAULT;

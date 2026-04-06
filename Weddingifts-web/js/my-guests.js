@@ -1,4 +1,4 @@
-﻿import {
+import {
   authHeaders,
   clearAuthSession,
   getApiBase,
@@ -9,7 +9,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatória.");
+if (!session) throw new Error("Autentica\\u00E7\\u00E3o obrigat\\u00F3ria.");
 
 const MAX_GUEST_NAME_LENGTH = 120;
 const MAX_GUEST_EMAIL_LENGTH = 120;
@@ -45,7 +45,7 @@ initUserDropdown({
 createGuestForm.addEventListener("submit", submitGuestForm);
 guestCancelEditButton.addEventListener("click", () => {
   resetGuestFormMode();
-  setStatus(status, "status-info", "Edição cancelada. Você pode adicionar um novo convidado.");
+  setStatus(status, "status-info", "Edi\\u00E7\\u00E3o cancelada. Voc\\u00EA pode adicionar um novo convidado.");
 });
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
@@ -78,7 +78,7 @@ eventSelect.addEventListener("input", () => {
 guestCpfInput.addEventListener("blur", autoFillGuestByCpf);
 
 syncGuestEditUi();
-setGuestSubmitButtonLabel(state.editingGuestId !== null ? "Salvar alterações" : "Adicionar convidado", state.editingGuestId !== null ? ICON_SAVE : ICON_USER_PLUS);
+setGuestSubmitButtonLabel(state.editingGuestId !== null ? "Salvar altera\\u00E7\\u00F5es" : "Adicionar convidado", state.editingGuestId !== null ? ICON_SAVE : ICON_USER_PLUS);
 loadMyEvents();
 
 async function loadMyEvents() {
@@ -96,7 +96,7 @@ async function loadMyEvents() {
       state.guests = [];
       renderEventSelect();
       renderGuests();
-      setStatus(status, "status-info", "Você ainda não possui eventos. Crie um evento primeiro.");
+      setStatus(status, "status-info", "Voc\\u00EA ainda n\\u00E3o possui eventos. Crie um evento primeiro.");
       return;
     }
 
@@ -125,14 +125,14 @@ async function submitGuestForm(event) {
 
   clearAllFieldErrors();
   if (!eventId) return showFieldError(eventSelect, "Selecione um evento para continuar.");
-  if (!editing && !isValidCpf(cpf)) return showFieldError(guestCpfInput, "Informe um CPF válido.");
+  if (!editing && !isValidCpf(cpf)) return showFieldError(guestCpfInput, "Informe um CPF v\\u00E1lido.");
   if (!name) return showFieldError(guestNameInput, "Informe o nome do convidado.");
-  if (name.length > MAX_GUEST_NAME_LENGTH) return showFieldError(guestNameInput, "O nome do convidado deve ter no máximo 120 caracteres.");
+  if (name.length > MAX_GUEST_NAME_LENGTH) return showFieldError(guestNameInput, "O nome do convidado deve ter no m\\u00E1ximo 120 caracteres.");
   if (!isValidPersonName(name)) return showFieldError(guestNameInput, "O nome do convidado deve conter apenas letras.");
   if (!email) return showFieldError(guestEmailInput, "Informe o e-mail do convidado.");
-  if (email.length > MAX_GUEST_EMAIL_LENGTH) return showFieldError(guestEmailInput, "O e-mail do convidado deve ter no máximo 120 caracteres.");
-  if (!isValidEmail(email)) return showFieldError(guestEmailInput, "Informe um e-mail de convidado válido.");
-  if (!isValidPhone(phoneDigits)) return showFieldError(guestPhoneInput, "Informe um celular válido com 10 ou 11 dígitos.");
+  if (email.length > MAX_GUEST_EMAIL_LENGTH) return showFieldError(guestEmailInput, "O e-mail do convidado deve ter no m\\u00E1ximo 120 caracteres.");
+  if (!isValidEmail(email)) return showFieldError(guestEmailInput, "Informe um e-mail de convidado v\\u00E1lido.");
+  if (!isValidPhone(phoneDigits)) return showFieldError(guestPhoneInput, "Informe um celular v\\u00E1lido com 10 ou 11 d\\u00EDgitos.");
 
   try {
     guestSubmitButton.disabled = true;
@@ -181,7 +181,7 @@ async function submitGuestForm(event) {
   } finally {
     guestSubmitButton.disabled = false;
     setGuestSubmitButtonLabel(
-      state.editingGuestId !== null ? "Salvar alterações" : "Adicionar convidado",
+      state.editingGuestId !== null ? "Salvar altera\\u00E7\\u00F5es" : "Adicionar convidado",
       state.editingGuestId !== null ? ICON_SAVE : ICON_USER_PLUS
     );
   }
@@ -196,9 +196,9 @@ function startGuestEditMode(guest) {
   guestNameInput.value = guest.name || "";
   guestEmailInput.value = guest.email || "";
   guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
-  setGuestSubmitButtonLabel("Salvar alterações", ICON_SAVE);
+  setGuestSubmitButtonLabel("Salvar altera\\u00E7\\u00F5es", ICON_SAVE);
   syncGuestEditUi();
-  guestFormTitle.textContent = `Você está editando o convidado "${guest.name}".`;
+  guestFormTitle.textContent = `Voc\\u00EA est\\u00E1 editando o convidado "${guest.name}".`;
   guestNameInput.focus();
 }
 
@@ -241,7 +241,7 @@ async function deleteGuest(guest) {
     }
 
     await loadSelectedEventGuests();
-    setStatus(status, "status-success", "Convidado excluído com sucesso.");
+    setStatus(status, "status-success", "Convidado exclu\\u00EDdo com sucesso.");
   } catch (error) {
     setStatus(status, "status-error", `Falha ao excluir convidado: ${error.message}`);
   }
@@ -283,7 +283,7 @@ async function autoFillGuestByCpf() {
     if (!guestEmailInput.value.trim()) guestEmailInput.value = guest.email || "";
     if (!guestPhoneInput.value.trim()) guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
   } catch {
-    // Não exibe erro em lookup de preenchimento automático.
+    // N\\u00E3o exibe erro em lookup de preenchimento autom\\u00E1tico.
   }
 }
 

@@ -1,4 +1,4 @@
-﻿import {
+import {
   clearAuthSession,
   formatCurrency,
   formatDate,
@@ -54,7 +54,7 @@ if (querySlug) {
   loadEvent();
 } else {
   render();
-  setStatus(status, "status-info", "Informe o slug para carregar o evento público.");
+  setStatus(status, "status-info", "Informe o slug para carregar o evento p\\u00FAblico.");
 }
 
 function enhanceHeaderForLoggedUser(sessionData) {
@@ -66,7 +66,7 @@ function enhanceHeaderForLoggedUser(sessionData) {
 
   navRight.innerHTML = `
     <div class="shell-links">
-      <a href="./event.html" class="active">Evento público</a>
+      <a href="./event.html" class="active">Evento p\\u00FAblico</a>
     </div>
     ${getUserMenuMarkup()}
   `;
@@ -124,8 +124,8 @@ function reservedUnits(gift) {
 function badgeForGift(gift) {
   const available = availableUnits(gift);
   if (available === 0) return { label: "Reservado", className: "tag-muted" };
-  if (available === 1) return { label: "Última unidade", className: "tag-warning" };
-  return { label: "Disponível", className: "tag-ok" };
+  if (available === 1) return { label: "\\u00DAltima unidade", className: "tag-warning" };
+  return { label: "Dispon\\u00EDvel", className: "tag-ok" };
 }
 
 function filteredGifts() {
@@ -142,8 +142,8 @@ function refreshHeader() {
   const total = document.getElementById("event-total");
 
   if (!state.event) {
-    title.textContent = "Evento não carregado";
-    subtitle.textContent = "Use o slug público para buscar os dados reais no backend.";
+    title.textContent = "Evento n\\u00E3o carregado";
+    subtitle.textContent = "Use o slug p\\u00FAblico para buscar os dados reais no backend.";
     date.textContent = "--";
     slug.textContent = "--";
     total.textContent = "0 itens";
@@ -151,7 +151,7 @@ function refreshHeader() {
   }
 
   title.textContent = state.event.name;
-  subtitle.textContent = "Lista pública atualizada em tempo real via API.";
+  subtitle.textContent = "Lista p\\u00FAblica atualizada em tempo real via API.";
   date.textContent = formatDate(state.event.eventDate);
   slug.textContent = state.event.slug;
   total.textContent = `${state.gifts.length} itens`;
@@ -180,10 +180,10 @@ function renderGiftList() {
 
     giftName.textContent = gift.name;
     giftPrice.textContent = formatCurrency(gift.price);
-    giftDescription.textContent = gift.description || "Sem descrição.";
+    giftDescription.textContent = gift.description || "Sem descri\\u00E7\\u00E3o.";
     giftBadge.textContent = badge.label;
     giftBadge.classList.add("tag", badge.className);
-    giftMeta.textContent = `${available} disponíveis | ${reserved} reservados`;
+    giftMeta.textContent = `${available} dispon\\u00EDveis | ${reserved} reservados`;
 
     reserveButton.disabled = busy || available === 0;
     reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}${busy ? "Aguarde..." : "Reservar"}`;
@@ -208,7 +208,7 @@ async function loadEvent() {
   const slug = slugInput.value.trim();
 
   if (!slug) return setStatus(status, "status-error", "Informe o slug do evento.");
-  if (slug.length > MAX_SLUG_LENGTH) return setStatus(status, "status-error", "O slug deve ter no máximo 24 caracteres.");
+  if (slug.length > MAX_SLUG_LENGTH) return setStatus(status, "status-error", "O slug deve ter no m\\u00E1ximo 24 caracteres.");
 
   try {
     state.loading = true;
@@ -235,7 +235,7 @@ async function reserveGift(giftId) {
   const guestCpf = digitsOnly(guestCpfInput.value);
 
   if (guestCpf.length !== 11) {
-    showReservationError("Informe um CPF válido com 11 dígitos para reservar.");
+    showReservationError("Informe um CPF v\\u00E1lido com 11 d\\u00EDgitos para reservar.");
     return;
   }
 

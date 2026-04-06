@@ -1,8 +1,8 @@
-﻿export const DEFAULT_API_BASE = "http://localhost:5298";
+export const DEFAULT_API_BASE = "http://localhost:5298";
 const AUTH_KEY = "wg_auth_session";
 
 const STATUS_CLASSES = ["status-info", "status-success", "status-error", "status-loading"];
-const GENERIC_ERROR_MESSAGE = "Não foi possível concluir a operação. Tente novamente.";
+const GENERIC_ERROR_MESSAGE = "N\\u00E3o foi poss\\u00EDvel concluir a opera\\u00E7\\u00E3o. Tente novamente.";
 
 export function getApiBase() {
   return DEFAULT_API_BASE;
@@ -47,7 +47,7 @@ export async function requestJson(url, options = {}) {
       const currentPath = `${window.location.pathname}${window.location.search || ""}`;
       const returnTo = encodeURIComponent(currentPath);
       window.location.href = `./login.html?sessionExpired=1&returnTo=${returnTo}`;
-      throw new Error("Sua sessão expirou. Faça login novamente.");
+      throw new Error("Sua sess\\u00E3o expirou. Fa\\u00E7a login novamente.");
     }
 
     const payload = await response.text();
@@ -178,10 +178,10 @@ export function getUserMenuMarkup() {
       </button>
       <div id="user-menu" class="user-menu" hidden>
         <div class="user-menu-header">
-          <span class="user-menu-avatar" aria-hidden="true">♡</span>
+          <span class="user-menu-avatar" aria-hidden="true">\\u2661</span>
           <div class="user-menu-header-copy">
             <strong>Sua conta</strong>
-            <span>Acesso rápido</span>
+            <span>Acesso r\\u00E1pido</span>
           </div>
         </div>
         <a class="menu-item menu-item-primary" href="./create-event.html">

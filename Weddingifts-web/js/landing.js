@@ -1,4 +1,4 @@
-﻿import { clearAuthSession, getAuthSession, getUserMenuMarkup, initUserDropdown } from "./common.js";
+import { clearAuthSession, getAuthSession, getUserMenuMarkup, initUserDropdown } from "./common.js";
 
 const params = new URLSearchParams(window.location.search);
 const slug = params.get("slug");
@@ -26,7 +26,7 @@ function enhanceHeaderForLoggedUser() {
 
   navRight.innerHTML = `
     <div class="shell-links">
-      <a href="./event.html">Evento público</a>
+      <a href="./event.html">Evento p\\u00FAblico</a>
     </div>
     ${getUserMenuMarkup()}
   `;

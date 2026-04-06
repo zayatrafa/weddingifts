@@ -1,4 +1,4 @@
-﻿import {
+import {
   clearAuthSession,
   formatDateTime,
   initUserDropdown,
@@ -7,7 +7,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatória.");
+if (!session) throw new Error("Autentica\\u00E7\\u00E3o obrigat\\u00F3ria.");
 
 const accountData = document.getElementById("account-data");
 const form = document.getElementById("change-password-form");
@@ -35,11 +35,11 @@ form.addEventListener("submit", (event) => {
   }
 
   if (newPassword !== confirmPassword) {
-    setStatus(status, "status-error", "A confirmação de senha não confere.");
+    setStatus(status, "status-error", "A confirma\\u00E7\\u00E3o de senha n\\u00E3o confere.");
     return;
   }
 
-  setStatus(status, "status-info", "Alteração de senha ainda não está disponível no backend. A interface já está preparada.");
+  setStatus(status, "status-info", "Altera\\u00E7\\u00E3o de senha ainda n\\u00E3o est\\u00E1 dispon\\u00EDvel no backend. A interface j\\u00E1 est\\u00E1 preparada.");
 });
 
 function renderAccount() {

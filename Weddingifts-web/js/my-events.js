@@ -1,4 +1,4 @@
-﻿import {
+import {
   authHeaders,
   buildPublicEventLink,
   clearAuthSession,
@@ -11,7 +11,7 @@
 } from "./common.js";
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatória.");
+if (!session) throw new Error("Autentica\\u00E7\\u00E3o obrigat\\u00F3ria.");
 
 const token = session.token;
 const refreshEventsButton = document.getElementById("refresh-events-button");
@@ -61,7 +61,7 @@ async function loadMyEvents() {
       setStatus(
         status,
         state.events.length ? "status-success" : "status-info",
-        state.events.length ? "Eventos carregados com sucesso." : "Você ainda não possui eventos."
+        state.events.length ? "Eventos carregados com sucesso." : "Voc\\u00EA ainda n\\u00E3o possui eventos."
       );
     }
   } catch (error) {
@@ -95,20 +95,20 @@ function renderEvents() {
           <h3 class="event-title">${escapeHtml(eventData.name)}</h3>
           <span class="tag tag-ok my-event-status">Publicado</span>
         </div>
-        <div class="my-event-quick-actions" aria-label="Ações rápidas do evento">
+        <div class="my-event-quick-actions" aria-label="A\\u00E7\\u00F5es r\\u00E1pidas do evento">
           <button class="icon-button" type="button" title="Editar evento" aria-label="Editar evento" data-action="edit">${ICON_EDIT}</button>
-          <button class="icon-button" type="button" title="Copiar link público" aria-label="Copiar link público" data-action="copy">${ICON_SHARE}</button>
+          <button class="icon-button" type="button" title="Copiar link p\\u00FAblico" aria-label="Copiar link p\\u00FAblico" data-action="copy">${ICON_SHARE}</button>
           <button class="icon-button danger event-delete" type="button" title="Excluir evento" aria-label="Excluir evento" data-action="delete">${ICON_TRASH}</button>
         </div>
       </div>
 
       <p class="my-event-date">Data do evento: <strong>${formatDate(eventData.eventDate)}</strong></p>
-      <p class="my-event-meta">Slug: <span>${escapeHtml(eventData.slug)}</span> · ${giftCount} presente(s) · ${guestCount} convidado(s)</p>
+      <p class="my-event-meta">Slug: <span>${escapeHtml(eventData.slug)}</span> \\u00B7 ${giftCount} presente(s) \\u00B7 ${guestCount} convidado(s)</p>
 
-      <div class="my-event-primary-actions" aria-label="Ações principais do evento">
+      <div class="my-event-primary-actions" aria-label="A\\u00E7\\u00F5es principais do evento">
         <button class="btn btn-secondary btn-main-action with-icon" type="button" data-action="manage-guests">${ICON_GUESTS}Convidados</button>
         <button class="btn btn-primary btn-main-action with-icon" type="button" data-action="manage">${ICON_GIFT}Presentes</button>
-        <button class="btn btn-secondary btn-main-action with-icon" type="button" data-action="manage-reservations">${ICON_HISTORY}Histórico de reservas</button>
+        <button class="btn btn-secondary btn-main-action with-icon" type="button" data-action="manage-reservations">${ICON_HISTORY}Hist\\u00F3rico de reservas</button>
       </div>
 
       <form class="event-edit-form my-event-edit-form" data-edit-form hidden>
@@ -121,7 +121,7 @@ function renderEvents() {
           <input class="input" type="date" name="eventDate" min="${minEventDate}" value="${toInputDate(eventData.eventDate)}" required />
         </div>
         <div class="row row-tight fit-content">
-          <button class="btn btn-primary" type="submit">Salvar alterações</button>
+          <button class="btn btn-primary" type="submit">Salvar altera\\u00E7\\u00F5es</button>
           <button class="btn btn-secondary" type="button" data-action="cancel-edit">Cancelar</button>
         </div>
       </form>
@@ -134,7 +134,7 @@ function renderEvents() {
       try {
         const link = buildPublicEventLink(eventData.slug);
         await copyToClipboard(link);
-        setStatus(status, "status-success", `Link público copiado: ${link}`);
+        setStatus(status, "status-success", `Link p\\u00FAblico copiado: ${link}`);
       } catch (error) {
         setStatus(status, "status-error", `Falha ao copiar link: ${error.message}`);
       }
@@ -157,8 +157,8 @@ function renderEvents() {
       editForm.hidden = nextStateHidden;
       editButton.classList.toggle("is-active", !nextStateHidden);
       editButton.setAttribute("aria-pressed", String(!nextStateHidden));
-      editButton.setAttribute("aria-label", nextStateHidden ? "Editar evento" : "Fechar edição");
-      editButton.setAttribute("title", nextStateHidden ? "Editar evento" : "Fechar edição");
+      editButton.setAttribute("aria-label", nextStateHidden ? "Editar evento" : "Fechar edi\\u00E7\\u00E3o");
+      editButton.setAttribute("title", nextStateHidden ? "Editar evento" : "Fechar edi\\u00E7\\u00E3o");
     });
 
     item.querySelector('[data-action="cancel-edit"]').addEventListener("click", () => {
@@ -185,7 +185,7 @@ function renderEvents() {
       }
 
       if (name.length > MAX_EVENT_NAME_LENGTH) {
-        setStatus(status, "status-error", "O nome do evento deve ter no máximo 120 caracteres.");
+        setStatus(status, "status-error", "O nome do evento deve ter no m\\u00E1ximo 120 caracteres.");
         return;
       }
 
@@ -209,10 +209,10 @@ function renderEvents() {
         setStatus(status, "status-success", "Evento atualizado com sucesso.");
         await loadMyEvents();
       } catch (error) {
-        setStatus(status, "status-error", String(error.message || "Não foi possível atualizar o evento."));
+        setStatus(status, "status-error", String(error.message || "N\\u00E3o foi poss\\u00EDvel atualizar o evento."));
       } finally {
         submitButton.disabled = false;
-        submitButton.textContent = "Salvar alterações";
+        submitButton.textContent = "Salvar altera\\u00E7\\u00F5es";
       }
     });
 
@@ -229,10 +229,10 @@ function renderEvents() {
           headers: authHeaders(token)
         });
 
-        setStatus(status, "status-success", "Evento excluído com sucesso.");
+        setStatus(status, "status-success", "Evento exclu\\u00EDdo com sucesso.");
         await loadMyEvents();
       } catch (error) {
-        setStatus(status, "status-error", String(error.message || "Não foi possível excluir o evento."));
+        setStatus(status, "status-error", String(error.message || "N\\u00E3o foi poss\\u00EDvel excluir o evento."));
       }
     });
 
