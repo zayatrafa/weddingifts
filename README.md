@@ -1,25 +1,34 @@
-# Weddingifts
+﻿# Weddingifts
 
-Weddingifts é uma aplicação para criação e gerenciamento de listas de presentes de casamento.
+Weddingifts e um MVP real de lista de presentes para casamento, construído com foco em **produto utilizavel**, **qualidade de engenharia** e **evolucao para SaaS**.
 
-O projeto foi construído para:
-- aprendizado técnico com práticas modernas
-- portfólio profissional
-- evolução futura para produto SaaS
-- entrega de um MVP publicável
+Este repositorio foi estruturado para mostrar um perfil que entrega ponta a ponta:
+- transforma regra de negocio em software funcionando
+- escreve backend limpo, testavel e seguro
+- constroi frontend funcional sem depender de framework
+- pensa em operacao, evolucao e experiencia do usuario
 
-## Visão geral do fluxo
+## O Que Este Projeto Prova
 
-Fluxo principal atual:
-- casal cria conta
-- casal faz login
-- casal cria eventos
-- casal gerencia convidados por evento
-- casal gerencia presentes por evento
-- convidados acessam página pública por `slug`
-- convidados reservam e cancelam presentes com CPF
+- Arquitetura em camadas bem definida (`Controllers -> Services -> DbContext`)
+- Regras de negocio consistentes no backend (nao espalhadas no controller)
+- API com padrao de erro (`ProblemDetails`) e contrato previsivel
+- Seguranca aplicada na pratica (JWT, rate limit, security headers, CORS controlado)
+- Integracao backend + frontend com fluxos completos de usuario
+- Testes de integracao para proteger comportamento critico
+- CI em GitHub Actions com `restore`, `build` e `test`
 
-## Stack
+## Fluxo De Produto Entregue (MVP)
+
+1. casal cria conta
+2. casal faz login
+3. casal cria e gerencia eventos
+4. casal gerencia convidados por evento
+5. casal gerencia presentes por evento
+6. convidado acessa pagina publica por `slug`
+7. convidado reserva e cancela presente com CPF
+
+## Stack Tecnica
 
 Backend:
 - .NET 8
@@ -33,70 +42,40 @@ Frontend:
 - sem framework
 - sem build step
 
-Qualidade e entrega:
-- testes de integração (`Weddingifts.Api.IntegrationTests`)
-- CI no GitHub Actions (`restore`, `build`, `test`)
+Qualidade:
+- testes de integracao (`Weddingifts.Api.IntegrationTests`)
+- GitHub Actions (pipeline automatizada)
 
-## Funcionalidades implementadas
+## Regras De Negocio Relevantes
 
-Autenticação e usuário:
-- cadastro de usuário com `name`, `email`, `password`, `cpf`, `birthDate`
-- CPF obrigatório e único
-- `birthDate` obrigatório e não pode ser futura
-- login com JWT
+Usuarios:
+- `cpf` obrigatorio e unico
+- `birthDate` obrigatorio e nao pode ser futura
 
 Eventos:
-- criação de evento autenticado
-- listagem de eventos do usuário logado
-- atualização de evento do usuário logado
-- exclusão de evento do usuário logado
-- recuperação pública de evento por `slug`
+- nome obrigatorio
+- data obrigatoria
+- `slug` unico gerado automaticamente
+- edicao/exclusao apenas pelo dono autenticado
 
 Presentes:
-- criação, listagem, edição e exclusão por evento
-- validações de preço e quantidade no frontend e backend
-- reserva/cancelamento de presente
+- `price > 0` e `price < 1000000`
+- `quantity >= 1` e `quantity <= 100000`
+- reserva bloqueada quando indisponivel
 
 Convidados:
-- criação, listagem, edição e exclusão por evento
-- busca por CPF dentro do evento
-- validação de CPF, nome, e-mail e telefone
+- CPF com 11 digitos
+- CPF unico por evento
+- nome, email e telefone obrigatorios
 
-Reserva pública:
-- reserva exige CPF válido
-- CPF precisa estar na lista de convidados do evento
+Reservas:
+- exige CPF valido
+- CPF precisa estar cadastrado no evento
 - controle de `ReservedQuantity`, `ReservedBy` e `ReservedAt`
-
-## Regras de negócio principais
-
-Evento:
-- nome obrigatório
-- data obrigatória e futura
-- `slug` único
-- editar/excluir apenas pelo dono autenticado
-
-Presente:
-- `price > 0`
-- `price < 1000000`
-- `quantity >= 1`
-- `quantity <= 100000`
-- `name` e `description` limitados a 255 caracteres
-
-Convidado:
-- CPF com 11 dígitos
-- CPF único por evento
-- nome, e-mail e telefone obrigatórios
 
 ## Arquitetura
 
-Backend em camadas:
-- `Controllers` -> HTTP, autenticação/autorização, DTOs e respostas
-- `Services` -> regras de negócio e validações
-- `Data` (`AppDbContext`) -> persistência com EF Core
-- `Entities` -> mapeamento de dados
-- `Models` -> contratos de request/response
-
-Estrutura principal:
+Pastas principais:
 - `Weddingifts.Api/Controllers`
 - `Weddingifts.Api/Services`
 - `Weddingifts.Api/Entities`
@@ -107,58 +86,39 @@ Estrutura principal:
 - `Weddingifts.Api/Migrations`
 - `Weddingifts-web`
 
-## Segurança e API
+Principio usado no backend:
+- controller enxuto para HTTP
+- service como dono da regra de negocio
+- persistencia isolada no EF Core
 
-- autenticação JWT em rotas privadas
-- middleware global de exceções com `ProblemDetails`
-- validações com mensagens em PT-BR no frontend
-- CORS liberado para `http://localhost:5500` e `http://127.0.0.1:5500`
-- rate limiting global e regras mais restritas para login e criação de usuário
-- migrations aplicadas automaticamente ao iniciar a API
+## Seguranca E Confiabilidade
 
-## Pré-requisitos
+- autenticacao JWT nas rotas privadas
+- `ProblemDetails` padronizado para erros
+- rate limiting global e reforcado em rotas sensiveis
+- headers de seguranca (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, `CORP`, `CSP`, `HSTS` em HTTPS)
+- migrations aplicadas automaticamente no startup
 
-- .NET SDK 8
-- PostgreSQL local (ou outro ambiente PostgreSQL acessível)
-- Python 3 (para servidor estático do frontend)
-- Windows PowerShell (scripts utilitários do projeto)
+## Como Rodar
 
-## Configuração
-
-String de conexão padrão (desenvolvimento local) em `Weddingifts.Api/appsettings.json`:
-
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Port=5432;Database=weddingifts;Username=admin;Password=admin123"
-}
-```
-
-Se necessário, ajuste a conexão conforme seu ambiente.
-
-## Como executar localmente
-
-Opção recomendada:
+Opcao recomendada:
 
 ```powershell
 .\run.bat
 ```
 
-Alternativa com script PowerShell:
+Opcao alternativa:
 
 ```powershell
 .\start-dev.ps1
 ```
 
-Execução manual:
-
-Backend:
+Manual:
 
 ```powershell
 cd Weddingifts.Api
 dotnet run
 ```
-
-Frontend:
 
 ```powershell
 cd Weddingifts-web
@@ -168,7 +128,7 @@ py -m http.server 5500
 URLs:
 - Frontend: `http://localhost:5500`
 - API: `http://localhost:5298`
-- Swagger (desenvolvimento): `http://localhost:5298/swagger`
+- Swagger: `http://localhost:5298/swagger`
 
 ## Testes
 
@@ -177,37 +137,30 @@ dotnet restore Weddingifts.Api/Weddingifts.Api.sln --configfile Weddingifts.Api/
 dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
 ```
 
-## Frontend e telas principais
+Checklist mobile:
+- [docs/MOBILE_TEST_CHECKLIST.md](docs/MOBILE_TEST_CHECKLIST.md)
 
-- `index.html` (landing)
-- `register.html` (cadastro)
-- `login.html` (login)
-- `create-event.html` (criação de evento)
-- `my-events.html` (gerenciamento de eventos)
-- `my-guests.html` (gerenciamento de convidados)
-- `my-event.html` (gerenciamento de presentes)
-- `event.html` (evento público)
-- `account.html` (minha conta)
+## Diferenciais Profissionais Evidenciados
 
-## Status do produto
+- capacidade de levar produto do zero ate MVP funcional
+- dominio de regras de negocio com foco em consistencia
+- preocupacao real com seguranca e operacao
+- boa separacao de responsabilidades e manutencao futura
+- visao de produto, nao apenas de codigo
 
-Situação atual:
+## Status Atual
+
 - MVP funcional implementado
-- projeto em pré-produção
-- foco em estabilização para MVP publicável
+- pre-producao em andamento
+- foco atual em estabilizacao para publicacao
 
-Focos imediatos para publicação:
-- acabamento de UX e consistência de validações/mensagens
-- segurança operacional complementar
-- setup de deploy, observabilidade e backup
+## Contato
 
-## Próximos passos sugeridos
+Se voce representa empresa ou time tecnico e quer conversar sobre backend, produto e engenharia com ownership de ponta a ponta, estou aberto a oportunidades.
 
-1. Sprint de estabilização do MVP publicável (UX, validações, i18n PT-BR, limites)
-2. Sprint de produção mínima (deploy, domínio, HTTPS, banco gerenciado, secrets, logs)
-3. Go-live controlado com poucos usuários e ciclo curto de feedback
-4. Pós-MVP: confirmação real por e-mail e convites por e-mail/WhatsApp
+- LinkedIn: **adicione seu link aqui**
+- Email: **adicione seu email aqui**
 
-## Licença
+## Licenca
 
-Este projeto está em desenvolvimento ativo para fins de aprendizado, portfólio e evolução de produto.
+Projeto em desenvolvimento ativo para aprendizado, portfolio e evolucao de produto.

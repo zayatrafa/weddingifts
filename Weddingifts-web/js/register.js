@@ -8,8 +8,12 @@ const form = document.getElementById("register-form");
 const status = ensureStatusElement();
 const submitButton = document.getElementById("submit-button");
 const cpfInput = document.getElementById("cpf-input");
+const birthDateInput = document.getElementById("birth-date-input");
 const REGISTER_BUTTON_DEFAULT = `${accountPlusIcon()}Criar conta`;
 const REGISTER_BUTTON_LOADING = `${spinnerIcon()}Cadastrando...`;
+const MAX_NAME_LENGTH = 120;
+
+birthDateInput.max = todayDateIso();
 
 cpfInput.addEventListener("input", () => {
   cpfInput.value = formatCpfInput(cpfInput.value);
@@ -21,7 +25,7 @@ form.addEventListener("submit", async (event) => {
   const name = document.getElementById("name-input").value.trim();
   const email = document.getElementById("email-input").value.trim();
   const cpf = digitsOnly(cpfInput.value);
-  const birthDate = document.getElementById("birth-date-input").value;
+  const birthDate = birthDateInput.value;
   const password = document.getElementById("password-input").value;
   const confirmPassword = document.getElementById("confirm-password-input").value;
   const apiBase = getApiBase();
@@ -33,6 +37,11 @@ form.addEventListener("submit", async (event) => {
 
   if (!isValidPersonName(name)) {
     setStatus(status, "status-error", "O nome deve conter apenas letras.");
+    return;
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    setStatus(status, "status-error", "O nome deve ter no máximo 120 caracteres.");
     return;
   }
 
@@ -61,6 +70,11 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!isValidBirthDate(birthDate)) {
+    setStatus(status, "status-error", "Informe uma data de nascimento válida no formato AAAA-MM-DD.");
+    return;
+  }
+
   try {
     submitButton.disabled = true;
     submitButton.innerHTML = REGISTER_BUTTON_LOADING;
@@ -73,7 +87,7 @@ form.addEventListener("submit", async (event) => {
 
     window.location.href = `./login.html?email=${encodeURIComponent(email)}&registered=1`;
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao cadastrar usuário: ${error.message}`);
+    setStatus(status, "status-error", String(error.message || "Não foi possível concluir seu cadastro."));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = REGISTER_BUTTON_DEFAULT;
@@ -126,6 +140,40 @@ function isValidPersonName(name) {
 
 function isStrongPassword(password) {
   return /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(String(password || ""));
+}
+
+function isValidBirthDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) return false;
+
+  const [year, month, day] = value.split("-").map(Number);
+  if (
+    parsedDate.getFullYear() !== year
+    || parsedDate.getMonth() + 1 !== month
+    || parsedDate.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return parsedDate <= today;
+}
+
+function todayDateIso() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return toLocalDateIso(today);
+}
+
+function toLocalDateIso(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function accountPlusIcon() {

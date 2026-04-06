@@ -94,7 +94,13 @@ py -m http.server 5500
 - feedback visual para loading/sucesso/erro
 - mensagens de erro exibem `ProblemDetails.detail` quando disponível
 - layout responsivo desktop/mobile
+- rodapé global em todas as páginas com links úteis e suporte
+- paleta visual em tons terrosos/sálvia com foco em contexto de casamento
 
 ## Observação importante
 
 Se aparecer erro `501 Unsupported method ('POST')` no browser, normalmente a API não está rodando e apenas o servidor estático foi iniciado. Garanta que o backend esteja ativo em `http://localhost:5298`.
+
+## Testes mobile recomendados
+
+Use o checklist em `../docs/MOBILE_TEST_CHECKLIST.md` para validar os fluxos principais antes do go-live de testes.

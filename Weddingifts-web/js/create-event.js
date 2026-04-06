@@ -17,6 +17,7 @@ const status = document.getElementById("status");
 const eventDateInput = document.getElementById("event-date-input");
 const EVENT_BUTTON_DEFAULT = `${calendarPlusIcon()}Criar evento`;
 const EVENT_BUTTON_LOADING = `${spinnerIcon()}Criando...`;
+const MAX_EVENT_NAME_LENGTH = 120;
 
 eventDateInput.min = tomorrowDateIso();
 
@@ -42,6 +43,11 @@ async function createEvent(event) {
     return;
   }
 
+  if (name.length > MAX_EVENT_NAME_LENGTH) {
+    setStatus(status, "status-error", "O nome do evento deve ter no máximo 120 caracteres.");
+    return;
+  }
+
   if (!isFutureDate(eventDate)) {
     setStatus(status, "status-error", "A data do evento deve ser futura.");
     return;
@@ -62,7 +68,7 @@ async function createEvent(event) {
     const focusEventId = encodeURIComponent(String(createdEvent.id));
     window.location.href = `./my-events.html?focusEventId=${focusEventId}`;
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao criar evento: ${error.message}`);
+    setStatus(status, "status-error", String(error.message || "Não foi possível criar o evento."));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = EVENT_BUTTON_DEFAULT;
@@ -73,12 +79,23 @@ function tomorrowDateIso() {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() + 1);
-  return date.toISOString().slice(0, 10);
+  return toLocalDateIso(date);
 }
 
 function isFutureDate(dateValue) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return false;
+
   const selectedDate = new Date(`${dateValue}T00:00:00`);
   if (Number.isNaN(selectedDate.getTime())) return false;
+
+  const [year, month, day] = dateValue.split("-").map(Number);
+  if (
+    selectedDate.getFullYear() !== year
+    || selectedDate.getMonth() + 1 !== month
+    || selectedDate.getDate() !== day
+  ) {
+    return false;
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -91,4 +108,11 @@ function calendarPlusIcon() {
 
 function spinnerIcon() {
   return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
+}
+
+function toLocalDateIso(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

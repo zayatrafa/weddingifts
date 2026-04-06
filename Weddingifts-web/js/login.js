@@ -14,14 +14,21 @@ const submitButton = document.getElementById("submit-button");
 const LOGIN_BUTTON_DEFAULT = `${loginIcon()}Entrar`;
 const LOGIN_BUTTON_LOADING = `${spinnerIcon()}Entrando...`;
 
+const params = new URLSearchParams(window.location.search);
+const returnTo = params.get("returnTo");
+
 const session = getAuthSession();
 if (session?.token) {
-  window.location.replace("./create-event.html");
+  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+    window.location.replace(returnTo);
+  } else {
+    window.location.replace("./create-event.html");
+  }
 }
 
-const params = new URLSearchParams(window.location.search);
 const prefilledEmail = params.get("email");
 const fromRegistration = params.get("registered") === "1";
+const fromExpiredSession = params.get("sessionExpired") === "1";
 
 if (prefilledEmail) {
   emailInput.value = prefilledEmail;
@@ -33,6 +40,10 @@ if (fromRegistration) {
     "status-info",
     "Cadastro concluído. Você recebeu um e-mail para validar sua conta. Em breve essa validação estará ativa no sistema."
   );
+}
+
+if (fromExpiredSession) {
+  setStatus(status, "status-info", "Sua sessão expirou. Faça login novamente para continuar.");
 }
 
 form.addEventListener("submit", async (event) => {
@@ -54,6 +65,7 @@ form.addEventListener("submit", async (event) => {
 
     const login = await requestJson(`${apiBase}/api/auth/login`, {
       method: "POST",
+      skipAuthRedirect: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
@@ -69,7 +81,12 @@ form.addEventListener("submit", async (event) => {
     }, 420);
   } catch (error) {
     const backendMessage = String(error.message || "");
-    setStatus(status, "status-error", backendMessage || "Não foi possível entrar. Tente novamente.");
+    const invalidCredentialsMessage = "E-mail ou senha inválidos.";
+    const message = backendMessage === invalidCredentialsMessage
+      ? `⚠️ ${invalidCredentialsMessage}`
+      : (backendMessage || "Não foi possível entrar. Tente novamente.");
+
+    setStatus(status, "status-error", message);
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = LOGIN_BUTTON_DEFAULT;
@@ -77,6 +94,10 @@ form.addEventListener("submit", async (event) => {
 });
 
 async function resolvePostLoginRedirect(apiBase, token) {
+  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+    return returnTo;
+  }
+
   if (!token) return "./create-event.html";
 
   try {

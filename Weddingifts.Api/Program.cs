@@ -32,8 +32,13 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         var firstErrorMessage = firstError.Value?.Errors.FirstOrDefault()?.ErrorMessage ?? string.Empty;
         var normalizedField = NormalizeFieldName(rawField, firstErrorMessage);
         var displayField = GetDisplayFieldName(normalizedField);
+        var hasJsonConversionError = firstErrorMessage.Contains("could not be converted", StringComparison.OrdinalIgnoreCase);
 
-        var detail = string.IsNullOrWhiteSpace(displayField)
+        var detail = hasJsonConversionError && IsDateField(normalizedField)
+            ? $"Não foi possível validar o campo '{displayField}'. Use o formato de data AAAA-MM-DD."
+            : hasJsonConversionError && normalizedField.Equals("request", StringComparison.OrdinalIgnoreCase)
+            ? "Não foi possível validar os dados enviados. Verifique os campos de data e use o formato AAAA-MM-DD."
+            : string.IsNullOrWhiteSpace(displayField)
             ? "Não foi possível validar os dados enviados."
             : $"Não foi possível validar o campo '{displayField}'.";
 
@@ -78,7 +83,9 @@ if (!builder.Environment.IsEnvironment("Testing"))
             var path = httpContext.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
 
             var isSensitivePath = path.Contains("/api/auth/login")
-                || (path == "/api/users" && httpContext.Request.Method == HttpMethods.Post);
+                || (path == "/api/users" && httpContext.Request.Method == HttpMethods.Post)
+                || (path.Contains("/api/gifts/") && path.EndsWith("/reserve"))
+                || (path.Contains("/api/gifts/") && path.EndsWith("/unreserve"));
 
             if (isSensitivePath)
             {
@@ -123,6 +130,12 @@ static string NormalizeFieldName(string rawField, string errorMessage)
         field = field.Split('.').Last();
 
     return string.IsNullOrWhiteSpace(field) ? InferFieldFromErrorMessage(errorMessage) : field;
+}
+
+static bool IsDateField(string normalizedField)
+{
+    return normalizedField.Equals("birthDate", StringComparison.OrdinalIgnoreCase)
+        || normalizedField.Equals("eventDate", StringComparison.OrdinalIgnoreCase);
 }
 
 static string InferFieldFromErrorMessage(string errorMessage)

@@ -221,6 +221,109 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
         Assert.Equal(expectedDetail, payload.Detail);
     }
 
+    [Fact]
+    public async Task UpdateGift_ShouldReturnBadRequest_WhenTryingToChangeLockedFieldsWithActiveReservation()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 3);
+        const string guestCpf = "52998224725";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
+
+        var response = await PutAuthorizedJsonAsync($"/api/events/{eventId}/gifts/{giftId}", new
+        {
+            name = "Jogo de pratos premium",
+            description = "Descricao alterada",
+            price = 359.90m,
+            quantity = 3
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Este presente possui reservas ativas. Nome, descrição e preço não podem ser alterados.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task UpdateGift_ShouldReturnOk_WhenOnlyIncreasingQuantityWithActiveReservation()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 2);
+        const string guestCpf = "52998224725";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
+
+        var response = await PutAuthorizedJsonAsync($"/api/events/{eventId}/gifts/{giftId}", new
+        {
+            name = "Jogo de pratos",
+            description = "6 pecas",
+            price = 299.90m,
+            quantity = 4
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<GiftResponseContract>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(giftId, payload.Id);
+    }
+
+    [Fact]
+    public async Task DeleteGift_ShouldReturnBadRequest_WhenGiftHasActiveReservation()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
+        const string guestCpf = "52998224725";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
+
+        var response = await DeleteAuthorizedAsync($"/api/events/{eventId}/gifts/{giftId}", session.Token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Não é possível excluir um presente com reservas ativas.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task DeleteEvent_ShouldReturnBadRequest_WhenEventHasActiveReservations()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventId = await CreateEventAsync(session.Token);
+        var giftId = await CreateGiftAsync(session.Token, eventId, quantity: 1);
+        const string guestCpf = "52998224725";
+
+        await CreateGuestAsync(session.Token, eventId, guestCpf);
+        await _client.PostAsJsonAsync($"/api/gifts/{giftId}/reserve", new { guestCpf });
+
+        var response = await DeleteAuthorizedAsync($"/api/events/{eventId}", session.Token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Não é possível excluir o evento com reservas ativas. Cancele as reservas primeiro.", payload.Detail);
+    }
+
     private async Task<int> CreateGiftAsync(string token, int eventId, int quantity)
     {
         var response = await PostAuthorizedJsonAsync($"/api/events/{eventId}/gifts", new
@@ -345,6 +448,24 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
             Content = JsonContent.Create(body)
         };
 
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _client.SendAsync(request);
+    }
+
+    private async Task<HttpResponseMessage> PutAuthorizedJsonAsync(string url, object body, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        {
+            Content = JsonContent.Create(body)
+        };
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await _client.SendAsync(request);
+    }
+
+    private async Task<HttpResponseMessage> DeleteAuthorizedAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await _client.SendAsync(request);
     }

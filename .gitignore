@@ -18,3 +18,15 @@ node_modules/
 # OS
 Thumbs.db
 .DS_Store
+
+# Codex / IA (nao versionar)
+.codex/
+.codex_tmp*/
+.cursor/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+COPILOT.md
+cursor.md
+*.ai.md
+

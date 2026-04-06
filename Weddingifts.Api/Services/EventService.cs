@@ -99,6 +99,15 @@ public class EventService
         if (ev is null)
             throw new ResourceNotFoundException("Evento não encontrado.");
 
+        var hasActiveReservations = await _context.GiftReservations
+            .AnyAsync(r => r.EventId == eventId && r.ReservedQuantity > r.UnreservedQuantity);
+
+        if (hasActiveReservations)
+        {
+            throw new DomainValidationException(
+                "Não é possível excluir o evento com reservas ativas. Cancele as reservas primeiro.");
+        }
+
         _context.Events.Remove(ev);
         await _context.SaveChangesAsync();
     }

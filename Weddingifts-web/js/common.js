@@ -37,9 +37,19 @@ export function extractErrorMessage(raw) {
 }
 
 export async function requestJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const { skipAuthRedirect = false, ...fetchOptions } = options;
+  const response = await fetch(url, fetchOptions);
 
   if (!response.ok) {
+    if (!skipAuthRedirect && (response.status === 401 || response.status === 403) && getAuthSession()) {
+      clearAuthSession();
+
+      const currentPath = `${window.location.pathname}${window.location.search || ""}`;
+      const returnTo = encodeURIComponent(currentPath);
+      window.location.href = `./login.html?sessionExpired=1&returnTo=${returnTo}`;
+      throw new Error("Sua sessão expirou. Faça login novamente.");
+    }
+
     const payload = await response.text();
     throw new Error(extractErrorMessage(payload));
   }
@@ -81,6 +91,11 @@ export function getAuthSession() {
 
     if (!token) return null;
 
+    if (isExpired(expiresAt)) {
+      clearAuthSession();
+      return null;
+    }
+
     return { token, user, expiresAt };
   } catch {
     return null;
@@ -92,9 +107,13 @@ export function clearAuthSession() {
 }
 
 export function requireAuth() {
+  const hadPreviousSession = !!localStorage.getItem(AUTH_KEY);
   const session = getAuthSession();
   if (!session) {
-    window.location.href = "./login.html";
+    const currentPath = `${window.location.pathname}${window.location.search || ""}`;
+    const returnTo = encodeURIComponent(currentPath);
+    const sessionFlag = hadPreviousSession ? "sessionExpired=1&" : "";
+    window.location.href = `./login.html?${sessionFlag}returnTo=${returnTo}`;
     return null;
   }
 
@@ -254,4 +273,13 @@ export function setStatus(element, type, message) {
 export function buildPublicEventLink(slug) {
   const base = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "")}`;
   return `${base}event.html?slug=${encodeURIComponent(slug)}`;
+}
+
+function isExpired(expiresAt) {
+  if (!expiresAt) return false;
+
+  const parsed = new Date(expiresAt);
+  if (Number.isNaN(parsed.getTime())) return false;
+
+  return parsed.getTime() <= Date.now();
 }

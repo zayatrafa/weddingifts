@@ -1,7 +1,8 @@
-import {
+﻿import {
   authHeaders,
   clearAuthSession,
   formatCurrency,
+  formatDateTime,
   getApiBase,
   initUserDropdown,
   requestJson,
@@ -17,12 +18,13 @@ const MAX_GIFT_NAME_LENGTH = 255;
 const MAX_GIFT_DESCRIPTION_LENGTH = 120;
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatória.");
+if (!session) throw new Error("Autenticação obrigatÃ³ria.");
 
 const token = session.token;
 const createGiftForm = document.getElementById("create-gift-form");
 const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
+const reservationsList = document.getElementById("reservations-list") || ensureReservationsPanel();
 const status = document.getElementById("status");
 const giftNameInput = document.getElementById("gift-name-input");
 const giftDescriptionInput = document.getElementById("gift-description-input");
@@ -38,7 +40,7 @@ const ICON_EDIT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 2
 
 createGiftForm.noValidate = true;
 
-const state = { events: [], selectedEventId: null, gifts: [], editingGiftId: null };
+const state = { events: [], selectedEventId: null, gifts: [], reservations: [], editingGiftId: null };
 
 initUserDropdown({
   session,
@@ -56,7 +58,7 @@ giftCancelEditButton.addEventListener("click", () => {
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
   resetGiftFormMode({ silent: true });
-  await loadSelectedEventGifts();
+  await reloadSelectedEventData();
 });
 
 giftPriceInput.addEventListener("input", () => {
@@ -96,9 +98,11 @@ async function loadMyEvents() {
     if (!state.events.length) {
       state.selectedEventId = null;
       state.gifts = [];
+      state.reservations = [];
       renderGiftSelect();
       renderGifts();
-      setStatus(status, "status-info", "Você ainda não possui eventos. Crie um evento primeiro.");
+      renderReservations();
+      setStatus(status, "status-info", "Você ainda nÃ£o possui eventos. Crie um evento primeiro.");
       return;
     }
 
@@ -108,7 +112,7 @@ async function loadMyEvents() {
       : (state.events.some((event) => event.id === state.selectedEventId) ? state.selectedEventId : state.events[0].id);
 
     renderGiftSelect();
-    await loadSelectedEventGifts();
+    await reloadSelectedEventData();
     setStatus(status, "status-success", "Eventos carregados com sucesso.");
   } catch (error) {
     setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
@@ -145,7 +149,7 @@ async function submitGiftForm(event) {
   }
 
   if (quantity > MAX_GIFT_QUANTITY) {
-    return setGiftFormError("A quantidade máxima é 100.000.");
+    return setGiftFormError("A quantidade mÃ¡xima é 100.000.");
   }
 
   try {
@@ -161,7 +165,7 @@ async function submitGiftForm(event) {
         headers: authHeaders(token, true),
         body: JSON.stringify({ name, description, price, quantity })
       });
-      await loadSelectedEventGifts();
+      await reloadSelectedEventData();
       resetGiftFormMode({ silent: true });
       setGiftFormStatus("status-success", "Presente atualizado com sucesso.");
       return;
@@ -178,7 +182,7 @@ async function submitGiftForm(event) {
     giftPriceInput.value = "R$ 0,00";
     document.getElementById("gift-quantity-input").value = "1";
     eventSelect.value = String(state.selectedEventId || "");
-    await loadSelectedEventGifts();
+    await reloadSelectedEventData();
     await loadMyEvents();
     setGiftFormStatus("status-success", "Presente adicionado com sucesso.");
   } catch (error) {
@@ -202,7 +206,7 @@ function startGiftEditMode(gift) {
   document.getElementById("gift-quantity-input").value = String(gift.quantity || 1);
   setGiftSubmitButtonLabel("Salvar alterações", ICON_SAVE);
   syncGiftEditUi();
-  giftFormTitle.textContent = `Você está editando o presente "${gift.name}".`;
+  giftFormTitle.textContent = `Você estÃ¡ editando o presente "${gift.name}".`;
   document.getElementById("gift-name-input").focus();
 }
 
@@ -244,7 +248,7 @@ async function deleteGift(gift) {
       resetGiftFormMode({ silent: true });
     }
 
-    await loadSelectedEventGifts();
+    await reloadSelectedEventData();
     setGiftFormStatus("status-success", "Presente excluído com sucesso.");
   } catch (error) {
     setGiftFormError(`Falha ao excluir presente: ${error.message}`);
@@ -255,6 +259,8 @@ async function loadSelectedEventGifts() {
   if (!state.selectedEventId) {
     state.gifts = [];
     renderGifts();
+    state.reservations = [];
+    renderReservations();
     return;
   }
 
@@ -267,6 +273,31 @@ async function loadSelectedEventGifts() {
     renderGifts();
     setStatus(status, "status-error", `Falha ao carregar presentes: ${error.message}`);
   }
+}
+
+async function loadSelectedEventReservations() {
+  if (!state.selectedEventId) {
+    state.reservations = [];
+    renderReservations();
+    return;
+  }
+
+  try {
+    const apiBase = getApiBase();
+    state.reservations = await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/reservations`, {
+      headers: authHeaders(token)
+    });
+    renderReservations();
+  } catch (error) {
+    state.reservations = [];
+    renderReservations();
+    setStatus(status, "status-error", `Falha ao carregar histórico de reservas: ${error.message}`);
+  }
+}
+
+async function reloadSelectedEventData() {
+  await loadSelectedEventGifts();
+  await loadSelectedEventReservations();
 }
 
 function renderGiftSelect() {
@@ -313,7 +344,7 @@ function renderGifts() {
         </div>
         <span class="tag ${badgeClass}">${badgeText}</span>
       </div>
-      <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${gift.reservedQuantity || 0} reservados</p>
+      <p class="meta">${formatCurrency(gift.price)} | ${available} disponÃ­veis | ${gift.reservedQuantity || 0} reservados</p>
       <div class="row row-tight top-gap-sm">
         <button class="btn btn-secondary with-icon gift-edit" type="button">${ICON_EDIT}Editar presente</button>
       </div>
@@ -331,6 +362,60 @@ function renderGifts() {
   });
 }
 
+function renderReservations() {
+  if (!state.selectedEventId) {
+    reservationsList.innerHTML = '<div class="center-empty">Selecione um evento para visualizar as reservas.</div>';
+    return;
+  }
+
+  if (!state.reservations.length) {
+    reservationsList.innerHTML = '<div class="center-empty">Nenhuma reserva registrada para este evento.</div>';
+    return;
+  }
+
+  reservationsList.innerHTML = "";
+
+  state.reservations.forEach((reservation) => {
+    const item = document.createElement("article");
+    item.className = "gift-item";
+
+    const activeQuantity = Number(reservation.activeQuantity ?? 0);
+    const badgeClass = activeQuantity > 0 ? "tag-ok" : "tag-muted";
+    const badgeText = activeQuantity > 0 ? "Reserva ativa" : "Reserva encerrada";
+
+    item.innerHTML = `
+      <div class="gift-head">
+        <div>
+          <h3 class="gift-name">${escapeHtml(reservation.giftName || "Presente")}</h3>
+          <p class="meta">CPF: ${escapeHtml(formatCpfInput(reservation.guestCpf || ""))}</p>
+        </div>
+        <span class="tag ${badgeClass}">${badgeText}</span>
+      </div>
+      <p class="meta">Ativas: ${activeQuantity} | Reservadas: ${Number(reservation.reservedQuantity ?? 0)} | Canceladas: ${Number(reservation.unreservedQuantity ?? 0)}</p>
+      <p class="meta">Primeiro registro: ${formatDateTime(reservation.reservedAt)} | Última reserva: ${formatDateTime(reservation.lastReservedAt || reservation.reservedAt)} | Último cancelamento: ${formatDateTime(reservation.lastUnreservedAt)}</p>
+    `;
+
+    reservationsList.appendChild(item);
+  });
+}
+
+function ensureReservationsPanel() {
+  const parentCard = giftsList?.closest(".card");
+  if (!parentCard) return document.createElement("div");
+
+  const section = document.createElement("div");
+  section.className = "section";
+  section.id = "reservations-section";
+  section.innerHTML = `
+    <h3 class="card-title">Histórico de reservas do evento</h3>
+    <p class="card-subtitle">Veja quem reservou, quando reservou e quantas unidades seguem ativas.</p>
+    <div id="reservations-list" class="gifts-list"></div>
+  `;
+
+  parentCard.appendChild(section);
+  return section.querySelector("#reservations-list");
+}
+
 function parseCurrencyToNumber(value) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return 0;
@@ -340,6 +425,14 @@ function parseCurrencyToNumber(value) {
 function formatCurrencyInput(value) {
   const amount = parseCurrencyToNumber(value);
   return formatCurrency(amount);
+}
+
+function formatCpfInput(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
 function setGiftFormError(message) {
@@ -394,3 +487,7 @@ function trashIconSvg() {
     </svg>
   `;
 }
+
+
+
+

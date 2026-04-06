@@ -12,7 +12,7 @@ public class UserService
 {
     private const int MaxNameLength = 120;
     private const int MaxEmailLength = 255;
-    private const int MinPasswordLength = 6;
+    private const int MinPasswordLength = 8;
     private const int MaxPasswordLength = 72;
 
     private static readonly Regex EmailRegex = new(
@@ -130,7 +130,7 @@ public class UserService
 
     private static bool IsStrongPassword(string password)
     {
-        if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+        if (string.IsNullOrWhiteSpace(password) || password.Length < MinPasswordLength)
             return false;
 
         var hasLetter = password.Any(char.IsLetter);
