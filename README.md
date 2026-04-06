@@ -1,166 +1,127 @@
-﻿# Weddingifts
+# Weddingifts
 
-Weddingifts e um MVP real de lista de presentes para casamento, construído com foco em **produto utilizavel**, **qualidade de engenharia** e **evolucao para SaaS**.
+Weddingifts é um MVP real de lista de presentes para casamento, construído com foco em **produto utilizável**, **qualidade de engenharia** e **evolução para SaaS**.
 
-Este repositorio foi estruturado para mostrar um perfil que entrega ponta a ponta:
-- transforma regra de negocio em software funcionando
-- escreve backend limpo, testavel e seguro
-- constroi frontend funcional sem depender de framework
-- pensa em operacao, evolucao e experiencia do usuario
+Este repositório demonstra um perfil completo de engenharia, capaz de:
+- transformar regras de negócio em software funcional
+- construir backend limpo, testável e seguro
+- desenvolver frontend funcional sem dependência de frameworks
+- pensar em operação, escalabilidade e experiência do usuário
+
+---
 
 ## O Que Este Projeto Prova
 
 - Arquitetura em camadas bem definida (`Controllers -> Services -> DbContext`)
-- Regras de negocio consistentes no backend (nao espalhadas no controller)
-- API com padrao de erro (`ProblemDetails`) e contrato previsivel
-- Seguranca aplicada na pratica (JWT, rate limit, security headers, CORS controlado)
-- Integracao backend + frontend com fluxos completos de usuario
-- Testes de integracao para proteger comportamento critico
-- CI em GitHub Actions com `restore`, `build` e `test`
+- Regras de negócio centralizadas no backend (não espalhadas nos controllers)
+- API com padrão de erro consistente (`ProblemDetails`)
+- Segurança aplicada na prática (JWT, rate limit, security headers, CORS controlado)
+- Integração completa entre backend e frontend
+- Testes de integração protegendo fluxos críticos
+- CI com GitHub Actions (`restore`, `build`, `test`)
 
-## Fluxo De Produto Entregue (MVP)
+---
 
-1. casal cria conta
-2. casal faz login
-3. casal cria e gerencia eventos
-4. casal gerencia convidados por evento
-5. casal gerencia presentes por evento
-6. convidado acessa pagina publica por `slug`
-7. convidado reserva e cancela presente com CPF
+## Fluxo de Produto (MVP)
 
-## Stack Tecnica
+1. Casal cria conta  
+2. Casal realiza login  
+3. Casal cria e gerencia eventos  
+4. Casal gerencia convidados por evento  
+5. Casal gerencia presentes por evento  
+6. Convidado acessa página pública via `slug`  
+7. Convidado reserva ou cancela presente usando CPF  
 
-Backend:
-- .NET 8
-- ASP.NET Core Web API
-- Entity Framework Core
-- PostgreSQL
-- JWT Bearer
+---
 
-Frontend:
-- HTML, CSS e JavaScript puro
-- sem framework
-- sem build step
+## Stack Técnica
 
-Qualidade:
-- testes de integracao (`Weddingifts.Api.IntegrationTests`)
-- GitHub Actions (pipeline automatizada)
+### Backend
+- .NET 8  
+- ASP.NET Core Web API  
+- Entity Framework Core  
+- PostgreSQL  
+- JWT Bearer  
 
-## Regras De Negocio Relevantes
+### Frontend
+- HTML, CSS e JavaScript puro  
+- Sem frameworks  
+- Sem build step  
 
-Usuarios:
-- `cpf` obrigatorio e unico
-- `birthDate` obrigatorio e nao pode ser futura
+### Qualidade
+- Testes de integração (`Weddingifts.Api.IntegrationTests`)  
+- CI com GitHub Actions  
 
-Eventos:
-- nome obrigatorio
-- data obrigatoria
-- `slug` unico gerado automaticamente
-- edicao/exclusao apenas pelo dono autenticado
+---
 
-Presentes:
-- `price > 0` e `price < 1000000`
-- `quantity >= 1` e `quantity <= 100000`
-- reserva bloqueada quando indisponivel
+## Regras de Negócio
 
-Convidados:
-- CPF com 11 digitos
-- CPF unico por evento
-- nome, email e telefone obrigatorios
+### Usuários
+- `cpf` obrigatório e único  
+- `birthDate` obrigatório e não pode ser futuro  
 
-Reservas:
-- exige CPF valido
-- CPF precisa estar cadastrado no evento
-- controle de `ReservedQuantity`, `ReservedBy` e `ReservedAt`
+### Eventos
+- Nome obrigatório  
+- Data obrigatória  
+- `slug` único gerado automaticamente  
+- Edição/exclusão permitida apenas ao dono autenticado  
+
+### Presentes
+- `price > 0` e `< 1.000.000`  
+- `quantity >= 1` e `<= 100.000`  
+- Reserva bloqueada quando indisponível  
+
+### Convidados
+- CPF com 11 dígitos  
+- CPF único por evento  
+- Nome, e-mail e telefone obrigatórios  
+
+### Reservas
+- Exige CPF válido  
+- CPF deve estar cadastrado no evento  
+- Controle de `ReservedQuantity`, `ReservedBy` e `ReservedAt`  
+
+---
 
 ## Arquitetura
 
-Pastas principais:
-- `Weddingifts.Api/Controllers`
-- `Weddingifts.Api/Services`
-- `Weddingifts.Api/Entities`
-- `Weddingifts.Api/Models`
-- `Weddingifts.Api/Data`
-- `Weddingifts.Api/Middleware`
-- `Weddingifts.Api/Security`
-- `Weddingifts.Api/Migrations`
-- `Weddingifts-web`
+Principais pastas:
 
-Principio usado no backend:
-- controller enxuto para HTTP
-- service como dono da regra de negocio
-- persistencia isolada no EF Core
+- `Weddingifts.Api/Controllers`  
+- `Weddingifts.Api/Services`  
+- `Weddingifts.Api/Entities`  
+- `Weddingifts.Api/Models`  
+- `Weddingifts.Api/Data`  
+- `Weddingifts.Api/Middleware`  
+- `Weddingifts.Api/Security`  
+- `Weddingifts.Api/Migrations`  
+- `Weddingifts-web`  
 
-## Seguranca E Confiabilidade
+### Princípios adotados:
+- Controllers enxutos (responsáveis apenas por HTTP)
+- Services como núcleo das regras de negócio
+- Persistência isolada via EF Core
 
-- autenticacao JWT nas rotas privadas
-- `ProblemDetails` padronizado para erros
-- rate limiting global e reforcado em rotas sensiveis
-- headers de seguranca (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `COOP`, `CORP`, `CSP`, `HSTS` em HTTPS)
-- migrations aplicadas automaticamente no startup
+---
 
-## Como Rodar
+## Segurança e Confiabilidade
 
-Opcao recomendada:
+- Autenticação JWT nas rotas privadas  
+- Padronização de erros com `ProblemDetails`  
+- Rate limiting global + reforço em rotas sensíveis  
+- Security headers:
+  - `X-Content-Type-Options`
+  - `X-Frame-Options`
+  - `Referrer-Policy`
+  - `Permissions-Policy`
+  - `COOP`, `CORP`, `CSP`
+  - `HSTS` (em HTTPS)
+- Migrations aplicadas automaticamente no startup  
 
+---
+
+## Como Rodar o Projeto
+
+### Opção recomendada
 ```powershell
 .\run.bat
-```
-
-Opcao alternativa:
-
-```powershell
-.\start-dev.ps1
-```
-
-Manual:
-
-```powershell
-cd Weddingifts.Api
-dotnet run
-```
-
-```powershell
-cd Weddingifts-web
-py -m http.server 5500
-```
-
-URLs:
-- Frontend: `http://localhost:5500`
-- API: `http://localhost:5298`
-- Swagger: `http://localhost:5298/swagger`
-
-## Testes
-
-```powershell
-dotnet restore Weddingifts.Api/Weddingifts.Api.sln --configfile Weddingifts.Api/NuGet.Config
-dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
-```
-
-Checklist mobile:
-- [docs/MOBILE_TEST_CHECKLIST.md](docs/MOBILE_TEST_CHECKLIST.md)
-
-## Diferenciais Profissionais Evidenciados
-
-- capacidade de levar produto do zero ate MVP funcional
-- dominio de regras de negocio com foco em consistencia
-- preocupacao real com seguranca e operacao
-- boa separacao de responsabilidades e manutencao futura
-- visao de produto, nao apenas de codigo
-
-## Status Atual
-
-- MVP funcional implementado
-- pre-producao em andamento
-- foco atual em estabilizacao para publicacao
-
-## Contato
-
-Se voce representa empresa ou time tecnico e quer conversar sobre backend, produto e engenharia com ownership de ponta a ponta, estou aberto a oportunidades.
-
-- LinkedIn: **adicione seu link aqui**
-- Email: **adicione seu email aqui**
-
-## Licenca
-
-Projeto em desenvolvimento ativo para aprendizado, portfolio e evolucao de produto.
