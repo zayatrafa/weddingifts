@@ -18,7 +18,7 @@ const MAX_GIFT_NAME_LENGTH = 255;
 const MAX_GIFT_DESCRIPTION_LENGTH = 120;
 
 const session = requireAuth();
-if (!session) throw new Error("Autenticação obrigatÃ³ria.");
+if (!session) throw new Error("Autenticação obrigatória.");
 
 const token = session.token;
 const createGiftForm = document.getElementById("create-gift-form");
@@ -102,7 +102,7 @@ async function loadMyEvents() {
       renderGiftSelect();
       renderGifts();
       renderReservations();
-      setStatus(status, "status-info", "Você ainda nÃ£o possui eventos. Crie um evento primeiro.");
+      setStatus(status, "status-info", "Você ainda não possui eventos. Crie um evento primeiro.");
       return;
     }
 
@@ -149,7 +149,7 @@ async function submitGiftForm(event) {
   }
 
   if (quantity > MAX_GIFT_QUANTITY) {
-    return setGiftFormError("A quantidade mÃ¡xima é 100.000.");
+    return setGiftFormError("A quantidade máxima é 100.000.");
   }
 
   try {
@@ -206,7 +206,7 @@ function startGiftEditMode(gift) {
   document.getElementById("gift-quantity-input").value = String(gift.quantity || 1);
   setGiftSubmitButtonLabel("Salvar alterações", ICON_SAVE);
   syncGiftEditUi();
-  giftFormTitle.textContent = `Você estÃ¡ editando o presente "${gift.name}".`;
+  giftFormTitle.textContent = `Você está editando o presente "${gift.name}".`;
   document.getElementById("gift-name-input").focus();
 }
 
@@ -344,7 +344,7 @@ function renderGifts() {
         </div>
         <span class="tag ${badgeClass}">${badgeText}</span>
       </div>
-      <p class="meta">${formatCurrency(gift.price)} | ${available} disponÃ­veis | ${gift.reservedQuantity || 0} reservados</p>
+      <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${gift.reservedQuantity || 0} reservados</p>
       <div class="row row-tight top-gap-sm">
         <button class="btn btn-secondary with-icon gift-edit" type="button">${ICON_EDIT}Editar presente</button>
       </div>
@@ -487,6 +487,7 @@ function trashIconSvg() {
     </svg>
   `;
 }
+
 
 
 
