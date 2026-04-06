@@ -29,6 +29,7 @@ public class EventService
         var normalizedName = request.Name.Trim();
         if (normalizedName.Length > MaxEventNameLength)
             throw new DomainValidationException("Nome do evento excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedName, "nome do evento");
 
         if (request.EventDate == default)
             throw new DomainValidationException("Data do evento é obrigatória.");
@@ -71,6 +72,7 @@ public class EventService
         var normalizedName = request.Name.Trim();
         if (normalizedName.Length > MaxEventNameLength)
             throw new DomainValidationException("Nome do evento excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedName, "nome do evento");
 
         if (request.EventDate == default)
             throw new DomainValidationException("Data do evento é obrigatória.");
@@ -125,6 +127,7 @@ public class EventService
         var normalizedSlug = slug.Trim();
         if (normalizedSlug.Length > MaxSlugLength)
             throw new DomainValidationException("Slug excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedSlug, "slug");
 
         var ev = await _context.Events
             .AsNoTracking()

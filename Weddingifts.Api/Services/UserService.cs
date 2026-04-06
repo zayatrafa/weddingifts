@@ -40,6 +40,7 @@ public class UserService
         var normalizedName = request.Name.Trim();
         if (normalizedName.Length > MaxNameLength)
             throw new DomainValidationException("Nome excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedName, "nome");
 
         if (!IsValidPersonName(normalizedName))
             throw new DomainValidationException("Nome deve conter apenas letras.");
@@ -50,6 +51,7 @@ public class UserService
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         if (normalizedEmail.Length > MaxEmailLength)
             throw new DomainValidationException("E-mail excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedEmail, "e-mail");
 
         if (!IsValidEmail(normalizedEmail))
             throw new DomainValidationException("E-mail inválido.");

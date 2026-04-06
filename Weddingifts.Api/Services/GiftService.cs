@@ -213,7 +213,19 @@ public class GiftService
         if (reservation.ReservedQuantity == reservation.UnreservedQuantity)
             reservation.UnreservedAt = unreserveTimestamp;
 
+        // Persist first so subsequent query reflects current reservation counters.
+        await _context.SaveChangesAsync();
+
+        if (gift.ReservedQuantity <= 0)
+        {
+            gift.ReservedBy = null;
+            gift.ReservedAt = null;
+            await _context.SaveChangesAsync();
+            return gift;
+        }
+
         var lastActiveReservation = await _context.GiftReservations
+            .AsNoTracking()
             .Where(r => r.GiftId == giftId && r.ReservedQuantity > r.UnreservedQuantity)
             .OrderByDescending(r => r.LastReservedAt ?? r.ReservedAt)
             .FirstOrDefaultAsync();
@@ -261,11 +273,21 @@ public class GiftService
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainValidationException("Nome do presente é obrigatório.");
 
-        if (name.Trim().Length > MaxGiftNameLength)
-            throw new DomainValidationException("Nome do presente excede o tamanho máximo permitido.");
+        var normalizedName = name.Trim();
 
-        if (!string.IsNullOrWhiteSpace(description) && description.Trim().Length > MaxGiftDescriptionLength)
-            throw new DomainValidationException("Descrição do presente excede o tamanho máximo permitido.");
+        if (normalizedName.Length > MaxGiftNameLength)
+            throw new DomainValidationException("Nome do presente excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedName, "nome do presente");
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            var normalizedDescription = description.Trim();
+
+            if (normalizedDescription.Length > MaxGiftDescriptionLength)
+                throw new DomainValidationException("Descrição do presente excede o tamanho máximo permitido.");
+
+            InputThreatValidator.EnsureSafeText(normalizedDescription, "descrição do presente");
+        }
 
         if (price <= MinGiftPrice)
             throw new DomainValidationException("Preço deve ser maior que zero.");

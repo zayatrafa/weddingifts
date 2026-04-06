@@ -1,11 +1,15 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Weddingifts.Api.Data;
 
 #nullable disable
 
 namespace Weddingifts.Api.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260403000100_AddGiftReservations")]
     public partial class AddGiftReservations : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

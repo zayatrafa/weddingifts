@@ -40,6 +40,7 @@ public sealed class AuthService
             throw new DomainValidationException("Senha excede o tamanho máximo permitido.");
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        InputThreatValidator.EnsureSafeText(normalizedEmail, "e-mail");
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))

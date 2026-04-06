@@ -162,6 +162,7 @@ public sealed class EventGuestService
         var normalizedName = name.Trim();
         if (normalizedName.Length > MaxNameLength)
             throw new DomainValidationException("Nome do convidado excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedName, "nome do convidado");
 
         if (!IsValidPersonName(normalizedName))
             throw new DomainValidationException("Nome do convidado deve conter apenas letras.");
@@ -172,6 +173,7 @@ public sealed class EventGuestService
         var normalizedEmail = email.Trim();
         if (normalizedEmail.Length > MaxEmailLength)
             throw new DomainValidationException("E-mail do convidado excede o tamanho máximo permitido.");
+        InputThreatValidator.EnsureSafeText(normalizedEmail, "e-mail do convidado");
 
         if (!IsValidEmail(normalizedEmail))
             throw new DomainValidationException("E-mail do convidado é inválido.");

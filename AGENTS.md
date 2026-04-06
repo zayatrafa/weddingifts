@@ -1,125 +1,29 @@
-﻿# Weddingifts - Contexto do Projeto para Agentes de Código
+﻿# Weddingifts - Contexto para Agentes (Abr/2026)
 
-Este arquivo descreve o estado atual do projeto Weddingifts.
-Qualquer agente (Codex, Copilot, etc.) deve ler este documento antes de alterar código.
+Este arquivo consolida o estado real do projeto para continuidade em novos chats.
+Objetivo: evitar regressões e acelerar handoff entre agentes.
 
 ---
 
-## Visão Geral
+## 1) Estado atual do produto
 
-Weddingifts é uma aplicação para criação e gerenciamento de listas de presentes de casamento.
+Weddingifts é uma aplicação de lista de presentes de casamento com fluxo ponta a ponta funcional.
 
 Fluxo principal atual:
 
 - casal cria conta
 - casal faz login
 - casal cria eventos
-- casal cadastra convidados por evento
-- casal cadastra presentes por evento
-- convidados acessam página pública por slug e reservam/cancelam presentes com CPF
+- casal gerencia convidados por evento
+- casal gerencia presentes por evento
+- convidados acessam página pública por slug
+- convidados reservam e cancelam presente com CPF
 
-Objetivos do projeto:
-
-- aprendizado técnico com boas práticas modernas
-- portfólio profissional
-- base para evolução futura como SaaS
-- entregar um MVP publicável e utilizável por usuários reais
+Status: MVP funcional concluído e em fase de estabilização para MVP publicável.
 
 ---
 
-## Estado Atual (Mar/2026)
-
-### Backend implementado
-
-- criação de usuário (`POST /api/users`)
-  - com `name`, `email`, `password`, `cpf`, `birthDate`
-  - `cpf` obrigatório e único
-  - `birthDate` obrigatório e não pode ser futura
-- listagem de usuários (`GET /api/users`, sem expor `PasswordHash`)
-- login com JWT (`POST /api/auth/login`)
-- criação de evento autenticado (`POST /api/events`)
-- listagem de eventos do usuário autenticado (`GET /api/events/mine`)
-- atualização de evento do usuário autenticado (`PUT /api/events/{eventId}`)
-- exclusão de evento do usuário autenticado (`DELETE /api/events/{eventId}`)
-- recuperação pública de evento por slug (`GET /api/events/{slug}`)
-- criação de presente por evento (`POST /api/events/{eventId}/gifts`)
-- listagem de presentes por evento (`GET /api/events/{eventId}/gifts`)
-- criação de convidado por evento (`POST /api/events/{eventId}/guests`)
-- listagem de convidados por evento (`GET /api/events/{eventId}/guests`)
-- busca de convidado por CPF no evento (`GET /api/events/{eventId}/guests/by-cpf/{cpf}`)
-- reserva de presente com CPF (`POST /api/gifts/{giftId}/reserve`)
-  - reserva só permitida para CPF convidado do evento
-- cancelamento de reserva (`POST /api/gifts/{giftId}/unreserve`)
-
-### Regras importantes de negócio (estado atual)
-
-- evento:
-  - usuário deve existir
-  - nome obrigatório
-  - data obrigatória
-  - slug único gerado automaticamente
-  - editar/excluir permitido apenas para o dono autenticado
-- presente:
-  - evento deve existir
-  - `price > 0`
-  - `price < 1000000`
-  - `quantity >= 1`
-  - `quantity <= 100000`
-- convidado:
-  - `cpf` com 11 dígitos
-  - `cpf` único por evento
-  - nome, email e telefone obrigatórios
-- reserva:
-  - exige CPF válido
-  - CPF precisa estar cadastrado como convidado do evento
-  - não reserva se indisponível
-  - incrementa/decrementa `ReservedQuantity`
-  - limpa `ReservedBy`/`ReservedAt` quando volta a zero
-
-### Qualidade e plataforma
-
-- middleware global para erros com `ProblemDetails`
-- CORS para frontend local (`http://localhost:5500` e `http://127.0.0.1:5500`)
-- aplicação automática de migrations com `Database.Migrate()`
-- testes de integração backend (`Weddingifts.Api.IntegrationTests`)
-- CI com GitHub Actions em push e pull request (`restore/build/test`)
-
-### Frontend MVP+ implementado (HTML/CSS/JS puro)
-
-- landing page (`index.html`)
-- cadastro (`register.html`)
-  - confirmação de senha
-  - CPF e data de nascimento
-  - redirecionamento para login após sucesso
-- login (`login.html`)
-  - aviso contextual de pós-cadastro (placeholder de confirmação por email)
-  - tratamento amigável de credenciais inválidas
-- criação de evento (`create-event.html`)
-  - redireciona para gerenciamento do evento criado
-- gerenciamento de eventos (`my-events.html`)
-  - editar nome/data
-  - excluir evento
-  - copiar link público
-  - abrir gerenciamento de convidados
-  - abrir gerenciamento de presentes
-- gerenciamento de convidados (`my-guests.html`)
-- gerenciamento de presentes (`my-event.html`)
-  - preço em formato BRL no input
-  - validações amigáveis de preço e quantidade
-- minha conta (`account.html`)
-- evento público (`event.html`)
-  - reserva exigindo CPF
-
-Layout atual:
-
-- menu com estado logado/deslogado
-- menu dropdown com agrupamento de subitens para gerenciamento de eventos
-- interface responsiva desktop/mobile
-- API base fixa no frontend: `http://localhost:5298`
-
----
-
-## Stack
+## 2) Stack e arquitetura
 
 Backend:
 
@@ -127,7 +31,7 @@ Backend:
 - ASP.NET Core Web API
 - Entity Framework Core
 - PostgreSQL
-- JWT Bearer
+- JWT
 
 Frontend:
 
@@ -135,157 +39,197 @@ Frontend:
 - sem framework
 - sem build step
 
-Ferramentas:
-
-- Git + GitHub
-- Swagger/OpenAPI
-- GitHub Actions
-
----
-
-## Arquitetura
-
-Arquitetura em camadas no backend:
+Arquitetura backend:
 
 Controllers -> Services -> DbContext -> Database
 
 Responsabilidades:
 
-- Controllers: HTTP, autenticação/autorização, DTOs, resposta
+- Controllers: camada HTTP
 - Services: regras de negócio e validações
-- Entities: mapeamento de persistência
-- Models: requests/responses da API
-
-Estrutura principal:
-
-- `Weddingifts.Api/Controllers`
-- `Weddingifts.Api/Services`
-- `Weddingifts.Api/Entities`
-- `Weddingifts.Api/Models`
-- `Weddingifts.Api/Data`
-- `Weddingifts.Api/Middleware`
-- `Weddingifts.Api/Security`
-- `Weddingifts.Api/Migrations`
-
-Frontend organizado por páginas + JS por responsabilidade:
-
-- `Weddingifts-web/*.html`
-- `Weddingifts-web/js/common.js` (helpers compartilhados)
-- `Weddingifts-web/js/*.js` (lógica por tela)
+- Data/Entities: persistência
+- Models: contratos request/response
+- Middleware: tratamento global e hardening
 
 ---
 
-## Modelo de Dados
+## 3) Funcionalidades implementadas
 
-Entidades:
+### Usuários e autenticação
+
+- cadastro de usuário (`POST /api/users`) com `name`, `email`, `password`, `cpf`, `birthDate`
+- CPF único no usuário
+- validação de data de nascimento
+- login JWT (`POST /api/auth/login`)
+
+### Eventos
+
+- criar evento (`POST /api/events`)
+- listar meus eventos (`GET /api/events/mine`)
+- editar (`PUT /api/events/{eventId}`)
+- excluir (`DELETE /api/events/{eventId}`)
+- evento público por slug (`GET /api/events/{slug}`)
+- data do evento validada como futura
+
+### Convidados
+
+- criar convidado (`POST /api/events/{eventId}/guests`)
+- listar convidados (`GET /api/events/{eventId}/guests`)
+- buscar por CPF no evento (`GET /api/events/{eventId}/guests/by-cpf/{cpf}`)
+- editar convidado
+- remover convidado
+
+### Presentes
+
+- criar presente (`POST /api/events/{eventId}/gifts`)
+- listar presentes (`GET /api/events/{eventId}/gifts`)
+- editar presente
+- remover presente
+- regras atuais:
+  - `price > 0`
+  - `price < 1000000`
+  - `quantity >= 1`
+  - `quantity <= 100000`
+
+### Reserva de presentes
+
+- reservar com CPF (`POST /api/gifts/{giftId}/reserve`)
+- cancelar com CPF (`POST /api/gifts/{giftId}/unreserve` com body `guestCpf`)
+- cancelamento só permitido para CPF com reserva ativa
+- histórico de reservas por presente/convidado
+- endpoint de histórico por evento:
+  - `GET /api/events/{eventId}/gifts/reservations`
+
+---
+
+## 4) Modelo de dados relevante
+
+Entidades principais:
 
 - `User`
 - `Event`
-- `Gift`
 - `EventGuest`
+- `Gift`
+- `GiftReservation`
 
 Relacionamentos:
 
 - `User` 1:N `Event`
-- `Event` 1:N `Gift`
 - `Event` 1:N `EventGuest`
+- `Event` 1:N `Gift`
+- `Gift` 1:N `GiftReservation`
 
 Observações:
 
-- exclusão de evento remove presentes e convidados relacionados (cascade)
-- `User.Cpf` único global
-- `EventGuest` possui índice único em `(EventId, Cpf)`
+- deleção de evento em cascade para convidados e presentes
+- regra de autoria por CPF para cancelamento de reserva
 
 ---
 
-## Padrões de API e Segurança
+## 5) Hardening e segurança já aplicados
 
-- autenticação JWT para rotas privadas
-- erro de domínio -> HTTP 400
-- recurso não encontrado -> HTTP 404
-- erro inesperado -> HTTP 500
-- frontend deve exibir `ProblemDetails.detail` quando existir
+- middleware global de exceções com `ProblemDetails`
+- middleware de headers de segurança (`SecurityHeadersMiddleware`)
+- rate limiting global e mais rígido para rotas sensíveis
+- rate limiting desativado automaticamente no ambiente `Testing` (para não quebrar suíte de integração)
+- validação de input suspeito contra payloads maliciosos (`InputThreatValidator`)
+- validações de tamanho e formato em services (nome, email, telefone, senha etc.)
+- mensagens de validação e autenticação em PT-BR no backend
 
 Importante:
 
-- proteção contra SQL injection já é tratada por padrão via EF Core (queries parametrizadas)
-- ainda assim, manter validações de entrada e não concatenar SQL manual
+- EF Core já usa queries parametrizadas por padrão (proteção base contra SQL injection)
+- manter proibição de SQL manual concatenado em qualquer evolução
 
 ---
 
-## Execução Local (Windows)
+## 6) Frontend atual
 
-Opção 1 (recomendada):
+Páginas:
 
-- `run.bat`
+- `index.html`
+- `register.html`
+- `login.html`
+- `create-event.html`
+- `my-events.html`
+- `my-guests.html`
+- `my-event.html`
+- `account.html`
+- `event.html`
 
-Opção 2 (manual):
+UX atual:
+
+- menu logado/deslogado
+- dropdown de usuário com agrupamento de gerenciamento
+- feedback de status (loading/sucesso/erro)
+- preço no front em formato BRL nas telas de presentes
+
+---
+
+## 7) Arquivos-chave desta fase
 
 Backend:
 
-```powershell
-cd Weddingifts.Api
-dotnet run
-```
+- `Weddingifts.Api/Program.cs`
+- `Weddingifts.Api/Middleware/GlobalExceptionMiddleware.cs`
+- `Weddingifts.Api/Middleware/SecurityHeadersMiddleware.cs`
+- `Weddingifts.Api/Services/InputThreatValidator.cs`
+- `Weddingifts.Api/Services/UserService.cs`
+- `Weddingifts.Api/Services/AuthService.cs`
+- `Weddingifts.Api/Services/EventService.cs`
+- `Weddingifts.Api/Services/EventGuestService.cs`
+- `Weddingifts.Api/Services/GiftService.cs`
+- `Weddingifts.Api/Data/AppDbContext.cs`
+- `Weddingifts.Api/Migrations/20260403000100_AddGiftReservations.cs`
 
 Frontend:
 
-```powershell
-cd Weddingifts-web
-py -m http.server 5500
-```
-
-URLs:
-
-- frontend: `http://localhost:5500`
-- API: `http://localhost:5298`
-
-Importante:
-
-- erro `501 Unsupported method ('POST')` no navegador costuma indicar que apenas o servidor estático foi iniciado e a API não está rodando.
-
-Testes:
-
-```powershell
-dotnet restore Weddingifts.Api/Weddingifts.Api.sln --configfile Weddingifts.Api/NuGet.Config
-dotnet test Weddingifts.Api/Weddingifts.Api.sln --no-restore
-```
+- `Weddingifts-web/js/common.js`
+- `Weddingifts-web/js/register.js`
+- `Weddingifts-web/js/login.js`
+- `Weddingifts-web/js/create-event.js`
+- `Weddingifts-web/js/my-events.js`
+- `Weddingifts-web/js/my-guests.js`
+- `Weddingifts-web/js/my-event.js`
+- `Weddingifts-web/js/event.js`
+- `Weddingifts-web/js/landing.js`
+- `Weddingifts-web/styles.css`
 
 ---
 
-## Diretrizes para Mudanças
+## 8) O que manter em qualquer próxima mudança
 
-1. Manter arquitetura atual e simplicidade.
-2. Não introduzir framework frontend sem pedido explícito.
-3. Manter controllers enxutos e regras nos services.
-4. Não expor campos sensíveis em responses.
-5. Preservar compatibilidade com fluxos já existentes.
-6. Sempre validar impacto em login, eventos, convidados, presentes e página pública.
-7. Preferir mensagens de erro em PT-BR no frontend.
-8. Garantir limites de tamanho em campos de entrada no frontend e backend.
+1. Não remover validação de CPF em reserve/unreserve.
+2. Não permitir cancelamento sem autoria por CPF.
+3. Manter services como centro das regras de negócio.
+4. Manter feedback amigável no frontend.
+5. Não reverter alterações de outros chats em paralelo.
+6. Se houver conflito de mudanças, fazer merge lógico preservando comportamento já estável.
 
 ---
 
-## Situação do Produto
+## 9) Próximo passo recomendado no novo chat
 
-Resumo objetivo:
+Abrir com objetivo claro de sprint, por exemplo:
 
-- o fluxo principal do produto já está em forma de MVP funcional
-- o projeto ainda está em pré-produção (MVP publicável em progresso)
+- "Sprint 1 - Estabilização MVP publicável"
 
-Para considerar "MVP publicável", faltam principalmente:
+Escopo sugerido da próxima sprint:
 
-1. acabamento de UX e consistência de validações/mensagens
-2. endurecimento de segurança operacional (rate-limit, headers, etc.)
-3. setup de deploy (staging/produção), observabilidade e backup
+1. limites máximos de caracteres em todos os campos (front e back)
+2. padronização final de mensagens PT-BR
+3. revisão final de redirecionamentos de login/eventos
+4. rodapé global em todas as páginas
+5. checklist final de preparação de deploy (staging/produção)
 
 ---
 
-## Próxima Janela de Evolução (Sugestão)
+## 10) Nota de handoff
 
-Prioridade recomendada:
+Este arquivo foi atualizado para continuidade imediata em novo chat.
+Caso exista outro chat alterando em paralelo, este conteúdo deve ser tratado como base de referência e não como ordem para desfazer trabalho já válido.
 
-1. Sprint de estabilização do MVP publicável (UX, validações, limites, i18n PT-BR).
-2. Sprint de produção mínima (deploy, domínio, HTTPS, banco gerenciado, secrets, logs, backup).
-3. Go-live controlado com poucos usuários e ciclo curto de feedback/correção.
-4. Pós-MVP: confirmação real por email, convites por WhatsApp/email e refino visual amplo.
+Última validação técnica registrada neste chat:
+
+- build backend: OK
+- integração backend: OK (`11/11`)

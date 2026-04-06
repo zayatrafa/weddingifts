@@ -18,6 +18,9 @@ public sealed class SecurityHeadersMiddleware
             headers["X-Frame-Options"] = "DENY";
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
             headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
+            headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+            headers["Cross-Origin-Opener-Policy"] = "same-origin";
+            headers["X-Permitted-Cross-Domain-Policies"] = "none";
 
             return Task.CompletedTask;
         });
