@@ -22,6 +22,7 @@ const filters = document.querySelectorAll(".filter-button");
 const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
 const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
 const ICON_UNDO = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>';
+const MAX_SLUG_LENGTH = 24;
 
 const session = getAuthSession();
 enhanceHeaderForLoggedUser(session);
@@ -207,6 +208,7 @@ async function loadEvent() {
   const slug = slugInput.value.trim();
 
   if (!slug) return setStatus(status, "status-error", "Informe o slug do evento.");
+  if (slug.length > MAX_SLUG_LENGTH) return setStatus(status, "status-error", "O slug deve ter no máximo 24 caracteres.");
 
   try {
     state.loading = true;
@@ -233,7 +235,7 @@ async function reserveGift(giftId) {
   const guestCpf = digitsOnly(guestCpfInput.value);
 
   if (guestCpf.length !== 11) {
-    setStatus(status, "status-error", "Informe um CPF válido com 11 dígitos para reservar.");
+    showReservationError("Informe um CPF válido com 11 dígitos para reservar.");
     return;
   }
 
@@ -265,7 +267,7 @@ async function unreserveGift(giftId) {
   const guestCpf = digitsOnly(guestCpfInput.value);
 
   if (guestCpf.length !== 11) {
-    setStatus(status, "status-error", "Informe o CPF da reserva para cancelar.");
+    showReservationError("Informe o CPF da reserva para cancelar.");
     return;
   }
 
@@ -304,4 +306,9 @@ function formatCpfInput(value) {
 function render() {
   refreshHeader();
   renderGiftList();
+}
+
+function showReservationError(message) {
+  setStatus(status, "status-error", message);
+  status.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }

@@ -67,6 +67,23 @@ public class GiftService
         if (gift is null)
             throw new ResourceNotFoundException("Presente não encontrado.");
 
+        if (gift.ReservedQuantity > 0)
+        {
+            var normalizedName = request.Name.Trim();
+            var normalizedDescription = request.Description?.Trim() ?? string.Empty;
+
+            var triedToChangeLockedFields =
+                !string.Equals(gift.Name, normalizedName, StringComparison.Ordinal)
+                || !string.Equals(gift.Description, normalizedDescription, StringComparison.Ordinal)
+                || gift.Price != request.Price;
+
+            if (triedToChangeLockedFields)
+            {
+                throw new DomainValidationException(
+                    "Este presente possui reservas ativas. Nome, descrição e preço não podem ser alterados.");
+            }
+        }
+
         if (gift.ReservedQuantity > request.Quantity)
             throw new DomainValidationException("A quantidade não pode ser menor que a quantidade já reservada.");
 
@@ -92,6 +109,9 @@ public class GiftService
 
         if (gift is null)
             throw new ResourceNotFoundException("Presente não encontrado.");
+
+        if (gift.ReservedQuantity > 0)
+            throw new DomainValidationException("Não é possível excluir um presente com reservas ativas.");
 
         _context.Gifts.Remove(gift);
         await _context.SaveChangesAsync();
@@ -213,32 +233,35 @@ public class GiftService
         if (reservation.ReservedQuantity == reservation.UnreservedQuantity)
             reservation.UnreservedAt = unreserveTimestamp;
 
-        // Persist first so subsequent query reflects current reservation counters.
-        await _context.SaveChangesAsync();
-
         if (gift.ReservedQuantity <= 0)
         {
             gift.ReservedBy = null;
             gift.ReservedAt = null;
-            await _context.SaveChangesAsync();
-            return gift;
         }
-
-        var lastActiveReservation = await _context.GiftReservations
-            .AsNoTracking()
-            .Where(r => r.GiftId == giftId && r.ReservedQuantity > r.UnreservedQuantity)
-            .OrderByDescending(r => r.LastReservedAt ?? r.ReservedAt)
-            .FirstOrDefaultAsync();
-
-        if (lastActiveReservation is null)
+        else if (reservation.ReservedQuantity > reservation.UnreservedQuantity)
         {
-            gift.ReservedBy = null;
-            gift.ReservedAt = null;
+            gift.ReservedBy = normalizedCpf;
+            gift.ReservedAt = reservation.LastReservedAt ?? reservation.ReservedAt;
         }
         else
         {
-            gift.ReservedBy = lastActiveReservation.GuestCpf;
-            gift.ReservedAt = lastActiveReservation.LastReservedAt ?? lastActiveReservation.ReservedAt;
+            var lastActiveReservation = await _context.GiftReservations
+                .Where(r => r.GiftId == giftId
+                    && r.Id != reservation.Id
+                    && r.ReservedQuantity > r.UnreservedQuantity)
+                .OrderByDescending(r => r.LastReservedAt ?? r.ReservedAt)
+                .FirstOrDefaultAsync();
+
+            if (lastActiveReservation is null)
+            {
+                gift.ReservedBy = null;
+                gift.ReservedAt = null;
+            }
+            else
+            {
+                gift.ReservedBy = lastActiveReservation.GuestCpf;
+                gift.ReservedAt = lastActiveReservation.LastReservedAt ?? lastActiveReservation.ReservedAt;
+            }
         }
 
         await _context.SaveChangesAsync();

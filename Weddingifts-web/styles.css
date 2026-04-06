@@ -1,20 +1,20 @@
 ﻿@import url('https://fonts.googleapis.com/css2?family=Allura&family=Lora:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg: #f8f6f2;
-  --bg-soft: #f2ede4;
+  --bg: #f6f2eb;
+  --bg-soft: #eee6dc;
   --surface: #fffdf9;
-  --surface-soft: #f7f2ea;
+  --surface-soft: #f7f0e6;
   --text: #2b2b2b;
   --text-soft: #6f685f;
   --line: #e5ddd1;
-  --line-strong: #d5c7b5;
-  --accent: #a3b18a;
-  --accent-strong: #8f9e76;
-  --accent-soft: #eef3e7;
-  --rose: #d6a77a;
-  --rose-strong: #c99567;
-  --rose-soft: #f5ebe1;
+  --line-strong: #ccbca8;
+  --accent: #8fa67c;
+  --accent-strong: #7b9168;
+  --accent-soft: #e8efe0;
+  --rose: #be8f6b;
+  --rose-strong: #aa7b57;
+  --rose-soft: #f2e7dc;
   --success: #6f8a62;
   --danger: #b26c66;
   --warning: #aa8f68;
@@ -41,10 +41,10 @@ body {
   font-family: "Lora", serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 12% -8%, rgba(163, 177, 138, 0.18), transparent 42%),
-    radial-gradient(circle at 88% -4%, rgba(214, 167, 122, 0.2), transparent 36%),
-    radial-gradient(circle at 50% 110%, rgba(213, 199, 181, 0.2), transparent 44%),
-    linear-gradient(180deg, #faf8f5, var(--bg));
+    radial-gradient(circle at 12% -8%, rgba(143, 166, 124, 0.16), transparent 42%),
+    radial-gradient(circle at 88% -4%, rgba(190, 143, 107, 0.14), transparent 36%),
+    radial-gradient(circle at 50% 110%, rgba(204, 188, 168, 0.22), transparent 44%),
+    linear-gradient(180deg, #faf7f1, var(--bg));
   line-height: 1.6;
 }
 
@@ -531,8 +531,8 @@ a { color: inherit; text-decoration: none; }
 
 .btn-ghost {
   background: var(--rose-soft);
-  border-color: #ead5c4;
-  color: #8f6c50;
+  border-color: #ddc6b2;
+  color: #7f5d44;
 }
 
 .btn-lg {
@@ -1094,24 +1094,26 @@ a { color: inherit; text-decoration: none; }
 }
 
 .global-footer {
-  margin-top: 32px;
-  border-top: 1px solid rgba(229, 221, 209, 0.9);
-  background: rgba(255, 253, 249, 0.9);
+  margin-top: 40px;
+  border-top: 1px solid rgba(214, 199, 181, 0.92);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 249, 0.95), rgba(247, 240, 230, 0.94));
   backdrop-filter: blur(8px);
 }
 
 .global-footer-inner {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 19px 22px 24px;
+  padding: 21px 22px 26px;
   display: grid;
-  gap: 10px;
+  gap: 11px;
 }
 
 .global-footer-brand strong {
   display: inline-block;
   margin-bottom: 4px;
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .global-footer-brand p {
@@ -1132,8 +1134,8 @@ a { color: inherit; text-decoration: none; }
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 0.78rem;
-  color: var(--text-soft);
-  background: #fff;
+  color: #73695f;
+  background: rgba(255, 255, 255, 0.94);
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 
