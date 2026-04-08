@@ -1,4 +1,4 @@
-import {
+﻿import {
   authHeaders,
   getApiBase,
   getAuthSession,
@@ -38,12 +38,12 @@ if (fromRegistration) {
   setStatus(
     status,
     "status-info",
-    "Cadastro conclu\\u00EDdo. Voc\\u00EA recebeu um e-mail para validar sua conta. Em breve essa valida\\u00E7\\u00E3o estar\\u00E1 ativa no sistema."
+    "Cadastro concluído. Você recebeu um e-mail para validar sua conta. Em breve essa validação estará ativa no sistema."
   );
 }
 
 if (fromExpiredSession) {
-  setStatus(status, "status-info", "Sua sess\\u00E3o expirou. Fa\\u00E7a login novamente para continuar.");
+  setStatus(status, "status-info", "Sua sessão expirou. Faça login novamente para continuar.");
 }
 
 form.addEventListener("submit", async (event) => {
@@ -81,10 +81,10 @@ form.addEventListener("submit", async (event) => {
     }, 420);
   } catch (error) {
     const backendMessage = String(error.message || "");
-    const invalidCredentialsMessage = "E-mail ou senha inv\\u00E1lidos.";
+    const invalidCredentialsMessage = "E-mail ou senha inválidos.";
     const message = backendMessage === invalidCredentialsMessage
-      ? `\\u26A0\\uFE0F ${invalidCredentialsMessage}`
-      : (backendMessage || "N\\u00E3o foi poss\\u00EDvel entrar. Tente novamente.");
+      ? `⚠️ ${invalidCredentialsMessage}`
+      : (backendMessage || "Não foi possível entrar. Tente novamente.");
 
     setStatus(status, "status-error", message);
   } finally {

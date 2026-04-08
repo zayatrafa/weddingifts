@@ -1,4 +1,4 @@
-import {
+﻿import {
   getApiBase,
   requestJson,
   setStatus
@@ -31,7 +31,7 @@ form.addEventListener("submit", async (event) => {
   const apiBase = getApiBase();
 
   if (!name || !email || !cpf || !birthDate || !password || !confirmPassword) {
-    setStatus(status, "status-error", "Preencha todos os campos obrigat\\u00F3rios.");
+    setStatus(status, "status-error", "Preencha todos os campos obrigatórios.");
     return;
   }
 
@@ -41,17 +41,17 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (name.length > MAX_NAME_LENGTH) {
-    setStatus(status, "status-error", "O nome deve ter no m\\u00E1ximo 120 caracteres.");
+    setStatus(status, "status-error", "O nome deve ter no máximo 120 caracteres.");
     return;
   }
 
   if (!isValidEmail(email)) {
-    setStatus(status, "status-error", "Informe um e-mail v\\u00E1lido.");
+    setStatus(status, "status-error", "Informe um e-mail válido.");
     return;
   }
 
   if (!isValidCpf(cpf)) {
-    setStatus(status, "status-error", "Informe um CPF v\\u00E1lido.");
+    setStatus(status, "status-error", "Informe um CPF válido.");
     return;
   }
 
@@ -61,17 +61,17 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (!isStrongPassword(password)) {
-    setStatus(status, "status-error", "A senha deve conter letra, n\\u00FAmero e caractere especial.");
+    setStatus(status, "status-error", "A senha deve conter letra, número e caractere especial.");
     return;
   }
 
   if (password !== confirmPassword) {
-    setStatus(status, "status-error", "A confirma\\u00E7\\u00E3o de senha n\\u00E3o confere.");
+    setStatus(status, "status-error", "A confirmação de senha não confere.");
     return;
   }
 
   if (!isValidBirthDate(birthDate)) {
-    setStatus(status, "status-error", "Informe uma data de nascimento v\\u00E1lida no formato AAAA-MM-DD.");
+    setStatus(status, "status-error", "Informe uma data de nascimento válida no formato AAAA-MM-DD.");
     return;
   }
 
@@ -87,7 +87,7 @@ form.addEventListener("submit", async (event) => {
 
     window.location.href = `./login.html?email=${encodeURIComponent(email)}&registered=1`;
   } catch (error) {
-    setStatus(status, "status-error", String(error.message || "N\\u00E3o foi poss\\u00EDvel concluir seu cadastro."));
+    setStatus(status, "status-error", String(error.message || "Não foi possível concluir seu cadastro."));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = REGISTER_BUTTON_DEFAULT;
@@ -135,7 +135,7 @@ function isValidEmail(email) {
 }
 
 function isValidPersonName(name) {
-  return /^[A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF'-]+(?:\s+[A-Za-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u00FF'-]+)*$/u.test(String(name || "").trim());
+  return /^[A-Za-zÀ-ÖØ-öø-ÿ'-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ'-]+)*$/u.test(String(name || "").trim());
 }
 
 function isStrongPassword(password) {
