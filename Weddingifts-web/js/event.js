@@ -222,7 +222,7 @@ async function loadEvent() {
     state.event = null;
     state.gifts = [];
     render();
-    setStatus(status, "status-error", `Falha ao carregar evento: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar o evento: ${error.message}`);
   } finally {
     state.loading = false;
     loadButton.disabled = false;
@@ -254,7 +254,7 @@ async function reserveGift(giftId) {
     renderGiftList();
     setStatus(status, "status-success", "Reserva realizada com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao reservar: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível reservar o presente: ${error.message}`);
   } finally {
     state.actionGiftId = null;
     renderGiftList();
@@ -284,7 +284,7 @@ async function unreserveGift(giftId) {
     renderGiftList();
     setStatus(status, "status-success", "Reserva cancelada com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao cancelar: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível cancelar a reserva: ${error.message}`);
   } finally {
     state.actionGiftId = null;
     renderGiftList();
@@ -310,5 +310,5 @@ function render() {
 
 function showReservationError(message) {
   setStatus(status, "status-error", message);
-  status.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  status.scrollIntoView({ behavior: "smooth", block: "start" });
 }

@@ -12,8 +12,13 @@ const birthDateInput = document.getElementById("birth-date-input");
 const REGISTER_BUTTON_DEFAULT = `${accountPlusIcon()}Criar conta`;
 const REGISTER_BUTTON_LOADING = `${spinnerIcon()}Cadastrando...`;
 const MAX_NAME_LENGTH = 120;
+const MIN_BIRTH_DATE_ISO = "1900-01-01";
 
+birthDateInput.min = MIN_BIRTH_DATE_ISO;
 birthDateInput.max = todayDateIso();
+birthDateInput.addEventListener("input", () => {
+  validateBirthDateField();
+});
 
 cpfInput.addEventListener("input", () => {
   cpfInput.value = formatCpfInput(cpfInput.value);
@@ -160,7 +165,8 @@ function isValidBirthDate(value) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return parsedDate <= today;
+  const minBirthDate = new Date(`${MIN_BIRTH_DATE_ISO}T00:00:00`);
+  return parsedDate <= today && parsedDate >= minBirthDate;
 }
 
 function todayDateIso() {
@@ -194,4 +200,19 @@ function ensureStatusElement() {
   fallback.textContent = "Preencha os dados para criar sua conta.";
   form?.appendChild(fallback);
   return fallback;
+}
+
+function validateBirthDateField() {
+  const value = birthDateInput.value;
+  if (!value) {
+    birthDateInput.setCustomValidity("");
+    return;
+  }
+
+  if (!isValidBirthDate(value)) {
+    birthDateInput.setCustomValidity("Informe uma data de nascimento válida.");
+    return;
+  }
+
+  birthDateInput.setCustomValidity("");
 }

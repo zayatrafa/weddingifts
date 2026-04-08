@@ -1,4 +1,4 @@
-﻿export const DEFAULT_API_BASE = "http://localhost:5298";
+﻿export const DEFAULT_API_BASE = inferApiBase();
 const AUTH_KEY = "wg_auth_session";
 
 const STATUS_CLASSES = ["status-info", "status-success", "status-error", "status-loading"];
@@ -38,15 +38,14 @@ export function extractErrorMessage(raw) {
 
 export async function requestJson(url, options = {}) {
   const { skipAuthRedirect = false, ...fetchOptions } = options;
+  const hadStoredSession = hasStoredSession();
+  const hasAuthHeader = hasAuthorizationHeader(fetchOptions.headers);
   const response = await fetch(url, fetchOptions);
 
   if (!response.ok) {
-    if (!skipAuthRedirect && (response.status === 401 || response.status === 403) && getAuthSession()) {
+    if (!skipAuthRedirect && (response.status === 401 || response.status === 403) && (hasAuthHeader || hadStoredSession)) {
       clearAuthSession();
-
-      const currentPath = `${window.location.pathname}${window.location.search || ""}`;
-      const returnTo = encodeURIComponent(currentPath);
-      window.location.href = `./login.html?sessionExpired=1&returnTo=${returnTo}`;
+      redirectToLogin({ sessionExpired: true });
       throw new Error("Sua sessão expirou. Faça login novamente.");
     }
 
@@ -91,7 +90,7 @@ export function getAuthSession() {
 
     if (!token) return null;
 
-    if (isExpired(expiresAt)) {
+    if (isSessionExpired({ expiresAt, token })) {
       clearAuthSession();
       return null;
     }
@@ -107,16 +106,14 @@ export function clearAuthSession() {
 }
 
 export function requireAuth() {
-  const hadPreviousSession = !!localStorage.getItem(AUTH_KEY);
+  const hadPreviousSession = hasStoredSession();
   const session = getAuthSession();
   if (!session) {
-    const currentPath = `${window.location.pathname}${window.location.search || ""}`;
-    const returnTo = encodeURIComponent(currentPath);
-    const sessionFlag = hadPreviousSession ? "sessionExpired=1&" : "";
-    window.location.href = `./login.html?${sessionFlag}returnTo=${returnTo}`;
+    redirectToLogin({ sessionExpired: hadPreviousSession });
     return null;
   }
 
+  installSessionWatch();
   return session;
 }
 
@@ -283,3 +280,109 @@ function isExpired(expiresAt) {
 
   return parsed.getTime() <= Date.now();
 }
+
+function isTokenExpired(token) {
+  const claims = decodeJwtClaims(token);
+  if (!claims || typeof claims.exp !== "number") return false;
+
+  const expiresAtMs = claims.exp * 1000;
+  if (!Number.isFinite(expiresAtMs)) return false;
+
+  return expiresAtMs <= Date.now();
+}
+
+function isSessionExpired({ expiresAt, token }) {
+  if (isExpired(expiresAt)) return true;
+  return isTokenExpired(token);
+}
+
+function decodeJwtClaims(token) {
+  if (!token || typeof token !== "string") return null;
+
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+
+    const payload = parts[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const decoded = atob(padded);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+
+function hasStoredSession() {
+  return !!localStorage.getItem(AUTH_KEY);
+}
+
+function hasAuthorizationHeader(headers) {
+  if (!headers) return false;
+
+  if (typeof headers.get === "function") {
+    return Boolean(headers.get("Authorization"));
+  }
+
+  if (Array.isArray(headers)) {
+    return headers.some(([name]) => String(name).toLowerCase() === "authorization");
+  }
+
+  if (typeof headers === "object") {
+    return Object.keys(headers).some((name) => String(name).toLowerCase() === "authorization");
+  }
+
+  return false;
+}
+
+function redirectToLogin({ sessionExpired = false } = {}) {
+  const currentPath = `${window.location.pathname}${window.location.search || ""}${window.location.hash || ""}`;
+  if (isLoginPage(currentPath)) return;
+
+  const params = new URLSearchParams();
+  if (sessionExpired) {
+    params.set("sessionExpired", "1");
+  }
+  params.set("returnTo", currentPath);
+  window.location.href = `./login.html?${params.toString()}`;
+}
+
+function isLoginPage(pathname) {
+  return String(pathname || "").includes("login.html");
+}
+
+function installSessionWatch() {
+  if (window.__wgSessionWatchInstalled) return;
+  window.__wgSessionWatchInstalled = true;
+
+  const validate = () => {
+    if (getAuthSession()) return;
+    if (hasStoredSession()) {
+      clearAuthSession();
+    }
+    redirectToLogin({ sessionExpired: true });
+  };
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      validate();
+    }
+  });
+
+  window.addEventListener("pageshow", validate);
+  window.addEventListener("storage", (event) => {
+    if (event.key === AUTH_KEY) {
+      validate();
+    }
+  });
+}
+
+function inferApiBase() {
+  const isBrowser = typeof window !== "undefined" && !!window.location;
+  if (!isBrowser) return "http://localhost:5298";
+
+  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+  const hostname = window.location.hostname || "localhost";
+  return `${protocol}//${hostname}:5298`;
+}
+

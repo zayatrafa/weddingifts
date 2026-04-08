@@ -19,7 +19,7 @@ const returnTo = params.get("returnTo");
 
 const session = getAuthSession();
 if (session?.token) {
-  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+  if (isSafeReturnTo(returnTo)) {
     window.location.replace(returnTo);
   } else {
     window.location.replace("./create-event.html");
@@ -94,7 +94,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 async function resolvePostLoginRedirect(apiBase, token) {
-  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+  if (isSafeReturnTo(returnTo)) {
     return returnTo;
   }
 
@@ -121,4 +121,9 @@ function loginIcon() {
 
 function spinnerIcon() {
   return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
+}
+
+function isSafeReturnTo(value) {
+  if (!value || typeof value !== "string") return false;
+  return value.startsWith("/") && !value.startsWith("//");
 }

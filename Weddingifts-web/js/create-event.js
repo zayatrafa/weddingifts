@@ -18,8 +18,13 @@ const eventDateInput = document.getElementById("event-date-input");
 const EVENT_BUTTON_DEFAULT = `${calendarPlusIcon()}Criar evento`;
 const EVENT_BUTTON_LOADING = `${spinnerIcon()}Criando...`;
 const MAX_EVENT_NAME_LENGTH = 120;
+const MAX_EVENT_DATE_ISO = "2100-12-31";
 
 eventDateInput.min = tomorrowDateIso();
+eventDateInput.max = MAX_EVENT_DATE_ISO;
+eventDateInput.addEventListener("input", () => {
+  validateEventDateField();
+});
 
 initUserDropdown({
   session,
@@ -49,7 +54,7 @@ async function createEvent(event) {
   }
 
   if (!isFutureDate(eventDate)) {
-    setStatus(status, "status-error", "A data do evento deve ser futura.");
+    setStatus(status, "status-error", "A data do evento deve ser futura e válida.");
     return;
   }
 
@@ -68,7 +73,7 @@ async function createEvent(event) {
     const focusEventId = encodeURIComponent(String(createdEvent.id));
     window.location.href = `./my-events.html?focusEventId=${focusEventId}`;
   } catch (error) {
-    setStatus(status, "status-error", String(error.message || "Não foi possível criar o evento."));
+    setStatus(status, "status-error", String(error.message || "Não foi possível concluir a criação do evento."));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = EVENT_BUTTON_DEFAULT;
@@ -99,7 +104,8 @@ function isFutureDate(dateValue) {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return selectedDate > today;
+  const maxEventDate = new Date(`${MAX_EVENT_DATE_ISO}T00:00:00`);
+  return selectedDate > today && selectedDate <= maxEventDate;
 }
 
 function calendarPlusIcon() {
@@ -115,4 +121,19 @@ function toLocalDateIso(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function validateEventDateField() {
+  const value = eventDateInput.value;
+  if (!value) {
+    eventDateInput.setCustomValidity("");
+    return;
+  }
+
+  if (!isFutureDate(value)) {
+    eventDateInput.setCustomValidity("Informe uma data futura válida para o evento.");
+    return;
+  }
+
+  eventDateInput.setCustomValidity("");
 }

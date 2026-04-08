@@ -40,7 +40,7 @@ const ICON_EDIT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 2
 
 createGiftForm.noValidate = true;
 
-const state = { events: [], selectedEventId: null, gifts: [], reservations: [], editingGiftId: null };
+const state = { events: [], selectedEventId: null, gifts: [], reservations: [], guests: [], editingGiftId: null };
 
 initUserDropdown({
   session,
@@ -99,6 +99,7 @@ async function loadMyEvents() {
       state.selectedEventId = null;
       state.gifts = [];
       state.reservations = [];
+      state.guests = [];
       renderGiftSelect();
       renderGifts();
       renderReservations();
@@ -115,7 +116,7 @@ async function loadMyEvents() {
     await reloadSelectedEventData();
     setStatus(status, "status-success", "Eventos carregados com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar seus eventos: ${error.message}`);
   }
 }
 
@@ -186,7 +187,7 @@ async function submitGiftForm(event) {
     await loadMyEvents();
     setGiftFormStatus("status-success", "Presente adicionado com sucesso.");
   } catch (error) {
-    setGiftFormError(`Falha ao salvar presente: ${error.message}`);
+    setGiftFormError(`Não foi possível salvar o presente: ${error.message}`);
   } finally {
     giftSubmitButton.disabled = false;
     setGiftSubmitButtonLabel(
@@ -251,7 +252,7 @@ async function deleteGift(gift) {
     await reloadSelectedEventData();
     setGiftFormStatus("status-success", "Presente excluído com sucesso.");
   } catch (error) {
-    setGiftFormError(`Falha ao excluir presente: ${error.message}`);
+    setGiftFormError(`Não foi possível excluir o presente: ${error.message}`);
   }
 }
 
@@ -260,6 +261,7 @@ async function loadSelectedEventGifts() {
     state.gifts = [];
     renderGifts();
     state.reservations = [];
+    state.guests = [];
     renderReservations();
     return;
   }
@@ -271,7 +273,7 @@ async function loadSelectedEventGifts() {
   } catch (error) {
     state.gifts = [];
     renderGifts();
-    setStatus(status, "status-error", `Falha ao carregar presentes: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar os presentes: ${error.message}`);
   }
 }
 
@@ -291,13 +293,33 @@ async function loadSelectedEventReservations() {
   } catch (error) {
     state.reservations = [];
     renderReservations();
-    setStatus(status, "status-error", `Falha ao carregar histórico de reservas: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar o histórico de reservas: ${error.message}`);
+  }
+}
+
+async function loadSelectedEventGuests() {
+  if (!state.selectedEventId) {
+    state.guests = [];
+    renderReservations();
+    return;
+  }
+
+  try {
+    const apiBase = getApiBase();
+    state.guests = await requestJson(`${apiBase}/api/events/${state.selectedEventId}/guests`, {
+      headers: authHeaders(token)
+    });
+    renderReservations();
+  } catch (error) {
+    state.guests = [];
+    setStatus(status, "status-error", `Não foi possível carregar os convidados para enriquecer o histórico: ${error.message}`);
   }
 }
 
 async function reloadSelectedEventData() {
   await loadSelectedEventGifts();
   await loadSelectedEventReservations();
+  await loadSelectedEventGuests();
 }
 
 function renderGiftSelect() {
@@ -378,6 +400,7 @@ function renderReservations() {
   state.reservations.forEach((reservation) => {
     const item = document.createElement("article");
     item.className = "gift-item";
+    const guestName = findGuestNameByCpf(reservation.guestCpf);
 
     const activeQuantity = Number(reservation.activeQuantity ?? 0);
     const badgeClass = activeQuantity > 0 ? "tag-ok" : "tag-muted";
@@ -387,7 +410,7 @@ function renderReservations() {
       <div class="gift-head">
         <div>
           <h3 class="gift-name">${escapeHtml(reservation.giftName || "Presente")}</h3>
-          <p class="meta">CPF: ${escapeHtml(formatCpfInput(reservation.guestCpf || ""))}</p>
+          <p class="meta">Convidado: ${escapeHtml(guestName)} | CPF: ${escapeHtml(formatCpfInput(reservation.guestCpf || ""))}</p>
         </div>
         <span class="tag ${badgeClass}">${badgeText}</span>
       </div>
@@ -397,6 +420,20 @@ function renderReservations() {
 
     reservationsList.appendChild(item);
   });
+}
+
+function findGuestNameByCpf(cpf) {
+  const normalizedReservationCpf = normalizeCpf(cpf);
+  if (!normalizedReservationCpf || !Array.isArray(state.guests)) {
+    return "Convidado não identificado";
+  }
+
+  const matchedGuest = state.guests.find((guest) => normalizeCpf(guest?.cpf) === normalizedReservationCpf);
+  return matchedGuest?.name || "Convidado não identificado";
+}
+
+function normalizeCpf(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
 function parseCurrencyToNumber(value) {

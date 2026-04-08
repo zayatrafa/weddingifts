@@ -39,8 +39,8 @@ if ($ForceRestart) {
     Start-Sleep -Seconds 1
 }
 
-$apiCommand = "Set-Location '$apiPath'; dotnet run"
-$webCommand = "Set-Location '$webPath'; py -m http.server 5500"
+$apiCommand = "Set-Location '$apiPath'; dotnet run --urls http://0.0.0.0:5298"
+$webCommand = "Set-Location '$webPath'; py -m http.server 5500 --bind 0.0.0.0"
 
 $apiProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $apiCommand -PassThru
 $webProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $webCommand -PassThru
@@ -55,7 +55,24 @@ if ($Slug) {
 
 Start-Process $url
 
+$lanIp = (
+    Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp -ErrorAction SilentlyContinue |
+    Where-Object { $_.IPAddress -notlike "169.254.*" } |
+    Select-Object -First 1 -ExpandProperty IPAddress
+)
+
+if (-not $lanIp) {
+    $lanIp = (
+        Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Where-Object { $_.IPAddress -notlike "169.254.*" -and $_.IPAddress -ne "127.0.0.1" } |
+        Select-Object -First 1 -ExpandProperty IPAddress
+    )
+}
+
 Write-Host "API PID: $($apiProcess.Id)"
 Write-Host "WEB PID: $($webProcess.Id)"
 Write-Host "Navegador aberto em: $url"
+if ($lanIp) {
+    Write-Host "Acesso pelo celular (mesma rede Wi-Fi): http://$lanIp`:5500"
+}
 Write-Host "Para parar, feche as duas janelas do PowerShell que foram abertas."

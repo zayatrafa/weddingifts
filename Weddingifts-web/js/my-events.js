@@ -22,11 +22,12 @@ const query = new URLSearchParams(window.location.search);
 const focusEventIdFromQuery = Number(query.get("focusEventId"));
 let shouldFocusFromQuery = Number.isInteger(focusEventIdFromQuery) && focusEventIdFromQuery > 0;
 const minEventDate = tomorrowDateIso();
+const maxEventDate = "2100-12-31";
 
 const state = { events: [] };
 const MAX_EVENT_NAME_LENGTH = 120;
 const ICON_EDIT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg>';
-const ICON_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a1 1 0 0 0-1 1v8.59L8.7 10.3a1 1 0 0 0-1.4 1.4l4 4a1 1 0 0 0 1.4 0l4-4a1 1 0 1 0-1.4-1.4L13 12.59V4a1 1 0 0 0-1-1z" fill="currentColor"/><path d="M5 13a1 1 0 0 0-1 1v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 1 0-2 0v5H6v-5a1 1 0 0 0-1-1z" fill="currentColor"/></svg>';
+const ICON_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.59 13.41a1 1 0 0 1 0-1.41l2.83-2.83a3 3 0 0 1 4.24 4.24l-1.42 1.42a3 3 0 0 1-4.24 0 1 1 0 1 0-1.41 1.41 5 5 0 0 0 7.07 0l1.42-1.42a5 5 0 0 0-7.07-7.07l-2.83 2.83a1 1 0 0 1-1.41 0z" fill="currentColor"/><path d="M13.41 10.59a1 1 0 0 1 0 1.41l-2.83 2.83a3 3 0 0 1-4.24-4.24l1.42-1.42a3 3 0 0 1 4.24 0 1 1 0 1 0 1.41-1.41 5 5 0 0 0-7.07 0L4.93 9.17a5 5 0 1 0 7.07 7.07l2.83-2.83a1 1 0 0 1 1.41 0z" fill="currentColor"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M10 3h4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
 const ICON_GUESTS = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 2.2-6 5v1h12v-1c0-2.8-2.7-5-6-5zm8-2a3 3 0 1 0-2.2-5 6 6 0 0 1 .4 2c0 1.2-.3 2.3-.9 3.2.8.5 1.7.8 2.7.8zm1 2c-.8 0-1.6.1-2.3.4 1.4 1.1 2.3 2.8 2.3 4.6v1h4v-1c0-2.8-1.8-5-4-5z" fill="currentColor"/></svg></span>';
 const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
@@ -65,7 +66,7 @@ async function loadMyEvents() {
       );
     }
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar seus eventos: ${error.message}`);
   } finally {
     refreshEventsButton.disabled = false;
   }
@@ -96,9 +97,9 @@ function renderEvents() {
           <span class="tag tag-ok my-event-status">Publicado</span>
         </div>
         <div class="my-event-quick-actions" aria-label="Ações rápidas do evento">
-          <button class="icon-button" type="button" title="Editar evento" aria-label="Editar evento" data-action="edit">${ICON_EDIT}</button>
-          <button class="icon-button" type="button" title="Copiar link público" aria-label="Copiar link público" data-action="copy">${ICON_SHARE}</button>
-          <button class="icon-button danger event-delete" type="button" title="Excluir evento" aria-label="Excluir evento" data-action="delete">${ICON_TRASH}</button>
+          <button class="icon-button icon-button-text" type="button" title="Editar evento" aria-label="Editar evento" data-action="edit"><span class="icon-button-glyph">${ICON_EDIT}</span><span class="icon-button-label">Editar</span></button>
+          <button class="icon-button icon-button-text" type="button" title="Copiar link público" aria-label="Copiar link público" data-action="copy"><span class="icon-button-glyph">${ICON_SHARE}</span><span class="icon-button-label">Copiar link</span></button>
+          <button class="icon-button icon-button-text danger event-delete" type="button" title="Excluir evento" aria-label="Excluir evento" data-action="delete"><span class="icon-button-glyph">${ICON_TRASH}</span><span class="icon-button-label">Excluir</span></button>
         </div>
       </div>
 
@@ -118,7 +119,7 @@ function renderEvents() {
         </div>
         <div class="field field-flat">
           <label>Data</label>
-          <input class="input" type="date" name="eventDate" min="${minEventDate}" value="${toInputDate(eventData.eventDate)}" required />
+          <input class="input" type="date" name="eventDate" min="${minEventDate}" max="${maxEventDate}" value="${toInputDate(eventData.eventDate)}" required />
         </div>
         <div class="row row-tight fit-content">
           <button class="btn btn-primary" type="submit">Salvar alterações</button>
@@ -136,7 +137,7 @@ function renderEvents() {
         await copyToClipboard(link);
         setStatus(status, "status-success", `Link público copiado: ${link}`);
       } catch (error) {
-        setStatus(status, "status-error", `Falha ao copiar link: ${error.message}`);
+        setStatus(status, "status-error", `Não foi possível copiar o link público: ${error.message}`);
       }
     });
 
@@ -159,6 +160,16 @@ function renderEvents() {
       editButton.setAttribute("aria-pressed", String(!nextStateHidden));
       editButton.setAttribute("aria-label", nextStateHidden ? "Editar evento" : "Fechar edição");
       editButton.setAttribute("title", nextStateHidden ? "Editar evento" : "Fechar edição");
+    });
+
+    editForm.elements.eventDate.addEventListener("input", () => {
+      const value = editForm.elements.eventDate.value;
+      if (!value || isFutureDate(value)) {
+        editForm.elements.eventDate.setCustomValidity("");
+        return;
+      }
+
+      editForm.elements.eventDate.setCustomValidity("A data do evento deve ser futura e válida.");
     });
 
     item.querySelector('[data-action="cancel-edit"]').addEventListener("click", () => {
@@ -190,7 +201,7 @@ function renderEvents() {
       }
 
       if (!isFutureDate(eventDate)) {
-        setStatus(status, "status-error", "A data do evento deve ser futura.");
+        setStatus(status, "status-error", "A data do evento deve ser futura e válida.");
         return;
       }
 
@@ -209,7 +220,7 @@ function renderEvents() {
         setStatus(status, "status-success", "Evento atualizado com sucesso.");
         await loadMyEvents();
       } catch (error) {
-        setStatus(status, "status-error", String(error.message || "Não foi possível atualizar o evento."));
+        setStatus(status, "status-error", String(error.message || "Não foi possível salvar as alterações do evento."));
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = "Salvar alterações";
@@ -298,7 +309,8 @@ function isFutureDate(dateValue) {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return selectedDate > today;
+  const maxDate = new Date(`${maxEventDate}T00:00:00`);
+  return selectedDate > today && selectedDate <= maxDate;
 }
 
 function tomorrowDateIso() {

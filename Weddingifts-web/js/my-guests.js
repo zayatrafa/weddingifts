@@ -109,7 +109,7 @@ async function loadMyEvents() {
     await loadSelectedEventGuests();
     setStatus(status, "status-success", "Eventos carregados com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao carregar eventos: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar seus eventos: ${error.message}`);
   }
 }
 
@@ -176,7 +176,7 @@ async function submitGuestForm(event) {
     } else if (lowerMessage.includes("telefone") || lowerMessage.includes("celular")) {
       showFieldError(guestPhoneInput, error.message);
     } else {
-      showFieldError(guestSubmitButton, `Falha ao salvar convidado: ${error.message}`);
+      showFieldError(guestSubmitButton, `Não foi possível salvar o convidado: ${error.message}`);
     }
   } finally {
     guestSubmitButton.disabled = false;
@@ -243,7 +243,7 @@ async function deleteGuest(guest) {
     await loadSelectedEventGuests();
     setStatus(status, "status-success", "Convidado excluído com sucesso.");
   } catch (error) {
-    setStatus(status, "status-error", `Falha ao excluir convidado: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível excluir o convidado: ${error.message}`);
   }
 }
 
@@ -263,7 +263,7 @@ async function loadSelectedEventGuests() {
   } catch (error) {
     state.guests = [];
     renderGuests();
-    setStatus(status, "status-error", `Falha ao carregar convidados: ${error.message}`);
+    setStatus(status, "status-error", `Não foi possível carregar os convidados: ${error.message}`);
   }
 }
 
