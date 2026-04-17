@@ -1,13 +1,14 @@
 ﻿import {
-  clearAuthSession,
   formatCurrency,
   formatDate,
   getApiBase,
   getAuthSession,
   getUserMenuMarkup,
   initUserDropdown,
+  logoutAndRedirectToLogin,
   requestJson,
-  setStatus
+  setStatus,
+  UI_TEXT
 } from "./common.js";
 
 const state = { event: null, gifts: [], filter: "all", loading: false, actionGiftId: null };
@@ -54,12 +55,11 @@ if (querySlug) {
   loadEvent();
 } else {
   render();
-  setStatus(status, "status-info", "Informe o slug para carregar o evento público.");
+  setStatus(status, "status-info", UI_TEXT.publicEvent.initial);
 }
 
 function enhanceHeaderForLoggedUser(sessionData) {
-  const session = sessionData;
-  if (!session?.token) return;
+  if (!sessionData?.token) return;
 
   const navRight = document.querySelector(".shell-nav-right");
   if (!navRight) return;
@@ -72,10 +72,9 @@ function enhanceHeaderForLoggedUser(sessionData) {
   `;
 
   initUserDropdown({
-    session,
+    session: sessionData,
     onLogout: () => {
-      clearAuthSession();
-      window.location.href = "./login.html";
+      logoutAndRedirectToLogin();
     }
   });
 }
@@ -143,7 +142,7 @@ function refreshHeader() {
 
   if (!state.event) {
     title.textContent = "Evento não carregado";
-    subtitle.textContent = "Use o slug público para buscar os dados reais no backend.";
+    subtitle.textContent = "Use o slug público para consultar o evento e a lista de presentes.";
     date.textContent = "--";
     slug.textContent = "--";
     total.textContent = "0 itens";
@@ -151,7 +150,7 @@ function refreshHeader() {
   }
 
   title.textContent = state.event.name;
-  subtitle.textContent = "Lista pública atualizada em tempo real via API.";
+  subtitle.textContent = "Lista pública atualizada em tempo real pela API.";
   date.textContent = formatDate(state.event.eventDate);
   slug.textContent = state.event.slug;
   total.textContent = `${state.gifts.length} itens`;
@@ -159,9 +158,16 @@ function refreshHeader() {
 
 function renderGiftList() {
   giftGrid.innerHTML = "";
-  if (!state.event) return (giftGrid.innerHTML = '<div class="center-empty">Nenhum evento carregado.</div>');
+  if (!state.event) {
+    giftGrid.innerHTML = `<div class="center-empty">${UI_TEXT.publicEvent.emptyEvent}</div>`;
+    return;
+  }
+
   const items = filteredGifts();
-  if (!items.length) return (giftGrid.innerHTML = '<div class="center-empty">Nenhum presente encontrado para este filtro.</div>');
+  if (!items.length) {
+    giftGrid.innerHTML = `<div class="center-empty">${UI_TEXT.publicEvent.emptyFilter}</div>`;
+    return;
+  }
 
   items.forEach((gift) => {
     const fragment = giftTemplate.content.cloneNode(true);
@@ -180,7 +186,7 @@ function renderGiftList() {
 
     giftName.textContent = gift.name;
     giftPrice.textContent = formatCurrency(gift.price);
-    giftDescription.textContent = gift.description || "Sem descrição.";
+    giftDescription.textContent = gift.description || UI_TEXT.common.noDescription;
     giftBadge.textContent = badge.label;
     giftBadge.classList.add("tag", badge.className);
     giftMeta.textContent = `${available} disponíveis | ${reserved} reservados`;
@@ -190,7 +196,7 @@ function renderGiftList() {
     reserveButton.addEventListener("click", () => reserveGift(gift.id));
 
     unreserveButton.disabled = busy || reserved === 0;
-    unreserveButton.innerHTML = `${ICON_UNDO}Cancelar`;
+    unreserveButton.innerHTML = `${ICON_UNDO}Cancelar reserva`;
     unreserveButton.addEventListener("click", () => unreserveGift(gift.id));
 
     giftGrid.appendChild(fragment);
@@ -213,16 +219,16 @@ async function loadEvent() {
   try {
     state.loading = true;
     loadButton.disabled = true;
-    setStatus(status, "status-loading", "Carregando evento e presentes...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.loading);
     state.event = await requestJson(`${apiBase}/api/events/${encodeURIComponent(slug)}`);
     await refreshGifts();
-    setStatus(status, "status-success", `Evento '${state.event.name}' carregado com ${state.gifts.length} presente(s).`);
+    setStatus(status, "status-success", `Evento "${state.event.name}" carregado com ${state.gifts.length} presente(s).`);
     render();
   } catch (error) {
     state.event = null;
     state.gifts = [];
     render();
-    setStatus(status, "status-error", `Não foi possível carregar o evento: ${error.message}`);
+    setStatus(status, "status-error", `${UI_TEXT.publicEvent.loadError}: ${error.message}`);
   } finally {
     state.loading = false;
     loadButton.disabled = false;
@@ -242,7 +248,7 @@ async function reserveGift(giftId) {
   try {
     state.actionGiftId = giftId;
     renderGiftList();
-    setStatus(status, "status-loading", "Reservando presente...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.reserveLoading);
 
     await requestJson(`${apiBase}/api/gifts/${giftId}/reserve`, {
       method: "POST",
@@ -252,9 +258,9 @@ async function reserveGift(giftId) {
 
     await refreshGifts();
     renderGiftList();
-    setStatus(status, "status-success", "Reserva realizada com sucesso.");
+    setStatus(status, "status-success", UI_TEXT.publicEvent.reserveSuccess);
   } catch (error) {
-    setStatus(status, "status-error", `Não foi possível reservar o presente: ${error.message}`);
+    setStatus(status, "status-error", `${UI_TEXT.publicEvent.reserveError}: ${error.message}`);
   } finally {
     state.actionGiftId = null;
     renderGiftList();
@@ -274,7 +280,7 @@ async function unreserveGift(giftId) {
   try {
     state.actionGiftId = giftId;
     renderGiftList();
-    setStatus(status, "status-loading", "Cancelando reserva...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.unreserveLoading);
     await requestJson(`${apiBase}/api/gifts/${giftId}/unreserve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -282,9 +288,9 @@ async function unreserveGift(giftId) {
     });
     await refreshGifts();
     renderGiftList();
-    setStatus(status, "status-success", "Reserva cancelada com sucesso.");
+    setStatus(status, "status-success", UI_TEXT.publicEvent.unreserveSuccess);
   } catch (error) {
-    setStatus(status, "status-error", `Não foi possível cancelar a reserva: ${error.message}`);
+    setStatus(status, "status-error", `${UI_TEXT.publicEvent.unreserveError}: ${error.message}`);
   } finally {
     state.actionGiftId = null;
     renderGiftList();

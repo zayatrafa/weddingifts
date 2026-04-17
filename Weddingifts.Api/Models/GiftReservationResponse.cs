@@ -8,6 +8,7 @@ public sealed class GiftReservationResponse
     public int EventId { get; init; }
     public int GiftId { get; init; }
     public string GiftName { get; init; } = string.Empty;
+    public decimal GiftPrice { get; init; }
     public string GuestCpf { get; init; } = string.Empty;
     public int ReservedQuantity { get; init; }
     public int UnreservedQuantity { get; init; }
@@ -28,6 +29,7 @@ public sealed class GiftReservationResponse
             EventId = reservation.EventId,
             GiftId = reservation.GiftId,
             GiftName = reservation.Gift?.Name ?? string.Empty,
+            GiftPrice = reservation.Gift?.Price ?? 0m,
             GuestCpf = reservation.GuestCpf,
             ReservedQuantity = reservation.ReservedQuantity,
             UnreservedQuantity = reservation.UnreservedQuantity,

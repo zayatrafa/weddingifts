@@ -1,7 +1,9 @@
 ﻿import {
   getApiBase,
   requestJson,
-  setStatus
+  resolveSafeReturnTo,
+  setStatus,
+  UI_TEXT
 } from "./common.js";
 
 const form = document.getElementById("register-form");
@@ -41,7 +43,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (!isValidPersonName(name)) {
-    setStatus(status, "status-error", "O nome deve conter apenas letras.");
+    setStatus(status, "status-error", "Informe um nome válido usando apenas letras.");
     return;
   }
 
@@ -83,6 +85,7 @@ form.addEventListener("submit", async (event) => {
   try {
     submitButton.disabled = true;
     submitButton.innerHTML = REGISTER_BUTTON_LOADING;
+    setStatus(status, "status-loading", "Criando sua conta...");
 
     await requestJson(`${apiBase}/api/users`, {
       method: "POST",
@@ -90,9 +93,15 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify({ name, email, cpf, birthDate, password })
     });
 
-    window.location.href = `./login.html?email=${encodeURIComponent(email)}&registered=1`;
+    setStatus(status, "status-success", UI_TEXT.auth.registerSuccess);
+    const next = resolveSafeReturnTo("/create-event.html");
+    const target = `./login.html?email=${encodeURIComponent(email)}&registered=1${next ? `&returnTo=${encodeURIComponent(next)}` : ""}`;
+
+    window.setTimeout(() => {
+      window.location.href = target;
+    }, 320);
   } catch (error) {
-    setStatus(status, "status-error", String(error.message || "Não foi possível concluir seu cadastro."));
+    setStatus(status, "status-error", String(error.message || UI_TEXT.auth.registerError));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = REGISTER_BUTTON_DEFAULT;
@@ -197,7 +206,7 @@ function ensureStatusElement() {
   const fallback = document.createElement("p");
   fallback.id = "status";
   fallback.className = "status status-info";
-  fallback.textContent = "Preencha os dados para criar sua conta.";
+  fallback.textContent = UI_TEXT.auth.registerInitial;
   form?.appendChild(fallback);
   return fallback;
 }

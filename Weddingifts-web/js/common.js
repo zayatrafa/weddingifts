@@ -1,8 +1,107 @@
 ﻿export const DEFAULT_API_BASE = inferApiBase();
 const AUTH_KEY = "wg_auth_session";
+const MOBILE_NAV_TOGGLE_ID = "mobile-nav-toggle";
+const MOBILE_NAV_OVERLAY_ID = "mobile-nav-overlay";
+const MOBILE_NAV_DRAWER_ID = "mobile-nav-drawer";
+const MOBILE_NAV_TITLE = "Navegação principal";
 
 const STATUS_CLASSES = ["status-info", "status-success", "status-error", "status-loading"];
 const GENERIC_ERROR_MESSAGE = "Não foi possível concluir a operação. Tente novamente.";
+let mobileHeaderController = null;
+
+export const UI_TEXT = {
+  common: {
+    retry: "Não foi possível concluir a operação. Tente novamente.",
+    loading: "Carregando...",
+    empty: "Nenhum dado disponível.",
+    noDescription: "Sem descrição.",
+    save: "Salvar alterações",
+    cancel: "Cancelar",
+    editCancelled: "Edição cancelada.",
+    loggedOut: "Você saiu da sua conta com sucesso.",
+    sessionExpired: "Sua sessão expirou. Faça login novamente para continuar."
+  },
+  auth: {
+    loginInitial: "Informe e-mail e senha para continuar.",
+    loginLoading: "Validando suas credenciais...",
+    loginSuccess: "Login realizado com sucesso. Redirecionando...",
+    loginError: "Não foi possível entrar. Tente novamente.",
+    invalidCredentials: "E-mail ou senha inválidos.",
+    registerInitial: "Preencha os dados para criar sua conta.",
+    registerSuccess: "Cadastro concluído. Faça login para continuar.",
+    registerEmailNotice: "Cadastro concluído. Você recebeu um e-mail para validar sua conta. Essa validação será ativada em breve no sistema.",
+    registerError: "Não foi possível concluir seu cadastro.",
+    logoutDone: "Você saiu da sua conta com sucesso.",
+    passwordPending: "A alteração de senha ainda não está disponível no backend. A interface já está preparada."
+  },
+  events: {
+    loading: "Carregando seus eventos...",
+    empty: "Você ainda não possui eventos.",
+    emptyWithAction: "Você ainda não possui eventos. Crie um evento primeiro.",
+    loaded: "Eventos carregados com sucesso.",
+    createdFocus: "Evento criado e destacado com sucesso.",
+    createLoading: "Criando evento...",
+    createError: "Não foi possível concluir a criação do evento.",
+    updated: "Evento atualizado com sucesso.",
+    updating: "Atualizando evento...",
+    updateError: "Não foi possível salvar as alterações do evento.",
+    deleted: "Evento excluído com sucesso.",
+    deleting: "Excluindo evento...",
+    deleteError: "Não foi possível excluir o evento.",
+    copySuccess: "Link público copiado com sucesso.",
+    copyError: "Não foi possível copiar o link público."
+  },
+  gifts: {
+    initial: "Selecione um evento para começar.",
+    loading: "Carregando seus eventos...",
+    loadingList: "Carregando os presentes do evento...",
+    loadingReservations: "Carregando o histórico de reservas...",
+    createLoading: "Criando presente...",
+    createSuccess: "Presente adicionado com sucesso.",
+    createError: "Não foi possível salvar o presente.",
+    updateLoading: "Atualizando presente...",
+    updateSuccess: "Presente atualizado com sucesso.",
+    deleteLoading: "Excluindo presente...",
+    deleteSuccess: "Presente excluído com sucesso.",
+    deleteError: "Não foi possível excluir o presente.",
+    empty: "Nenhum presente cadastrado para este evento.",
+    emptyReservations: "Nenhuma reserva registrada para este evento."
+  },
+  guests: {
+    initial: "Selecione um evento para começar.",
+    loading: "Carregando seus eventos...",
+    loaded: "Eventos carregados com sucesso.",
+    loadingList: "Carregando os convidados do evento...",
+    createLoading: "Adicionando convidado...",
+    createSuccess: "Convidado adicionado com sucesso.",
+    updateLoading: "Atualizando convidado...",
+    updateSuccess: "Convidado atualizado com sucesso.",
+    deleteLoading: "Excluindo convidado...",
+    deleteSuccess: "Convidado excluído com sucesso.",
+    deleteError: "Não foi possível excluir o convidado.",
+    empty: "Nenhum convidado cadastrado para este evento.",
+    reservationNone: "Sem reserva ativa",
+    reservationActive: "Reserva ativa"
+  },
+  publicEvent: {
+    initial: "Informe o slug para carregar o evento público.",
+    loading: "Carregando evento e presentes...",
+    loadError: "Não foi possível carregar o evento.",
+    reserveLoading: "Reservando presente...",
+    reserveSuccess: "Reserva realizada com sucesso.",
+    reserveError: "Não foi possível reservar o presente.",
+    unreserveLoading: "Cancelando reserva...",
+    unreserveSuccess: "Reserva cancelada com sucesso.",
+    unreserveError: "Não foi possível cancelar a reserva.",
+    emptyEvent: "Nenhum evento carregado.",
+    emptyFilter: "Nenhum presente encontrado para este filtro."
+  },
+  confirms: {
+    deleteEvent: (name) => `Tem certeza que deseja excluir o evento "${name}"?`,
+    deleteGift: (name) => `Tem certeza que deseja excluir o presente "${name}"?`,
+    deleteGuest: (name) => `Tem certeza que deseja excluir o convidado "${name}"?`
+  }
+};
 
 export function getApiBase() {
   return DEFAULT_API_BASE;
@@ -45,8 +144,8 @@ export async function requestJson(url, options = {}) {
   if (!response.ok) {
     if (!skipAuthRedirect && (response.status === 401 || response.status === 403) && (hasAuthHeader || hadStoredSession)) {
       clearAuthSession();
-      redirectToLogin({ sessionExpired: true });
-      throw new Error("Sua sessão expirou. Faça login novamente.");
+      redirectToLoginPage({ sessionExpired: true });
+      throw new Error(UI_TEXT.common.sessionExpired);
     }
 
     const payload = await response.text();
@@ -109,7 +208,7 @@ export function requireAuth() {
   const hadPreviousSession = hasStoredSession();
   const session = getAuthSession();
   if (!session) {
-    redirectToLogin({ sessionExpired: hadPreviousSession });
+    redirectToLoginPage({ sessionExpired: hadPreviousSession });
     return null;
   }
 
@@ -272,6 +371,81 @@ export function buildPublicEventLink(slug) {
   return `${base}event.html?slug=${encodeURIComponent(slug)}`;
 }
 
+export function getCurrentAppPath() {
+  return `${window.location.pathname}${window.location.search || ""}${window.location.hash || ""}`;
+}
+
+export function resolveSafeReturnTo(value) {
+  if (!value || typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  if (value.includes("login.html")) return null;
+  return value;
+}
+
+export async function resolvePostLoginPath(apiBase, token, returnTo) {
+  const safeReturnTo = resolveSafeReturnTo(returnTo);
+  if (safeReturnTo) return safeReturnTo;
+
+  if (!token) return "./create-event.html";
+
+  try {
+    const events = await requestJson(`${apiBase}/api/events/mine`, {
+      headers: authHeaders(token)
+    });
+
+    return Array.isArray(events) && events.length > 0
+      ? "./my-events.html"
+      : "./create-event.html";
+  } catch {
+    return "./create-event.html";
+  }
+}
+
+export function redirectToLoginPage({ sessionExpired = false, loggedOut = false, returnTo } = {}) {
+  const currentPath = returnTo || getCurrentAppPath();
+  if (isLoginPage(currentPath)) return;
+
+  const params = new URLSearchParams();
+  if (sessionExpired) {
+    params.set("sessionExpired", "1");
+  }
+  if (loggedOut) {
+    params.set("loggedOut", "1");
+  }
+
+  const safeReturnTo = resolveSafeReturnTo(currentPath);
+  if (safeReturnTo) {
+    params.set("returnTo", safeReturnTo);
+  }
+
+  const query = params.toString();
+  window.location.href = query ? `./login.html?${query}` : "./login.html";
+}
+
+export function logoutAndRedirectToLogin() {
+  clearAuthSession();
+  redirectToLoginPage({ loggedOut: true });
+}
+
+export function initGlobalMobileHeader() {
+  if (typeof document === "undefined") return null;
+
+  const nav = document.querySelector(".shell-nav");
+  if (!nav) return null;
+
+  if (mobileHeaderController?.nav !== nav) {
+    mobileHeaderController = createMobileHeaderController(nav);
+  }
+
+  mobileHeaderController.render();
+  mobileHeaderController.syncScrollState();
+  return mobileHeaderController;
+}
+
+export function refreshMobileHeader() {
+  initGlobalMobileHeader();
+}
+
 function isExpired(expiresAt) {
   if (!expiresAt) return false;
 
@@ -335,18 +509,6 @@ function hasAuthorizationHeader(headers) {
   return false;
 }
 
-function redirectToLogin({ sessionExpired = false } = {}) {
-  const currentPath = `${window.location.pathname}${window.location.search || ""}${window.location.hash || ""}`;
-  if (isLoginPage(currentPath)) return;
-
-  const params = new URLSearchParams();
-  if (sessionExpired) {
-    params.set("sessionExpired", "1");
-  }
-  params.set("returnTo", currentPath);
-  window.location.href = `./login.html?${params.toString()}`;
-}
-
 function isLoginPage(pathname) {
   return String(pathname || "").includes("login.html");
 }
@@ -360,7 +522,7 @@ function installSessionWatch() {
     if (hasStoredSession()) {
       clearAuthSession();
     }
-    redirectToLogin({ sessionExpired: true });
+    redirectToLoginPage({ sessionExpired: true });
   };
 
   document.addEventListener("visibilitychange", () => {
@@ -384,5 +546,333 @@ function inferApiBase() {
   const protocol = window.location.protocol === "https:" ? "https:" : "http:";
   const hostname = window.location.hostname || "localhost";
   return `${protocol}//${hostname}:5298`;
+}
+
+
+
+
+function createMobileHeaderController(nav) {
+  const navInner = nav.querySelector(".shell-nav-inner");
+  if (!navInner) return { nav, render() {}, syncScrollState() {} };
+
+  const toggle = ensureMobileNavToggle(navInner);
+  const overlay = ensureMobileNavOverlay();
+  const drawer = ensureMobileNavDrawer();
+
+  let lastFocusedElement = null;
+  let lockedScrollY = 0;
+
+  const focusableSelector = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "[tabindex]:not([tabindex='-1'])"
+  ].join(", ");
+
+  const lockBodyScroll = () => {
+    lockedScrollY = window.scrollY;
+    document.body.classList.add("mobile-nav-open");
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${lockedScrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  };
+
+  const unlockBodyScroll = () => {
+    document.body.classList.remove("mobile-nav-open");
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    window.scrollTo(0, lockedScrollY);
+  };
+
+  const closeMenu = ({ restoreFocus = true } = {}) => {
+    toggle.setAttribute("aria-expanded", "false");
+    drawer.setAttribute("aria-hidden", "true");
+    drawer.classList.remove("is-open");
+    overlay.classList.remove("is-open");
+    unlockBodyScroll();
+
+    window.setTimeout(() => {
+      drawer.hidden = true;
+      overlay.hidden = true;
+    }, 280);
+
+    if (restoreFocus && lastFocusedElement instanceof HTMLElement) {
+      lastFocusedElement.focus();
+    }
+  };
+
+  const openMenu = () => {
+    lastFocusedElement = document.activeElement;
+    lockBodyScroll();
+    toggle.setAttribute("aria-expanded", "true");
+    overlay.hidden = false;
+    drawer.hidden = false;
+    drawer.setAttribute("aria-hidden", "false");
+
+    requestAnimationFrame(() => {
+      overlay.classList.add("is-open");
+      drawer.classList.add("is-open");
+    });
+
+    const firstFocusable = drawer.querySelector(focusableSelector);
+    firstFocusable?.focus();
+  };
+
+  const trapFocus = (event) => {
+    if (event.key !== "Tab" || drawer.hidden) return;
+
+    const focusable = Array.from(drawer.querySelectorAll(focusableSelector))
+      .filter((element) => element instanceof HTMLElement && !element.hasAttribute("hidden"));
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  toggle.addEventListener("click", () => {
+    if (drawer.hidden) {
+      openMenu();
+      return;
+    }
+
+    closeMenu();
+  });
+
+  overlay.addEventListener("click", () => closeMenu());
+  drawer.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (target.closest(".js-mobile-nav-logout")) {
+      closeMenu({ restoreFocus: false });
+      renderMobileDrawerContent(drawer);
+      logoutAndRedirectToLogin();
+      return;
+    }
+
+    if (target.closest(".js-mobile-nav-dismiss")) {
+      closeMenu({ restoreFocus: !target.closest("a[href]") });
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !drawer.hidden) {
+      closeMenu();
+      return;
+    }
+
+    trapFocus(event);
+  });
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === AUTH_KEY) {
+      renderMobileDrawerContent(drawer);
+    }
+  });
+
+  const syncScrollState = () => {
+    nav.classList.toggle("is-scrolled", window.scrollY > 10);
+  };
+
+  syncScrollState();
+  window.addEventListener("scroll", syncScrollState, { passive: true });
+
+  const render = () => {
+    renderMobileDrawerContent(drawer);
+  };
+
+  return { nav, render, syncScrollState };
+}
+
+function ensureMobileNavToggle(navInner) {
+  let toggle = document.getElementById(MOBILE_NAV_TOGGLE_ID);
+  if (toggle) return toggle;
+
+  toggle = document.createElement("button");
+  toggle.id = MOBILE_NAV_TOGGLE_ID;
+  toggle.className = "mobile-nav-toggle";
+  toggle.type = "button";
+  toggle.setAttribute("aria-label", "Abrir menu principal");
+  toggle.setAttribute("aria-controls", MOBILE_NAV_DRAWER_ID);
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.innerHTML = `
+    <span class="mobile-nav-toggle-icon" aria-hidden="true">
+      <span class="mobile-nav-toggle-line"></span>
+      <span class="mobile-nav-toggle-line"></span>
+      <span class="mobile-nav-toggle-line"></span>
+    </span>
+  `;
+
+  navInner.appendChild(toggle);
+  return toggle;
+}
+
+function ensureMobileNavOverlay() {
+  let overlay = document.getElementById(MOBILE_NAV_OVERLAY_ID);
+  if (overlay) {
+    if (overlay.parentElement !== document.body) {
+      document.body.appendChild(overlay);
+    }
+    return overlay;
+  }
+
+  overlay = document.createElement("div");
+  overlay.id = MOBILE_NAV_OVERLAY_ID;
+  overlay.className = "mobile-nav-overlay";
+  overlay.hidden = true;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function ensureMobileNavDrawer() {
+  let drawer = document.getElementById(MOBILE_NAV_DRAWER_ID);
+  if (drawer) {
+    if (drawer.parentElement !== document.body) {
+      document.body.appendChild(drawer);
+    }
+    return drawer;
+  }
+
+  drawer = document.createElement("aside");
+  drawer.id = MOBILE_NAV_DRAWER_ID;
+  drawer.className = "mobile-nav-drawer";
+  drawer.hidden = true;
+  drawer.tabIndex = -1;
+  drawer.setAttribute("aria-hidden", "true");
+  drawer.setAttribute("aria-label", MOBILE_NAV_TITLE);
+  document.body.appendChild(drawer);
+  return drawer;
+}
+
+function renderMobileDrawerContent(drawer) {
+  const session = getAuthSession();
+  const currentPage = getCurrentPageName();
+  const config = getMobileNavConfig({ session, currentPage });
+
+  drawer.innerHTML = `
+    <div class="mobile-nav-drawer-inner">
+      <div class="mobile-nav-drawer-head">
+        <a class="mobile-nav-brand js-mobile-nav-dismiss" href="./index.html">
+          <span class="shell-dot"></span>
+          <span>Weddingifts</span>
+        </a>
+        <button class="mobile-nav-close js-mobile-nav-dismiss" type="button" aria-label="Fechar menu">
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+      ${config.eyebrow ? `<p class="mobile-nav-eyebrow">${escapeHtml(config.eyebrow)}</p>` : ""}
+      <div class="mobile-nav-links">
+        ${config.links.map((link) => buildMobileNavLink(link, currentPage)).join("")}
+      </div>
+      <div class="mobile-nav-divider"></div>
+      <a class="mobile-nav-cta js-mobile-nav-dismiss" href="${config.cta.href}">${escapeHtml(config.cta.label)}</a>
+      <p class="mobile-nav-copy">${escapeHtml(config.copy)}</p>
+    </div>
+  `;
+}
+
+function buildMobileNavLink(link, currentPage) {
+  const classes = ["mobile-nav-link"];
+  const isActive = link.activePages?.includes(currentPage);
+
+  if (link.dismiss !== false) {
+    classes.push("js-mobile-nav-dismiss");
+  }
+
+  if (isActive) {
+    classes.push("is-active");
+  }
+
+  if (link.kind === "button") {
+    classes.push("mobile-nav-link-button");
+    if (link.buttonClass) {
+      classes.push(link.buttonClass);
+    }
+
+    return `<button class="${classes.join(" ")}" type="button">${escapeHtml(link.label)}</button>`;
+  }
+
+  return `<a class="${classes.join(" ")}" href="${link.href}">${escapeHtml(link.label)}</a>`;
+}
+
+function getMobileNavConfig({ session, currentPage }) {
+  if (session?.token) {
+    const displayName = session.user?.name?.trim() || session.user?.email?.trim() || "Sua conta";
+
+    return {
+      eyebrow: displayName,
+      links: [
+        { href: "./my-events.html", label: "Meus eventos", activePages: ["my-events.html"] },
+        { href: "./create-event.html", label: "Criar evento", activePages: ["create-event.html"] },
+        { href: "./my-event.html", label: "Gerenciar presentes", activePages: ["my-event.html"] },
+        { href: "./my-guests.html", label: "Gerenciar convidados", activePages: ["my-guests.html"] },
+        { href: "./account.html", label: "Minha conta", activePages: ["account.html"] },
+        { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] },
+        { kind: "button", label: "Sair", buttonClass: "js-mobile-nav-logout", activePages: [] }
+      ],
+      cta: {
+        href: "./create-event.html",
+        label: currentPage === "create-event.html" ? "Continuar edição" : "Criar minha lista"
+      },
+      copy: "Celebrar o amor com organização, clareza e um painel discreto."
+    };
+  }
+
+  return {
+    eyebrow: "Navegação",
+    links: [
+      { href: "./login.html", label: "Entrar", activePages: ["login.html"] },
+      { href: "./register.html", label: "Criar conta", activePages: ["register.html"] },
+      { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] }
+    ],
+    cta: {
+      href: "./register.html",
+      label: "Criar minha lista"
+    },
+    copy: "Celebrar o amor em cada detalhe."
+  };
+}
+
+function getCurrentPageName() {
+  const path = window.location.pathname || "";
+  const filename = path.split("/").pop();
+  return filename || "index.html";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initGlobalMobileHeader, { once: true });
+  } else {
+    initGlobalMobileHeader();
+  }
 }
 

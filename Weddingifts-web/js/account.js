@@ -1,9 +1,10 @@
 ﻿import {
-  clearAuthSession,
   formatDateTime,
   initUserDropdown,
+  logoutAndRedirectToLogin,
   requireAuth,
-  setStatus
+  setStatus,
+  UI_TEXT
 } from "./common.js";
 
 const session = requireAuth();
@@ -16,8 +17,7 @@ const status = document.getElementById("status");
 initUserDropdown({
   session,
   onLogout: () => {
-    clearAuthSession();
-    window.location.href = "./login.html";
+    logoutAndRedirectToLogin();
   }
 });
 
@@ -29,8 +29,8 @@ form.addEventListener("submit", (event) => {
   const newPassword = document.getElementById("new-password").value;
   const confirmPassword = document.getElementById("confirm-password").value;
 
-  if (newPassword.length < 6) {
-    setStatus(status, "status-error", "A nova senha precisa ter ao menos 6 caracteres.");
+  if (newPassword.length < 8) {
+    setStatus(status, "status-error", "A nova senha deve ter pelo menos 8 caracteres.");
     return;
   }
 
@@ -39,7 +39,7 @@ form.addEventListener("submit", (event) => {
     return;
   }
 
-  setStatus(status, "status-info", "Alteração de senha ainda não está disponível no backend. A interface já está preparada.");
+  setStatus(status, "status-info", UI_TEXT.auth.passwordPending);
 });
 
 function renderAccount() {
@@ -47,7 +47,7 @@ function renderAccount() {
 
   accountData.innerHTML = `
     <p class="meta"><strong>Nome:</strong> ${escapeHtml(user.name || "--")}</p>
-    <p class="meta"><strong>Email:</strong> ${escapeHtml(user.email || "--")}</p>
+    <p class="meta"><strong>E-mail:</strong> ${escapeHtml(user.email || "--")}</p>
     <p class="meta"><strong>ID:</strong> ${typeof user.id === "number" ? user.id : "--"}</p>
     <p class="meta"><strong>Criado em:</strong> ${formatDateTime(user.createdAt)}</p>
   `;
@@ -61,4 +61,3 @@ function escapeHtml(text) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-

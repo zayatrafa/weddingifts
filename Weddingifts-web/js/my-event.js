@@ -1,13 +1,14 @@
 ﻿import {
   authHeaders,
-  clearAuthSession,
   formatCurrency,
   formatDateTime,
   getApiBase,
   initUserDropdown,
+  logoutAndRedirectToLogin,
   requestJson,
   requireAuth,
-  setStatus
+  setStatus,
+  UI_TEXT
 } from "./common.js";
 
 const MIN_GIFT_PRICE = 0;
@@ -45,15 +46,14 @@ const state = { events: [], selectedEventId: null, gifts: [], reservations: [], 
 initUserDropdown({
   session,
   onLogout: () => {
-    clearAuthSession();
-    window.location.href = "./login.html";
+    logoutAndRedirectToLogin();
   }
 });
 
 createGiftForm.addEventListener("submit", submitGiftForm);
 giftCancelEditButton.addEventListener("click", () => {
   resetGiftFormMode();
-  setStatus(status, "status-info", "Edição cancelada. Você pode adicionar um novo presente.");
+  setStatus(status, "status-info", `${UI_TEXT.common.editCancelled} Você pode adicionar um novo presente.`);
 });
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
@@ -82,7 +82,7 @@ giftPriceInput.addEventListener("blur", () => {
 });
 
 syncGiftEditUi();
-setGiftSubmitButtonLabel(state.editingGiftId !== null ? "Salvar alterações" : "Adicionar presente", state.editingGiftId !== null ? ICON_SAVE : ICON_GIFT);
+setGiftSubmitButtonLabel(state.editingGiftId !== null ? UI_TEXT.common.save : "Adicionar presente", state.editingGiftId !== null ? ICON_SAVE : ICON_GIFT);
 loadMyEvents();
 
 async function loadMyEvents() {
@@ -90,7 +90,7 @@ async function loadMyEvents() {
   const queryEventId = Number(query.get("eventId"));
 
   try {
-    setStatus(status, "status-loading", "Carregando seus eventos...");
+    setStatus(status, "status-loading", UI_TEXT.gifts.loading);
 
     const apiBase = getApiBase();
     state.events = await requestJson(`${apiBase}/api/events/mine`, { headers: authHeaders(token) });
@@ -103,7 +103,7 @@ async function loadMyEvents() {
       renderGiftSelect();
       renderGifts();
       renderReservations();
-      setStatus(status, "status-info", "Você ainda não possui eventos. Crie um evento primeiro.");
+      setStatus(status, "status-info", UI_TEXT.events.emptyWithAction);
       return;
     }
 
@@ -114,7 +114,7 @@ async function loadMyEvents() {
 
     renderGiftSelect();
     await reloadSelectedEventData();
-    setStatus(status, "status-success", "Eventos carregados com sucesso.");
+    setStatus(status, "status-success", UI_TEXT.events.loaded);
   } catch (error) {
     setStatus(status, "status-error", `Não foi possível carregar seus eventos: ${error.message}`);
   }
@@ -160,7 +160,7 @@ async function submitGiftForm(event) {
     const apiBase = getApiBase();
 
     if (editing) {
-      setGiftFormStatus("status-loading", "Atualizando presente...");
+      setGiftFormStatus("status-loading", UI_TEXT.gifts.updateLoading);
       await requestJson(`${apiBase}/api/events/${eventId}/gifts/${state.editingGiftId}`, {
         method: "PUT",
         headers: authHeaders(token, true),
@@ -168,11 +168,11 @@ async function submitGiftForm(event) {
       });
       await reloadSelectedEventData();
       resetGiftFormMode({ silent: true });
-      setGiftFormStatus("status-success", "Presente atualizado com sucesso.");
+      setGiftFormStatus("status-success", UI_TEXT.gifts.updateSuccess);
       return;
     }
 
-    setGiftFormStatus("status-loading", "Criando presente...");
+    setGiftFormStatus("status-loading", UI_TEXT.gifts.createLoading);
     await requestJson(`${apiBase}/api/events/${eventId}/gifts`, {
       method: "POST",
       headers: authHeaders(token, true),
@@ -185,13 +185,13 @@ async function submitGiftForm(event) {
     eventSelect.value = String(state.selectedEventId || "");
     await reloadSelectedEventData();
     await loadMyEvents();
-    setGiftFormStatus("status-success", "Presente adicionado com sucesso.");
+    setGiftFormStatus("status-success", UI_TEXT.gifts.createSuccess);
   } catch (error) {
-    setGiftFormError(`Não foi possível salvar o presente: ${error.message}`);
+    setGiftFormError(`${UI_TEXT.gifts.createError}: ${error.message}`);
   } finally {
     giftSubmitButton.disabled = false;
     setGiftSubmitButtonLabel(
-      state.editingGiftId !== null ? "Salvar alterações" : "Adicionar presente",
+      state.editingGiftId !== null ? UI_TEXT.common.save : "Adicionar presente",
       state.editingGiftId !== null ? ICON_SAVE : ICON_GIFT
     );
   }
@@ -205,15 +205,13 @@ function startGiftEditMode(gift) {
   document.getElementById("gift-description-input").value = gift.description || "";
   giftPriceInput.value = formatCurrency(Number(gift.price) || 0);
   document.getElementById("gift-quantity-input").value = String(gift.quantity || 1);
-  setGiftSubmitButtonLabel("Salvar alterações", ICON_SAVE);
+  setGiftSubmitButtonLabel(UI_TEXT.common.save, ICON_SAVE);
   syncGiftEditUi();
   giftFormTitle.textContent = `Você está editando o presente "${gift.name}".`;
   document.getElementById("gift-name-input").focus();
 }
 
 function resetGiftFormMode(options = {}) {
-  const { silent = false } = options;
-
   state.editingGiftId = null;
   createGiftForm.reset();
   giftPriceInput.value = "R$ 0,00";
@@ -233,11 +231,11 @@ function syncGiftEditUi() {
 async function deleteGift(gift) {
   if (!state.selectedEventId) return;
 
-  const confirmed = window.confirm(`Tem certeza que deseja excluir o presente "${gift.name}"?`);
+  const confirmed = window.confirm(UI_TEXT.confirms.deleteGift(gift.name));
   if (!confirmed) return;
 
   try {
-    setGiftFormStatus("status-loading", "Excluindo presente...");
+    setGiftFormStatus("status-loading", UI_TEXT.gifts.deleteLoading);
 
     const apiBase = getApiBase();
     await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/${gift.id}`, {
@@ -250,9 +248,9 @@ async function deleteGift(gift) {
     }
 
     await reloadSelectedEventData();
-    setGiftFormStatus("status-success", "Presente excluído com sucesso.");
+    setGiftFormStatus("status-success", UI_TEXT.gifts.deleteSuccess);
   } catch (error) {
-    setGiftFormError(`Não foi possível excluir o presente: ${error.message}`);
+    setGiftFormError(`${UI_TEXT.gifts.deleteError}: ${error.message}`);
   }
 }
 
@@ -340,7 +338,7 @@ function renderGifts() {
   }
 
   if (!state.gifts.length) {
-    giftsList.innerHTML = '<div class="center-empty">Nenhum presente cadastrado para este evento.</div>';
+    giftsList.innerHTML = `<div class="center-empty">${UI_TEXT.gifts.empty}</div>`;
     return;
   }
 
@@ -358,13 +356,15 @@ function renderGifts() {
     const badgeText = available === 0 ? "Reservado" : available === 1 ? "Última unidade" : "Disponível";
 
     item.innerHTML = `
-      <button class="icon-button danger gift-delete" type="button" title="Excluir presente" aria-label="Excluir presente">${trashIconSvg()}</button>
-      <div class="gift-head">
+      <div class="gift-head gift-head-actions">
         <div>
           <h3 class="gift-name">${escapeHtml(gift.name)}</h3>
-          <p class="meta">${escapeHtml(gift.description || "Sem descrição")}</p>
+          <p class="meta gift-description-copy">${escapeHtml(gift.description || UI_TEXT.common.noDescription)}</p>
         </div>
-        <span class="tag ${badgeClass}">${badgeText}</span>
+        <div class="gift-card-side-actions">
+          <span class="tag ${badgeClass}">${badgeText}</span>
+          <button class="icon-button danger gift-delete" type="button" title="Excluir presente" aria-label="Excluir presente">${trashIconSvg()}</button>
+        </div>
       </div>
       <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${gift.reservedQuantity || 0} reservados</p>
       <div class="row row-tight top-gap-sm">
@@ -391,7 +391,7 @@ function renderReservations() {
   }
 
   if (!state.reservations.length) {
-    reservationsList.innerHTML = '<div class="center-empty">Nenhuma reserva registrada para este evento.</div>';
+    reservationsList.innerHTML = `<div class="center-empty">${UI_TEXT.gifts.emptyReservations}</div>`;
     return;
   }
 
@@ -405,6 +405,7 @@ function renderReservations() {
     const activeQuantity = Number(reservation.activeQuantity ?? 0);
     const badgeClass = activeQuantity > 0 ? "tag-ok" : "tag-muted";
     const badgeText = activeQuantity > 0 ? "Reserva ativa" : "Reserva encerrada";
+    const activeValue = activeQuantity * Number(reservation.giftPrice ?? 0);
 
     item.innerHTML = `
       <div class="gift-head">
@@ -414,7 +415,7 @@ function renderReservations() {
         </div>
         <span class="tag ${badgeClass}">${badgeText}</span>
       </div>
-      <p class="meta">Ativas: ${activeQuantity} | Reservadas: ${Number(reservation.reservedQuantity ?? 0)} | Canceladas: ${Number(reservation.unreservedQuantity ?? 0)}</p>
+      <p class="meta">Ativas: ${activeQuantity} | Reservadas: ${Number(reservation.reservedQuantity ?? 0)} | Canceladas: ${Number(reservation.unreservedQuantity ?? 0)} | Valor ativo: ${formatCurrency(activeValue)}</p>
       <p class="meta">Primeiro registro: ${formatDateTime(reservation.reservedAt)} | Última reserva: ${formatDateTime(reservation.lastReservedAt || reservation.reservedAt)} | Último cancelamento: ${formatDateTime(reservation.lastUnreservedAt)}</p>
     `;
 
@@ -507,8 +508,3 @@ function trashIconSvg() {
     </svg>
   `;
 }
-
-
-
-
-

@@ -66,14 +66,14 @@
     <section class="card card-pad">
       <p class="kicker">Painel privado</p>
       <h1 class="h2">Organize os presentes do seu evento</h1>
-      <p class="card-subtitle">Selecione um evento para adicionar itens e acompanhar disponibilidade.</p>
+      <p class="card-subtitle">Selecione um evento para adicionar presentes e acompanhar a disponibilidade em tempo real.</p>
       <p id="status" class="status status-info">Selecione um evento para começar.</p>
     </section>
 
     <section class="dashboard-grid">
       <article class="card card-pad">
         <h2 id="gift-form-title" class="card-title">Adicionar presente</h2>
-        <p class="card-subtitle">Os presentes são vinculados ao evento selecionado.</p>
+        <p class="card-subtitle">Os presentes são vinculados ao evento selecionado e ficam disponíveis na lista pública.</p>
         <form id="create-gift-form" class="form form-compact">
           <div class="field"><label for="event-select">Evento</label><select id="event-select" class="select" required><option value="">Selecione um evento</option></select></div>
           <div class="field"><label for="gift-name-input">Nome do presente</label><input class="input" id="gift-name-input" type="text" maxlength="255" placeholder="Jogo de jantar" required /></div>
@@ -97,7 +97,7 @@
 
       <article class="card card-pad" id="reservations-section">
         <h2 class="card-title">Histórico de reservas do evento</h2>
-        <p class="card-subtitle">Veja quem reservou, quando reservou e quantas unidades seguem ativas.</p>
+        <p class="card-subtitle">Veja quem reservou, quando reservou e qual valor segue ativo em cada reserva.</p>
         <div id="reservations-list" class="gifts-list"></div>
       </article>
     </section>
@@ -124,6 +124,7 @@
   </footer>
 </body>
 </html>
+
 
 
 

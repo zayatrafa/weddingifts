@@ -1,11 +1,12 @@
 ﻿import {
   authHeaders,
-  clearAuthSession,
   getApiBase,
   initUserDropdown,
+  logoutAndRedirectToLogin,
   requestJson,
   requireAuth,
-  setStatus
+  setStatus,
+  UI_TEXT
 } from "./common.js";
 
 const session = requireAuth();
@@ -29,8 +30,7 @@ eventDateInput.addEventListener("input", () => {
 initUserDropdown({
   session,
   onLogout: () => {
-    clearAuthSession();
-    window.location.href = "./login.html";
+    logoutAndRedirectToLogin();
   }
 });
 
@@ -44,7 +44,7 @@ async function createEvent(event) {
   const submitButton = document.getElementById("event-submit-button");
 
   if (!name || !eventDate) {
-    setStatus(status, "status-error", "Informe nome e data do evento.");
+    setStatus(status, "status-error", "Informe o nome e a data do evento.");
     return;
   }
 
@@ -54,14 +54,14 @@ async function createEvent(event) {
   }
 
   if (!isFutureDate(eventDate)) {
-    setStatus(status, "status-error", "A data do evento deve ser futura e válida.");
+    setStatus(status, "status-error", "Informe uma data futura válida para o evento.");
     return;
   }
 
   try {
     submitButton.disabled = true;
     submitButton.innerHTML = EVENT_BUTTON_LOADING;
-    setStatus(status, "status-loading", "Criando evento...");
+    setStatus(status, "status-loading", UI_TEXT.events.createLoading);
 
     const apiBase = getApiBase();
     const createdEvent = await requestJson(`${apiBase}/api/events`, {
@@ -70,10 +70,14 @@ async function createEvent(event) {
       body: JSON.stringify({ name, eventDate })
     });
 
+    setStatus(status, "status-success", "Evento criado com sucesso. Redirecionando...");
     const focusEventId = encodeURIComponent(String(createdEvent.id));
-    window.location.href = `./my-events.html?focusEventId=${focusEventId}`;
+
+    window.setTimeout(() => {
+      window.location.href = `./my-events.html?focusEventId=${focusEventId}`;
+    }, 320);
   } catch (error) {
-    setStatus(status, "status-error", String(error.message || "Não foi possível concluir a criação do evento."));
+    setStatus(status, "status-error", String(error.message || UI_TEXT.events.createError));
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = EVENT_BUTTON_DEFAULT;

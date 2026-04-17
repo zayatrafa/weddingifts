@@ -1,4 +1,10 @@
-﻿import { clearAuthSession, getAuthSession, getUserMenuMarkup, initUserDropdown } from "./common.js";
+﻿import {
+  getAuthSession,
+  getUserMenuMarkup,
+  initUserDropdown,
+  logoutAndRedirectToLogin,
+  refreshMobileHeader
+} from "./common.js";
 
 const params = new URLSearchParams(window.location.search);
 const slug = params.get("slug");
@@ -31,12 +37,21 @@ function enhanceHeaderForLoggedUser() {
     ${getUserMenuMarkup()}
   `;
 
+  updateHeroCtasForLoggedUser();
+  refreshMobileHeader();
+
   initUserDropdown({
     session,
     onLogout: () => {
-      clearAuthSession();
-      window.location.href = "./login.html";
+      logoutAndRedirectToLogin();
     }
   });
 }
 
+function updateHeroCtasForLoggedUser() {
+  const primaryHeroAction = document.querySelector(".home-hero-actions .btn-primary");
+  if (!primaryHeroAction) return;
+
+  primaryHeroAction.setAttribute("href", "./create-event.html");
+  primaryHeroAction.innerHTML = `<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z" fill="currentColor"/></svg></span>Criar meu evento`;
+}

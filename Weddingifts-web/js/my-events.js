@@ -1,13 +1,14 @@
 ﻿import {
   authHeaders,
   buildPublicEventLink,
-  clearAuthSession,
   formatDate,
   getApiBase,
   initUserDropdown,
+  logoutAndRedirectToLogin,
   requestJson,
   requireAuth,
-  setStatus
+  setStatus,
+  UI_TEXT
 } from "./common.js";
 
 const session = requireAuth();
@@ -36,8 +37,7 @@ const ICON_HISTORY = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 
 initUserDropdown({
   session,
   onLogout: () => {
-    clearAuthSession();
-    window.location.href = "./login.html";
+    logoutAndRedirectToLogin();
   }
 });
 
@@ -47,7 +47,7 @@ loadMyEvents();
 async function loadMyEvents() {
   try {
     refreshEventsButton.disabled = true;
-    setStatus(status, "status-loading", "Carregando seus eventos...");
+    setEventsStatus("status-loading", UI_TEXT.events.loading);
 
     const apiBase = getApiBase();
     state.events = await requestJson(`${apiBase}/api/events/mine`, {
@@ -57,16 +57,16 @@ async function loadMyEvents() {
     renderEvents();
 
     if (applyFocusFromQueryIfNeeded()) {
-      setStatus(status, "status-success", "Evento criado e destacado com sucesso.");
+      setEventsStatus("status-success", UI_TEXT.events.createdFocus);
     } else {
-      setStatus(
-        status,
-        state.events.length ? "status-success" : "status-info",
-        state.events.length ? "Eventos carregados com sucesso." : "Você ainda não possui eventos."
+      setEventsStatus(
+        state.events.length ? "status-info" : "status-info",
+        state.events.length ? UI_TEXT.events.loaded : UI_TEXT.events.empty,
+        { subtle: state.events.length }
       );
     }
   } catch (error) {
-    setStatus(status, "status-error", `Não foi possível carregar seus eventos: ${error.message}`);
+    setEventsStatus("status-error", `Não foi possível carregar seus eventos: ${error.message}`);
   } finally {
     refreshEventsButton.disabled = false;
   }
@@ -74,7 +74,7 @@ async function loadMyEvents() {
 
 function renderEvents() {
   if (!state.events.length) {
-    eventsList.innerHTML = '<div class="center-empty">Nenhum evento cadastrado ainda.</div>';
+    eventsList.innerHTML = '<div class="center-empty">Nenhum evento cadastrado no momento.</div>';
     return;
   }
 
@@ -107,9 +107,9 @@ function renderEvents() {
       <p class="my-event-meta">Slug: <span>${escapeHtml(eventData.slug)}</span> · ${giftCount} presente(s) · ${guestCount} convidado(s)</p>
 
       <div class="my-event-primary-actions" aria-label="Ações principais do evento">
-        <button class="btn btn-secondary btn-main-action with-icon" type="button" data-action="manage-guests">${ICON_GUESTS}Convidados</button>
-        <button class="btn btn-primary btn-main-action with-icon" type="button" data-action="manage">${ICON_GIFT}Presentes</button>
-        <button class="btn btn-secondary btn-main-action with-icon" type="button" data-action="manage-reservations">${ICON_HISTORY}Histórico de reservas</button>
+          <button class="btn btn-main-action btn-main-action-secondary with-icon" type="button" data-action="manage-guests">${ICON_GUESTS}Convidados</button>
+          <button class="btn btn-main-action btn-main-action-primary with-icon" type="button" data-action="manage">${ICON_GIFT}Presentes</button>
+          <button class="btn btn-main-action btn-main-action-secondary with-icon" type="button" data-action="manage-reservations">${ICON_HISTORY}Histórico de reservas</button>
       </div>
 
       <form class="event-edit-form my-event-edit-form" data-edit-form hidden>
@@ -118,12 +118,12 @@ function renderEvents() {
           <input class="input" type="text" name="name" maxlength="120" value="${escapeAttribute(eventData.name)}" required />
         </div>
         <div class="field field-flat">
-          <label>Data</label>
+          <label>Data do evento</label>
           <input class="input" type="date" name="eventDate" min="${minEventDate}" max="${maxEventDate}" value="${toInputDate(eventData.eventDate)}" required />
         </div>
         <div class="row row-tight fit-content">
-          <button class="btn btn-primary" type="submit">Salvar alterações</button>
-          <button class="btn btn-secondary" type="button" data-action="cancel-edit">Cancelar</button>
+          <button class="btn btn-primary" type="submit">${UI_TEXT.common.save}</button>
+          <button class="btn btn-secondary" type="button" data-action="cancel-edit">${UI_TEXT.common.cancel}</button>
         </div>
       </form>
     `;
@@ -135,9 +135,9 @@ function renderEvents() {
       try {
         const link = buildPublicEventLink(eventData.slug);
         await copyToClipboard(link);
-        setStatus(status, "status-success", `Link público copiado: ${link}`);
+        setEventsStatus("status-success", `${UI_TEXT.events.copySuccess} ${link}`);
       } catch (error) {
-        setStatus(status, "status-error", `Não foi possível copiar o link público: ${error.message}`);
+        setEventsStatus("status-error", `${UI_TEXT.events.copyError}: ${error.message}`);
       }
     });
 
@@ -169,7 +169,7 @@ function renderEvents() {
         return;
       }
 
-      editForm.elements.eventDate.setCustomValidity("A data do evento deve ser futura e válida.");
+      editForm.elements.eventDate.setCustomValidity("Informe uma data futura válida para o evento.");
     });
 
     item.querySelector('[data-action="cancel-edit"]').addEventListener("click", () => {
@@ -181,6 +181,7 @@ function renderEvents() {
       editForm.reset();
       editForm.elements.name.value = eventData.name;
       editForm.elements.eventDate.value = toInputDate(eventData.eventDate);
+      setEventsStatus("status-info", `${UI_TEXT.common.editCancelled} Você pode retomar quando quiser.`);
     });
 
     editForm.addEventListener("submit", async (submitEvent) => {
@@ -191,24 +192,24 @@ function renderEvents() {
       const eventDate = editForm.elements.eventDate.value;
 
       if (!name || !eventDate) {
-        setStatus(status, "status-error", "Informe nome e data para atualizar o evento.");
+        setEventsStatus("status-error", "Informe o nome e a data para atualizar o evento.");
         return;
       }
 
       if (name.length > MAX_EVENT_NAME_LENGTH) {
-        setStatus(status, "status-error", "O nome do evento deve ter no máximo 120 caracteres.");
+        setEventsStatus("status-error", "O nome do evento deve ter no máximo 120 caracteres.");
         return;
       }
 
       if (!isFutureDate(eventDate)) {
-        setStatus(status, "status-error", "A data do evento deve ser futura e válida.");
+        setEventsStatus("status-error", "Informe uma data futura válida para o evento.");
         return;
       }
 
       try {
         submitButton.disabled = true;
         submitButton.textContent = "Salvando...";
-        setStatus(status, "status-loading", "Atualizando evento...");
+        setEventsStatus("status-loading", UI_TEXT.events.updating);
 
         const apiBase = getApiBase();
         await requestJson(`${apiBase}/api/events/${eventData.id}`, {
@@ -217,22 +218,22 @@ function renderEvents() {
           body: JSON.stringify({ name, eventDate })
         });
 
-        setStatus(status, "status-success", "Evento atualizado com sucesso.");
+        setEventsStatus("status-success", UI_TEXT.events.updated);
         await loadMyEvents();
       } catch (error) {
-        setStatus(status, "status-error", String(error.message || "Não foi possível salvar as alterações do evento."));
+        setEventsStatus("status-error", String(error.message || UI_TEXT.events.updateError));
       } finally {
         submitButton.disabled = false;
-        submitButton.textContent = "Salvar alterações";
+        submitButton.textContent = UI_TEXT.common.save;
       }
     });
 
     item.querySelector('[data-action="delete"]').addEventListener("click", async () => {
-      const confirmation = window.confirm(`Tem certeza que deseja excluir o evento \"${eventData.name}\"?`);
+      const confirmation = window.confirm(UI_TEXT.confirms.deleteEvent(eventData.name));
       if (!confirmation) return;
 
       try {
-        setStatus(status, "status-loading", "Excluindo evento...");
+        setEventsStatus("status-loading", UI_TEXT.events.deleting);
         const apiBase = getApiBase();
 
         await requestJson(`${apiBase}/api/events/${eventData.id}`, {
@@ -240,10 +241,10 @@ function renderEvents() {
           headers: authHeaders(token)
         });
 
-        setStatus(status, "status-success", "Evento excluído com sucesso.");
+        setEventsStatus("status-success", UI_TEXT.events.deleted);
         await loadMyEvents();
       } catch (error) {
-        setStatus(status, "status-error", String(error.message || "Não foi possível excluir o evento."));
+        setEventsStatus("status-error", String(error.message || UI_TEXT.events.deleteError));
       }
     });
 
@@ -338,4 +339,9 @@ function escapeHtml(text) {
 
 function escapeAttribute(text) {
   return escapeHtml(text).replaceAll("`", "&#096;");
+}
+
+function setEventsStatus(type, message, { subtle = false } = {}) {
+  setStatus(status, type, message);
+  status.classList.toggle("my-events-status-subtle", subtle);
 }
