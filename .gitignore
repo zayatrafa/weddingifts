@@ -1,15 +1,22 @@
-# Visual Studio
+# IDE
 .vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.rsuser
+*.sln.docstates
 
 # Build
 bin/
 obj/
+TestResults/
+artifacts/
+*.trx
+*.coverage
+*.coveragexml
 
-# Rider / VSCode
-.idea/
-.vscode/
-
-# Node (para quando criarmos o frontend)
+# Frontend local tooling (opcional)
 node_modules/
 
 # Logs
@@ -17,9 +24,10 @@ node_modules/
 
 # OS
 Thumbs.db
+Desktop.ini
 .DS_Store
 
-# Codex / IA (nao versionar)
+# AI local files
 .codex/
 .codex_tmp*/
 .cursor/
@@ -30,6 +38,15 @@ COPILOT.md
 cursor.md
 *.ai.md
 
-
-# Project docs
+# Private docs
 docs/
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Environment / secrets
+.env
+.env.*
