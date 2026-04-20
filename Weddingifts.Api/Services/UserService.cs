@@ -56,11 +56,7 @@ public class UserService
         if (!IsValidEmail(normalizedEmail))
             throw new DomainValidationException("E-mail inválido.");
 
-        if (!IsStrongPassword(request.Password))
-            throw new DomainValidationException("A senha deve ter no mínimo 8 caracteres e conter letras, números e caractere especial.");
-
-        if (request.Password.Length > MaxPasswordLength)
-            throw new DomainValidationException("Senha excede o tamanho máximo permitido.");
+        ValidateNewPassword(request.Password, "A senha");
 
         var normalizedCpf = NormalizeCpf(request.Cpf);
 
@@ -92,12 +88,48 @@ public class UserService
         return user;
     }
 
+    public async Task ChangePassword(int userId, ChangePasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+            throw new DomainValidationException("Senha atual é obrigatória.");
+
+        if (request.CurrentPassword.Length > MaxPasswordLength)
+            throw new DomainValidationException("Senha atual excede o tamanho máximo permitido.");
+
+        ValidateNewPassword(request.NewPassword, "A nova senha");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            throw new ResourceNotFoundException("Usuário não encontrado.");
+
+        if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            throw new UnauthorizedRequestException("Senha atual incorreta.");
+
+        if (request.CurrentPassword == request.NewPassword)
+            throw new DomainValidationException("A nova senha deve ser diferente da senha atual.");
+
+        user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<List<User>> GetUsers()
     {
         return await _context.Users
             .AsNoTracking()
             .OrderByDescending(u => u.Id)
             .ToListAsync();
+    }
+
+    private static void ValidateNewPassword(string password, string label)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            throw new DomainValidationException($"{label} é obrigatória.");
+
+        if (!IsStrongPassword(password))
+            throw new DomainValidationException($"{label} deve ter no mínimo 8 caracteres e conter letras, números e caractere especial.");
+
+        if (password.Length > MaxPasswordLength)
+            throw new DomainValidationException($"{label} excede o tamanho máximo permitido.");
     }
 
     private static string NormalizeCpf(string? rawCpf)

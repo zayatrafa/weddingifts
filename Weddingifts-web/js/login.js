@@ -39,7 +39,7 @@ if (prefilledEmail) {
 }
 
 if (fromRegistration) {
-  setStatus(status, "status-info", UI_TEXT.auth.registerEmailNotice);
+  setStatus(status, "status-info", UI_TEXT.auth.registerSuccess);
 } else if (fromExpiredSession) {
   setStatus(status, "status-info", UI_TEXT.common.sessionExpired);
 } else if (fromLogout) {

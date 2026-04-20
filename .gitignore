@@ -18,6 +18,8 @@ artifacts/
 
 # Frontend local tooling (opcional)
 node_modules/
+playwright-report/
+test-results/
 
 # Logs
 *.log

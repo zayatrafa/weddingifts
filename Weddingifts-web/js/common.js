@@ -29,10 +29,11 @@ export const UI_TEXT = {
     invalidCredentials: "E-mail ou senha inválidos.",
     registerInitial: "Preencha os dados para criar sua conta.",
     registerSuccess: "Cadastro concluído. Faça login para continuar.",
-    registerEmailNotice: "Cadastro concluído. Você recebeu um e-mail para validar sua conta. Essa validação será ativada em breve no sistema.",
     registerError: "Não foi possível concluir seu cadastro.",
     logoutDone: "Você saiu da sua conta com sucesso.",
-    passwordPending: "A alteração de senha ainda não está disponível no backend. A interface já está preparada."
+    passwordChangeLoading: "Atualizando sua senha...",
+    passwordChangeSuccess: "Senha atualizada com sucesso.",
+    passwordChangeError: "Não foi possível atualizar sua senha."
   },
   events: {
     loading: "Carregando seus eventos...",

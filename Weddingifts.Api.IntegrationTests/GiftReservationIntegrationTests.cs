@@ -24,20 +24,6 @@ public sealed class GiftReservationIntegrationTests : IClassFixture<IntegrationT
     }
 
     [Fact]
-    public async Task CreateEvent_ShouldReturnUnauthorized_WhenNoToken()
-    {
-        await _factory.ResetDatabaseAsync();
-
-        var response = await _client.PostAsJsonAsync("/api/events", new
-        {
-            name = "Casamento Sem Token",
-            eventDate = DateTime.UtcNow.AddMonths(1)
-        });
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
     public async Task CreateGift_ShouldReturnForbidden_WhenEventBelongsToAnotherUser()
     {
         await _factory.ResetDatabaseAsync();

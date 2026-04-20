@@ -14,6 +14,24 @@ using Weddingifts.Api.Security;
 using Weddingifts.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
+var isFrontendSmokeEnvironment = builder.Environment.IsEnvironment("FrontendSmoke");
+
+if (isTestingEnvironment || isFrontendSmokeEnvironment)
+{
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["ConnectionStrings:DefaultConnection"] = isFrontendSmokeEnvironment
+            ? $"Data Source={Path.Combine(builder.Environment.ContentRootPath, "weddingifts.frontend-smoke.db")}"
+            : "Host=localhost;Port=5432;Database=weddingifts_tests;Username=test;Password=test",
+        ["Jwt:Issuer"] = isFrontendSmokeEnvironment ? "Weddingifts.Api.FrontendSmoke" : "Weddingifts.Api.Tests",
+        ["Jwt:Audience"] = isFrontendSmokeEnvironment ? "Weddingifts.Web.FrontendSmoke" : "Weddingifts.Web.Tests",
+        ["Jwt:Key"] = isFrontendSmokeEnvironment
+            ? "Weddingifts_FrontendSmoke_Jwt_Key_1234567890!"
+            : "Weddingifts_Testing_Jwt_Key_1234567890!",
+        ["Jwt:ExpiresMinutes"] = "180"
+    });
+}
 
 builder.Services
     .AddControllers()
@@ -61,7 +79,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
-if (!builder.Environment.IsEnvironment("Testing"))
+if (!isTestingEnvironment && !isFrontendSmokeEnvironment)
 {
     builder.Services.AddRateLimiter(options =>
     {
@@ -140,6 +158,12 @@ static bool IsDateField(string normalizedField)
         || normalizedField.Equals("eventDate", StringComparison.OrdinalIgnoreCase);
 }
 
+static bool IsMissingOrPlaceholder(string? value)
+{
+    return string.IsNullOrWhiteSpace(value)
+        || value.Contains("__SET_IN_USER_SECRETS_OR_ENV__", StringComparison.Ordinal);
+}
+
 static string InferFieldFromErrorMessage(string errorMessage)
 {
     if (errorMessage.Contains("birthdate", StringComparison.OrdinalIgnoreCase))
@@ -184,9 +208,11 @@ static string GetDisplayFieldName(string normalizedField)
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtTokenOptions>()
     ?? throw new InvalidOperationException("JWT options are not configured.");
 
-if (string.IsNullOrWhiteSpace(jwtOptions.Key) || Encoding.UTF8.GetByteCount(jwtOptions.Key) < 32)
+if (IsMissingOrPlaceholder(jwtOptions.Key) || Encoding.UTF8.GetByteCount(jwtOptions.Key) < 32)
 {
-    throw new InvalidOperationException("JWT signing key must be configured with at least 32 bytes.");
+    throw new InvalidOperationException(
+        "JWT signing key must be configured with at least 32 bytes. Configure 'Jwt:Key' via User Secrets or environment variable."
+    );
 }
 
 builder.Services.AddSingleton(jwtOptions);
@@ -251,7 +277,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("WeddingiftsWeb", policy =>
     {
-        if (builder.Environment.IsDevelopment())
+        if (builder.Environment.IsDevelopment() || isFrontendSmokeEnvironment)
         {
             policy
                 .SetIsOriginAllowed(_ => true)
@@ -268,17 +294,36 @@ builder.Services.AddCors(options =>
     });
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (!isFrontendSmokeEnvironment && IsMissingOrPlaceholder(connectionString))
+{
+    throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' is not configured. Configure 'ConnectionStrings:DefaultConnection' via User Secrets or environment variable."
+    );
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(connectionString);
+    if (isFrontendSmokeEnvironment)
+    {
+        options.UseSqlite(connectionString!);
+        return;
+    }
+
+    options.UseNpgsql(connectionString!);
 });
 
 var app = builder.Build();
 
-if (!app.Environment.IsEnvironment("Testing"))
+if (isFrontendSmokeEnvironment)
+{
+    using var smokeScope = app.Services.CreateScope();
+    var smokeDbContext = smokeScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    smokeDbContext.Database.EnsureDeleted();
+    smokeDbContext.Database.EnsureCreated();
+}
+else if (!isTestingEnvironment)
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -288,7 +333,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || isFrontendSmokeEnvironment)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -299,7 +344,7 @@ else
     app.UseHttpsRedirection();
 }
 app.UseCors("WeddingiftsWeb");
-if (!app.Environment.IsEnvironment("Testing"))
+if (!isTestingEnvironment && !isFrontendSmokeEnvironment)
 {
     app.UseRateLimiter();
 }

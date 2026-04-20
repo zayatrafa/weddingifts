@@ -1,0 +1,12 @@
+{
+  "name": "weddingifts-frontend-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:frontend-smoke": "node frontend-smoke/run-smoke.mjs",
+    "test:frontend-smoke:headed": "node frontend-smoke/run-smoke.mjs --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
