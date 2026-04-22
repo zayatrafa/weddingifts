@@ -63,7 +63,7 @@ export async function createGuest(token, eventId, overrides = {}) {
     token,
     body: {
       cpf,
-      name: overrides.name || `Convidado ${suffix}`,
+      name: overrides.name || "Joao Silva",
       email: overrides.email || `guest-${suffix}@weddingifts.local`,
       phoneNumber: overrides.phoneNumber || "11999990000"
     }

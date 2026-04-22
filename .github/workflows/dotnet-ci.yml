@@ -27,3 +27,52 @@ jobs:
 
       - name: Test
         run: dotnet test Weddingifts.Api/Weddingifts.Api.sln --configuration Release --no-build
+
+  frontend-smoke:
+    runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore backend
+        run: dotnet restore Weddingifts.Api/Weddingifts.Api.sln --configfile Weddingifts.Api/NuGet.Config
+
+      - name: Build API for FrontendSmoke
+        run: dotnet build Weddingifts.Api/Weddingifts.Api.csproj /p:UseAppHost=false --no-restore
+
+      - name: Install frontend smoke dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Run frontend smoke suite
+        run: npm run test:frontend-smoke
+
+      - name: Upload frontend smoke artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-smoke-artifacts
+          path: |
+            test-results
+          if-no-files-found: ignore
