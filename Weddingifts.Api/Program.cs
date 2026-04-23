@@ -155,7 +155,8 @@ static string NormalizeFieldName(string rawField, string errorMessage)
 static bool IsDateField(string normalizedField)
 {
     return normalizedField.Equals("birthDate", StringComparison.OrdinalIgnoreCase)
-        || normalizedField.Equals("eventDate", StringComparison.OrdinalIgnoreCase);
+        || normalizedField.Equals("eventDate", StringComparison.OrdinalIgnoreCase)
+        || normalizedField.Equals("eventDateTime", StringComparison.OrdinalIgnoreCase);
 }
 
 static bool IsMissingOrPlaceholder(string? value)
@@ -178,6 +179,12 @@ static string InferFieldFromErrorMessage(string errorMessage)
     if (errorMessage.Contains("eventdate", StringComparison.OrdinalIgnoreCase))
         return "eventDate";
 
+    if (errorMessage.Contains("eventdatetime", StringComparison.OrdinalIgnoreCase))
+        return "eventDateTime";
+
+    if (errorMessage.Contains("timezoneid", StringComparison.OrdinalIgnoreCase))
+        return "timeZoneId";
+
     if (errorMessage.Contains("phonenumber", StringComparison.OrdinalIgnoreCase)
         || errorMessage.Contains("phone", StringComparison.OrdinalIgnoreCase)
         || errorMessage.Contains("celular", StringComparison.OrdinalIgnoreCase)
@@ -198,6 +205,8 @@ static string GetDisplayFieldName(string normalizedField)
         "cpf" => "CPF",
         "birthdate" => "data de nascimento",
         "eventdate" => "data do evento",
+        "eventdatetime" => "data e hora do evento",
+        "timezoneid" => "fuso do evento",
         "phonenumber" => "celular",
         "price" => "preço",
         "quantity" => "quantidade",
@@ -219,6 +228,8 @@ builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<JwtTokenService>();
 
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<EventTimeZoneService>();
+builder.Services.AddScoped<EventRsvpService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<GiftService>();
 builder.Services.AddScoped<EventGuestService>();

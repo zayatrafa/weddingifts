@@ -10,6 +10,24 @@ public class Event
 
     public DateTime EventDate { get; set; }
 
+    public string HostNames { get; set; } = string.Empty;
+
+    public DateTime EventDateTime { get; set; }
+
+    public string TimeZoneId { get; set; } = string.Empty;
+
+    public string LocationName { get; set; } = string.Empty;
+
+    public string LocationAddress { get; set; } = string.Empty;
+
+    public string LocationMapsUrl { get; set; } = string.Empty;
+
+    public string CeremonyInfo { get; set; } = string.Empty;
+
+    public string DressCode { get; set; } = string.Empty;
+
+    public string CoverImageUrl { get; set; } = string.Empty;
+
     public string Slug { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

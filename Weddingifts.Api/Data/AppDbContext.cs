@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<Gift> Gifts => Set<Gift>();
     public DbSet<GiftReservation> GiftReservations => Set<GiftReservation>();
     public DbSet<EventGuest> EventGuests => Set<EventGuest>();
+    public DbSet<EventGuestCompanion> EventGuestCompanions => Set<EventGuestCompanion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,6 +25,46 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Event>()
             .Property(e => e.Name)
             .HasMaxLength(120)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.HostNames)
+            .HasMaxLength(160)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.TimeZoneId)
+            .HasMaxLength(64)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.LocationName)
+            .HasMaxLength(160)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.LocationAddress)
+            .HasMaxLength(255)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.LocationMapsUrl)
+            .HasMaxLength(500)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.CeremonyInfo)
+            .HasMaxLength(500)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.DressCode)
+            .HasMaxLength(160)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.CoverImageUrl)
+            .HasMaxLength(500)
             .IsRequired();
 
         modelBuilder.Entity<Gift>()
@@ -57,8 +98,34 @@ public class AppDbContext : DbContext
             .IsRequired();
 
         modelBuilder.Entity<EventGuest>()
+            .Property(g => g.RsvpStatus)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
+
+        modelBuilder.Entity<EventGuest>()
+            .Property(g => g.MessageToCouple)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<EventGuest>()
+            .Property(g => g.DietaryRestrictions)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<EventGuest>()
             .HasIndex(g => new { g.EventId, g.Cpf })
             .IsUnique();
+
+        modelBuilder.Entity<EventGuestCompanion>()
+            .Property(c => c.Name)
+            .HasMaxLength(120)
+            .IsRequired();
+
+        modelBuilder.Entity<EventGuestCompanion>()
+            .Property(c => c.Cpf)
+            .HasMaxLength(11);
+
+        modelBuilder.Entity<EventGuestCompanion>()
+            .HasIndex(c => c.EventGuestId);
         
         // User modelBuilder
         modelBuilder.Entity<User>()
@@ -81,6 +148,12 @@ public class AppDbContext : DbContext
             .HasOne(r => r.Gift)
             .WithMany(g => g.Reservations)
             .HasForeignKey(r => r.GiftId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EventGuestCompanion>()
+            .HasOne(c => c.EventGuest)
+            .WithMany(g => g.Companions)
+            .HasForeignKey(c => c.EventGuestId)
             .OnDelete(DeleteBehavior.Cascade);
 
     }

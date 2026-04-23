@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Weddingifts.Api.Data;
 using Weddingifts.Api.Entities;
@@ -22,17 +22,19 @@ public sealed class EventGuestService
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly AppDbContext _context;
+    private readonly EventRsvpService _eventRsvpService;
 
-    public EventGuestService(AppDbContext context)
+    public EventGuestService(AppDbContext context, EventRsvpService eventRsvpService)
     {
         _context = context;
+        _eventRsvpService = eventRsvpService;
     }
 
     public async Task<EventGuest> CreateGuestForUser(int eventId, int userId, CreateEventGuestRequest request)
     {
         var ev = await GetEventForUser(eventId, userId, "modificar");
-
         var normalizedCpf = NormalizeCpf(request.Cpf);
+        var normalizedMaxExtraGuests = NormalizeMaxExtraGuests(request.MaxExtraGuests);
 
         ValidateGuestData(request.Name, request.Email, request.PhoneNumber);
 
@@ -46,7 +48,8 @@ public sealed class EventGuestService
             Cpf = normalizedCpf,
             Name = request.Name.Trim(),
             Email = request.Email.Trim().ToLowerInvariant(),
-            PhoneNumber = NormalizePhoneNumber(request.PhoneNumber)
+            PhoneNumber = NormalizePhoneNumber(request.PhoneNumber),
+            MaxExtraGuests = normalizedMaxExtraGuests
         };
 
         _context.EventGuests.Add(guest);
@@ -57,7 +60,7 @@ public sealed class EventGuestService
 
     public async Task<EventGuest> UpdateGuestForUser(int eventId, int guestId, int userId, UpdateEventGuestRequest request)
     {
-        await GetEventForUser(eventId, userId, "modificar");
+        var ev = await GetEventForUser(eventId, userId, "modificar");
 
         if (guestId <= 0)
             throw new DomainValidationException("Id do convidado deve ser maior que zero.");
@@ -65,6 +68,7 @@ public sealed class EventGuestService
         ValidateGuestData(request.Name, request.Email, request.PhoneNumber);
 
         var guest = await _context.EventGuests
+            .Include(g => g.Companions)
             .FirstOrDefaultAsync(g => g.Id == guestId && g.EventId == eventId);
 
         if (guest is null)
@@ -80,9 +84,19 @@ public sealed class EventGuestService
         if (duplicatedEmail)
             throw new DomainValidationException("Já existe convidado com este e-mail neste evento.");
 
+        var normalizedMaxExtraGuests = NormalizeMaxExtraGuests(request.MaxExtraGuests, guest.MaxExtraGuests);
+
         guest.Name = request.Name.Trim();
         guest.Email = normalizedEmail;
         guest.PhoneNumber = NormalizePhoneNumber(request.PhoneNumber);
+
+        var reducedMaxExtraGuests = normalizedMaxExtraGuests < guest.MaxExtraGuests;
+        guest.MaxExtraGuests = normalizedMaxExtraGuests;
+
+        if (reducedMaxExtraGuests)
+        {
+            _eventRsvpService.ResetGuestIfNeededAfterMaxExtraGuestsReduction(ev, guest);
+        }
 
         await _context.SaveChangesAsync();
 
@@ -97,6 +111,7 @@ public sealed class EventGuestService
             throw new DomainValidationException("Id do convidado deve ser maior que zero.");
 
         var guest = await _context.EventGuests
+            .Include(g => g.Companions)
             .FirstOrDefaultAsync(g => g.Id == guestId && g.EventId == eventId);
 
         if (guest is null)
@@ -112,6 +127,7 @@ public sealed class EventGuestService
 
         return await _context.EventGuests
             .AsNoTracking()
+            .Include(g => g.Companions)
             .Where(g => g.EventId == eventId)
             .OrderBy(g => g.Name)
             .ToListAsync();
@@ -125,6 +141,7 @@ public sealed class EventGuestService
 
         return await _context.EventGuests
             .AsNoTracking()
+            .Include(g => g.Companions)
             .FirstOrDefaultAsync(g => g.EventId == eventId && g.Cpf == normalizedCpf);
     }
 
@@ -142,7 +159,6 @@ public sealed class EventGuestService
             throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         var ev = await _context.Events
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == eventId);
 
         if (ev is null)
@@ -185,6 +201,17 @@ public sealed class EventGuestService
             throw new DomainValidationException("Telefone do convidado excede o tamanho máximo permitido.");
 
         _ = NormalizePhoneNumber(phoneNumber);
+    }
+
+    private static int NormalizeMaxExtraGuests(int? rawMaxExtraGuests, int fallback = 0)
+    {
+        if (!rawMaxExtraGuests.HasValue)
+            return fallback;
+
+        if (rawMaxExtraGuests.Value < 0)
+            throw new DomainValidationException("Limite de acompanhantes não pode ser negativo.");
+
+        return rawMaxExtraGuests.Value;
     }
 
     private static bool IsValidEmail(string email)

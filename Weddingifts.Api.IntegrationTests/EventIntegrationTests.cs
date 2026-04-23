@@ -33,7 +33,9 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.True(payload.Id > 0);
         Assert.Equal(session.UserId, payload.UserId);
         Assert.Equal("Casamento Primavera", payload.Name);
-        Assert.Equal(eventDate, payload.EventDate);
+        Assert.Equal(DateTime.SpecifyKind(eventDate.Date, DateTimeKind.Utc), payload.EventDate);
+        Assert.Equal("Casamento Primavera", payload.HostNames);
+        Assert.Equal("America/Sao_Paulo", payload.TimeZoneId);
         Assert.False(string.IsNullOrWhiteSpace(payload.Slug));
         Assert.Empty(payload.Gifts);
         Assert.Equal(0, payload.GuestCount);
@@ -62,15 +64,15 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
 
         var response = await PostAuthorizedJsonAsync("/api/events", new
         {
-            name = "Casamento Inválido",
-            eventDate = DateTime.UtcNow.Date
+            name = "Casamento Inv\u00E1lido",
+            eventDate = GetCurrentLegacyEventDateRequestValue()
         }, session.Token);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Erro de validação", payload.Title);
+        Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
         Assert.Equal("A data do evento deve ser futura.", payload.Detail);
     }
 
@@ -95,8 +97,49 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.NotNull(payload);
         Assert.Equal(createdEvent.Id, payload.Id);
         Assert.Equal("Casamento Atualizado", payload.Name);
-        Assert.Equal(updatedDate, payload.EventDate);
+        Assert.Equal(DateTime.SpecifyKind(updatedDate.Date, DateTimeKind.Utc), payload.EventDate);
         Assert.Equal(createdEvent.Slug, payload.Slug);
+    }
+
+    [Fact]
+    public async Task CreateEvent_ShouldReturnCreated_WithEnrichedFieldsAndTimeZone()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventDateTime = CreateEventDateTimeOffset(
+            "America/Manaus",
+            new DateTime(2030, 8, 10, 19, 30, 0, DateTimeKind.Unspecified));
+
+        var response = await PostAuthorizedJsonAsync("/api/events", new
+        {
+            name = "Casamento Enriquecido",
+            hostNames = "Ana e Bruno",
+            eventDateTime,
+            timeZoneId = "America/Manaus",
+            locationName = "Solar das Aguas",
+            locationAddress = "Av. das Palmeiras, 500",
+            locationMapsUrl = "https://maps.example.com/solar-das-aguas",
+            ceremonyInfo = "Cerimonia ao por do sol.",
+            dressCode = "Social",
+            coverImageUrl = "https://images.example.com/casamento-enriquecido.jpg"
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
+
+        Assert.NotNull(payload);
+        Assert.Equal("Casamento Enriquecido", payload.Name);
+        Assert.Equal("Ana e Bruno", payload.HostNames);
+        Assert.Equal("America/Manaus", payload.TimeZoneId);
+        Assert.Equal(eventDateTime.UtcDateTime, payload.EventDateTime);
+        Assert.Equal("Solar das Aguas", payload.LocationName);
+        Assert.Equal("Av. das Palmeiras, 500", payload.LocationAddress);
+        Assert.Equal("https://maps.example.com/solar-das-aguas", payload.LocationMapsUrl);
+        Assert.Equal("Cerimonia ao por do sol.", payload.CeremonyInfo);
+        Assert.Equal("Social", payload.DressCode);
+        Assert.Equal("https://images.example.com/casamento-enriquecido.jpg", payload.CoverImageUrl);
     }
 
     [Fact]
@@ -118,8 +161,8 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Recurso não encontrado", payload.Title);
-        Assert.Equal("Evento não encontrado.", payload.Detail);
+        Assert.Equal("Recurso n\u00E3o encontrado", payload.Title);
+        Assert.Equal("Evento n\u00E3o encontrado.", payload.Detail);
     }
 
     [Fact]
@@ -158,7 +201,7 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
 
         var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
         Assert.NotNull(payload);
-        Assert.Equal("Recurso não encontrado", payload.Title);
-        Assert.Equal("Evento não encontrado.", payload.Detail);
+        Assert.Equal("Recurso n\u00E3o encontrado", payload.Title);
+        Assert.Equal("Evento n\u00E3o encontrado.", payload.Detail);
     }
 }

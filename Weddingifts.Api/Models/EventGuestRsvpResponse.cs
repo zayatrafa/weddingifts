@@ -1,33 +1,30 @@
-﻿using Weddingifts.Api.Entities;
+using Weddingifts.Api.Entities;
 
 namespace Weddingifts.Api.Models;
 
-public sealed class EventGuestResponse
+public sealed class EventGuestRsvpResponse
 {
-    public int Id { get; init; }
     public int EventId { get; init; }
-    public string Cpf { get; init; } = string.Empty;
-    public string Name { get; init; } = string.Empty;
-    public string Email { get; init; } = string.Empty;
-    public string PhoneNumber { get; init; } = string.Empty;
+    public string EventSlug { get; init; } = string.Empty;
+    public int GuestId { get; init; }
+    public string GuestCpf { get; init; } = string.Empty;
+    public string GuestName { get; init; } = string.Empty;
     public int MaxExtraGuests { get; init; }
     public string RsvpStatus { get; init; } = string.Empty;
     public DateTime? RsvpRespondedAt { get; init; }
     public string? MessageToCouple { get; init; }
     public string? DietaryRestrictions { get; init; }
     public IReadOnlyList<EventGuestCompanionResponse> Companions { get; init; } = [];
-    public DateTime CreatedAt { get; init; }
 
-    public static EventGuestResponse FromEntity(EventGuest guest)
+    public static EventGuestRsvpResponse FromEntity(Event ev, EventGuest guest)
     {
-        return new EventGuestResponse
+        return new EventGuestRsvpResponse
         {
-            Id = guest.Id,
-            EventId = guest.EventId,
-            Cpf = guest.Cpf,
-            Name = guest.Name,
-            Email = guest.Email,
-            PhoneNumber = guest.PhoneNumber,
+            EventId = ev.Id,
+            EventSlug = ev.Slug,
+            GuestId = guest.Id,
+            GuestCpf = guest.Cpf,
+            GuestName = guest.Name,
             MaxExtraGuests = guest.MaxExtraGuests,
             RsvpStatus = guest.RsvpStatus.ToString().ToLowerInvariant(),
             RsvpRespondedAt = guest.RsvpRespondedAt,
@@ -36,8 +33,7 @@ public sealed class EventGuestResponse
             Companions = guest.Companions
                 .OrderBy(companion => companion.CreatedAt)
                 .Select(EventGuestCompanionResponse.FromEntity)
-                .ToList(),
-            CreatedAt = guest.CreatedAt
+                .ToList()
         };
     }
 }

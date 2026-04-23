@@ -107,20 +107,60 @@ public abstract class IntegrationTestBase
         return (await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions))!;
     }
 
+    protected async Task<EventResponseContract> CreateRichEventAsync(
+        string token,
+        string? eventName = null,
+        string? hostNames = null,
+        DateTimeOffset? eventDateTime = null,
+        string? timeZoneId = null,
+        string? locationName = null,
+        string? locationAddress = null,
+        string? locationMapsUrl = null,
+        string? ceremonyInfo = null,
+        string? dressCode = null,
+        string? coverImageUrl = null)
+    {
+        var normalizedTimeZoneId = timeZoneId ?? "America/Sao_Paulo";
+        var normalizedEventDateTime = eventDateTime ?? CreateEventDateTimeOffset(
+            normalizedTimeZoneId,
+            new DateTime(2030, 6, 15, 18, 0, 0, DateTimeKind.Unspecified));
+
+        var response = await PostAuthorizedJsonAsync("/api/events", new
+        {
+            name = eventName ?? "Casamento Teste",
+            hostNames = hostNames ?? "Ana e Bruno",
+            eventDateTime = normalizedEventDateTime,
+            timeZoneId = normalizedTimeZoneId,
+            locationName = locationName ?? "Espaco Primavera",
+            locationAddress = locationAddress ?? "Rua das Flores, 123",
+            locationMapsUrl = locationMapsUrl ?? "https://maps.example.com/evento",
+            ceremonyInfo = ceremonyInfo ?? "Cerimonia no salao principal as 18h.",
+            dressCode = dressCode ?? "Esporte fino",
+            coverImageUrl = coverImageUrl ?? "https://images.example.com/capa.jpg"
+        }, token);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode, $"Erro ao criar evento enriquecido: {body}");
+
+        return (await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions))!;
+    }
+
     protected async Task<EventGuestResponseContract> CreateGuestAsync(
         string token,
         int eventId,
         string? cpf = null,
         string? name = null,
         string? email = null,
-        string? phoneNumber = null)
+        string? phoneNumber = null,
+        int? maxExtraGuests = null)
     {
         var response = await PostAuthorizedJsonAsync($"/api/events/{eventId}/guests", new
         {
             cpf = cpf ?? GenerateUniqueCpf(),
             name = name ?? "Convidado Teste",
             email = email ?? $"guest-{Guid.NewGuid():N}@weddingifts.local",
-            phoneNumber = phoneNumber ?? "11999990000"
+            phoneNumber = phoneNumber ?? "11999990000",
+            maxExtraGuests
         }, token);
 
         var body = await response.Content.ReadAsStringAsync();
@@ -138,6 +178,20 @@ public abstract class IntegrationTestBase
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await Client.SendAsync(request);
+    }
+
+    protected static DateTimeOffset CreateEventDateTimeOffset(string timeZoneId, DateTime localDateTime)
+    {
+        var timeZone = ResolveTimeZone(timeZoneId);
+        var expectedOffset = timeZone.GetUtcOffset(localDateTime);
+        return new DateTimeOffset(localDateTime, expectedOffset);
+    }
+
+    protected static DateTime GetCurrentLegacyEventDateRequestValue()
+    {
+        var timeZone = ResolveTimeZone("America/Sao_Paulo");
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+        return DateTime.SpecifyKind(localNow.Date, DateTimeKind.Utc);
     }
 
     protected async Task<HttpResponseMessage> PutAuthorizedJsonAsync(string url, object body, string token)
@@ -200,6 +254,18 @@ public abstract class IntegrationTestBase
         var remainder = sum % 11;
         return remainder < 2 ? 0 : 11 - remainder;
     }
+
+    private static TimeZoneInfo ResolveTimeZone(string timeZoneId)
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (TimeZoneNotFoundException) when (TimeZoneInfo.TryConvertIanaIdToWindowsId(timeZoneId, out var windowsId))
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(windowsId);
+        }
+    }
 }
 
 public class RegisteredUser
@@ -239,7 +305,16 @@ public sealed class EventResponseContract
     public int Id { get; set; }
     public int UserId { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string HostNames { get; set; } = string.Empty;
     public DateTime EventDate { get; set; }
+    public DateTime EventDateTime { get; set; }
+    public string TimeZoneId { get; set; } = string.Empty;
+    public string LocationName { get; set; } = string.Empty;
+    public string LocationAddress { get; set; } = string.Empty;
+    public string LocationMapsUrl { get; set; } = string.Empty;
+    public string CeremonyInfo { get; set; } = string.Empty;
+    public string DressCode { get; set; } = string.Empty;
+    public string CoverImageUrl { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public List<object> Gifts { get; set; } = [];
@@ -254,5 +329,35 @@ public sealed class EventGuestResponseContract
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
+    public int MaxExtraGuests { get; set; }
+    public string RsvpStatus { get; set; } = string.Empty;
+    public DateTime? RsvpRespondedAt { get; set; }
+    public string? MessageToCouple { get; set; }
+    public string? DietaryRestrictions { get; set; }
+    public List<EventGuestCompanionResponseContract> Companions { get; set; } = [];
+    public DateTime CreatedAt { get; set; }
+}
+
+public sealed class EventGuestRsvpResponseContract
+{
+    public int EventId { get; set; }
+    public string EventSlug { get; set; } = string.Empty;
+    public int GuestId { get; set; }
+    public string GuestCpf { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public int MaxExtraGuests { get; set; }
+    public string RsvpStatus { get; set; } = string.Empty;
+    public DateTime? RsvpRespondedAt { get; set; }
+    public string? MessageToCouple { get; set; }
+    public string? DietaryRestrictions { get; set; }
+    public List<EventGuestCompanionResponseContract> Companions { get; set; } = [];
+}
+
+public sealed class EventGuestCompanionResponseContract
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateOnly BirthDate { get; set; }
+    public string? Cpf { get; set; }
     public DateTime CreatedAt { get; set; }
 }

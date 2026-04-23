@@ -1192,16 +1192,15 @@ body.mobile-nav-open {
   gap: 8px;
 }
 
+/* Shared management list cards reused across event, gift, and guest management pages. */
 .event-item,
 .gift-item {
   border: 1px solid rgba(229, 221, 209, 0.9);
   border-radius: 11px;
   padding: 11px;
   background: #fff;
+  position: relative;
 }
-
-.event-item,
-.gift-item { position: relative; }
 
 .event-edit-form {
   margin-top: 10px;
@@ -1211,6 +1210,7 @@ body.mobile-nav-open {
   gap: 8px;
 }
 
+/* Shared compact actions used inside management cards. */
 .icon-button {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -1357,6 +1357,7 @@ body.mobile-nav-open {
   background: rgba(136, 125, 112, 0.16);
 }
 
+/* Page-level adjustments for authenticated management screens. */
 .my-event-card {
   padding: 16px;
   border-radius: 14px;

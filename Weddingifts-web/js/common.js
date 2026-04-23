@@ -5,10 +5,11 @@ const MOBILE_NAV_OVERLAY_ID = "mobile-nav-overlay";
 const MOBILE_NAV_DRAWER_ID = "mobile-nav-drawer";
 const MOBILE_NAV_TITLE = "Navegação principal";
 
-const STATUS_CLASSES = ["status-info", "status-success", "status-error", "status-loading"];
+const STATUS_CLASSES = Object.freeze(["status-info", "status-success", "status-error", "status-loading"]);
 const GENERIC_ERROR_MESSAGE = "Não foi possível concluir a operação. Tente novamente.";
 let mobileHeaderController = null;
 
+// Shared product copy used across multiple pages.
 export const UI_TEXT = {
   common: {
     retry: "Não foi possível concluir a operação. Tente novamente.",
@@ -103,6 +104,24 @@ export const UI_TEXT = {
     deleteGuest: (name) => `Tem certeza que deseja excluir o convidado "${name}"?`
   }
 };
+
+const MOBILE_NAV_AUTH_LINKS = deepFreeze([
+  { href: "./my-events.html", label: "Meus eventos", activePages: ["my-events.html"] },
+  { href: "./create-event.html", label: "Criar evento", activePages: ["create-event.html"] },
+  { href: "./my-event.html", label: "Gerenciar presentes", activePages: ["my-event.html"] },
+  { href: "./my-guests.html", label: "Gerenciar convidados", activePages: ["my-guests.html"] },
+  { href: "./account.html", label: "Minha conta", activePages: ["account.html"] },
+  { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] },
+  { kind: "button", label: "Sair", buttonClass: "js-mobile-nav-logout", activePages: [] }
+]);
+
+const MOBILE_NAV_PUBLIC_LINKS = deepFreeze([
+  { href: "./login.html", label: "Entrar", activePages: ["login.html"] },
+  { href: "./register.html", label: "Criar conta", activePages: ["register.html"] },
+  { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] }
+]);
+
+deepFreeze(UI_TEXT);
 
 export function getApiBase() {
   return DEFAULT_API_BASE;
@@ -549,9 +568,7 @@ function inferApiBase() {
   return `${protocol}//${hostname}:5298`;
 }
 
-
-
-
+// Global mobile header / drawer controller used by pages that render .shell-nav.
 function createMobileHeaderController(nav) {
   const navInner = nav.querySelector(".shell-nav-inner");
   if (!navInner) return { nav, render() {}, syncScrollState() {} };
@@ -822,15 +839,7 @@ function getMobileNavConfig({ session, currentPage }) {
 
     return {
       eyebrow: displayName,
-      links: [
-        { href: "./my-events.html", label: "Meus eventos", activePages: ["my-events.html"] },
-        { href: "./create-event.html", label: "Criar evento", activePages: ["create-event.html"] },
-        { href: "./my-event.html", label: "Gerenciar presentes", activePages: ["my-event.html"] },
-        { href: "./my-guests.html", label: "Gerenciar convidados", activePages: ["my-guests.html"] },
-        { href: "./account.html", label: "Minha conta", activePages: ["account.html"] },
-        { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] },
-        { kind: "button", label: "Sair", buttonClass: "js-mobile-nav-logout", activePages: [] }
-      ],
+      links: MOBILE_NAV_AUTH_LINKS,
       cta: {
         href: "./create-event.html",
         label: currentPage === "create-event.html" ? "Continuar edição" : "Criar minha lista"
@@ -841,11 +850,7 @@ function getMobileNavConfig({ session, currentPage }) {
 
   return {
     eyebrow: "Navegação",
-    links: [
-      { href: "./login.html", label: "Entrar", activePages: ["login.html"] },
-      { href: "./register.html", label: "Criar conta", activePages: ["register.html"] },
-      { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] }
-    ],
+    links: MOBILE_NAV_PUBLIC_LINKS,
     cta: {
       href: "./register.html",
       label: "Criar minha lista"
@@ -867,6 +872,20 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function deepFreeze(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) {
+    return value;
+  }
+
+  Object.freeze(value);
+
+  for (const nestedValue of Object.values(value)) {
+    deepFreeze(nestedValue);
+  }
+
+  return value;
 }
 
 if (typeof document !== "undefined") {
