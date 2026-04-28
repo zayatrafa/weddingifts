@@ -67,6 +67,11 @@ public class AppDbContext : DbContext
             .HasMaxLength(500)
             .IsRequired();
 
+        modelBuilder.Entity<Event>()
+            .Property(e => e.InvitationMessage)
+            .HasMaxLength(500)
+            .IsRequired();
+
         modelBuilder.Entity<Gift>()
             .Property(g => g.Name)
             .HasMaxLength(255)

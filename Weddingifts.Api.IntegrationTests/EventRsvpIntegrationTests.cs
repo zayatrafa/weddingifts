@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 
@@ -24,7 +25,14 @@ public sealed class EventRsvpIntegrationTests : IntegrationTestBase, IClassFixtu
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var payload = await response.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+        var body = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(body);
+        Assert.True(document.RootElement.TryGetProperty("hasCompletedInvitationFlow", out var hasCompletedProperty));
+        Assert.False(hasCompletedProperty.GetBoolean());
+        Assert.True(document.RootElement.TryGetProperty("invitationFlowCompletedAt", out var completedAtProperty));
+        Assert.Equal(JsonValueKind.Null, completedAtProperty.ValueKind);
+
+        var payload = JsonSerializer.Deserialize<EventGuestRsvpResponseContract>(body, JsonOptions);
         Assert.NotNull(payload);
         Assert.Equal(ev.Id, payload.EventId);
         Assert.Equal(ev.Slug, payload.EventSlug);
@@ -34,6 +42,8 @@ public sealed class EventRsvpIntegrationTests : IntegrationTestBase, IClassFixtu
         Assert.Equal(2, payload.MaxExtraGuests);
         Assert.Equal("pending", payload.RsvpStatus);
         Assert.Null(payload.RsvpRespondedAt);
+        Assert.False(payload.HasCompletedInvitationFlow);
+        Assert.Null(payload.InvitationFlowCompletedAt);
         Assert.Empty(payload.Companions);
     }
 
@@ -63,6 +73,156 @@ public sealed class EventRsvpIntegrationTests : IntegrationTestBase, IClassFixtu
         Assert.NotNull(payload);
         Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
         Assert.Equal("A quantidade de acompanhantes excede o limite permitido para este convidado.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task CompleteInvitationFlow_ShouldReturnBadRequest_WhenGuestCpfIsInvalid()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(session.Token);
+
+        var response = await CompleteInvitationFlowAsync(ev.Slug, "123");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
+        Assert.Equal("CPF deve conter exatamente 11 d\u00EDgitos.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task CompleteInvitationFlow_ShouldReturnBadRequest_WhenGuestCpfIsNotInvited()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(session.Token);
+
+        var response = await CompleteInvitationFlowAsync(ev.Slug, GenerateUniqueCpf());
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
+        Assert.Equal("Este CPF n\u00E3o est\u00E1 convidado para este evento.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task CompleteInvitationFlow_ShouldReturnBadRequest_WhenRsvpIsPending()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(session.Token);
+        var guest = await CreateGuestAsync(session.Token, ev.Id);
+
+        var response = await CompleteInvitationFlowAsync(ev.Slug, guest.Cpf);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
+        Assert.Equal("Para concluir o convite, confirme ou recuse sua presen\u00E7a primeiro.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task CompleteInvitationFlow_ShouldReturnOk_WhenRsvpIsAccepted()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(session.Token);
+        var guest = await CreateGuestAsync(session.Token, ev.Id);
+
+        var confirmResponse = await Client.PostAsJsonAsync($"/api/events/{ev.Slug}/rsvp", new
+        {
+            guestCpf = guest.Cpf,
+            status = "accepted"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+
+        var response = await CompleteInvitationFlowAsync(ev.Slug, guest.Cpf);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("accepted", payload.RsvpStatus);
+        Assert.True(payload.HasCompletedInvitationFlow);
+        Assert.NotNull(payload.InvitationFlowCompletedAt);
+
+        var lookupResponse = await Client.GetAsync($"/api/events/{ev.Slug}/rsvp?guestCpf={guest.Cpf}");
+        var lookupPayload = await lookupResponse.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+
+        Assert.NotNull(lookupPayload);
+        Assert.True(lookupPayload.HasCompletedInvitationFlow);
+        Assert.Equal(payload.InvitationFlowCompletedAt, lookupPayload.InvitationFlowCompletedAt);
+    }
+
+    [Fact]
+    public async Task CompleteInvitationFlow_ShouldReturnOk_WhenRsvpIsDeclined()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(session.Token);
+        var guest = await CreateGuestAsync(session.Token, ev.Id);
+
+        var declineResponse = await Client.PostAsJsonAsync($"/api/events/{ev.Slug}/rsvp", new
+        {
+            guestCpf = guest.Cpf,
+            status = "declined",
+            messageToCouple = "N\u00E3o poderemos comparecer."
+        });
+
+        Assert.Equal(HttpStatusCode.OK, declineResponse.StatusCode);
+
+        var response = await CompleteInvitationFlowAsync(ev.Slug, guest.Cpf);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("declined", payload.RsvpStatus);
+        Assert.True(payload.HasCompletedInvitationFlow);
+        Assert.NotNull(payload.InvitationFlowCompletedAt);
+    }
+
+    [Fact]
+    public async Task CompleteInvitationFlow_ShouldKeepOriginalTimestamp_WhenAlreadyCompleted()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(session.Token);
+        var guest = await CreateGuestAsync(session.Token, ev.Id);
+
+        var confirmResponse = await Client.PostAsJsonAsync($"/api/events/{ev.Slug}/rsvp", new
+        {
+            guestCpf = guest.Cpf,
+            status = "accepted"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+
+        var firstResponse = await CompleteInvitationFlowAsync(ev.Slug, guest.Cpf);
+        var firstPayload = await firstResponse.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+
+        var secondResponse = await CompleteInvitationFlowAsync(ev.Slug, guest.Cpf);
+        var secondPayload = await secondResponse.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+        Assert.NotNull(firstPayload);
+        Assert.NotNull(secondPayload);
+        Assert.True(secondPayload.HasCompletedInvitationFlow);
+        Assert.Equal(firstPayload.InvitationFlowCompletedAt, secondPayload.InvitationFlowCompletedAt);
     }
 
     [Fact]
@@ -283,5 +443,66 @@ public sealed class EventRsvpIntegrationTests : IntegrationTestBase, IClassFixtu
         Assert.Null(payload.MessageToCouple);
         Assert.Null(payload.DietaryRestrictions);
         Assert.Empty(payload.Companions);
+    }
+
+    [Fact]
+    public async Task UpdateEvent_ShouldClearInvitationCompletion_WhenTemporalChangeResetsRsvp()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var ev = await CreateRichEventAsync(
+            session.Token,
+            eventDateTime: CreateEventDateTimeOffset(
+                "America/Rio_Branco",
+                new DateTime(2030, 8, 9, 22, 30, 0, DateTimeKind.Unspecified)),
+            timeZoneId: "America/Rio_Branco");
+        var guest = await CreateGuestAsync(session.Token, ev.Id, maxExtraGuests: 1);
+
+        var confirmResponse = await Client.PostAsJsonAsync($"/api/events/{ev.Slug}/rsvp", new
+        {
+            guestCpf = guest.Cpf,
+            status = "accepted",
+            companions = new object[]
+            {
+                new { name = "Ana Silva", birthDate = new DateOnly(2014, 8, 10), cpf = (string?)null }
+            }
+        });
+
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+
+        var completeResponse = await CompleteInvitationFlowAsync(ev.Slug, guest.Cpf);
+        var completePayload = await completeResponse.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+
+        Assert.Equal(HttpStatusCode.OK, completeResponse.StatusCode);
+        Assert.NotNull(completePayload);
+        Assert.True(completePayload.HasCompletedInvitationFlow);
+        Assert.NotNull(completePayload.InvitationFlowCompletedAt);
+
+        var updateEventResponse = await PutAuthorizedJsonAsync($"/api/events/{ev.Id}", new
+        {
+            name = ev.Name,
+            hostNames = ev.HostNames,
+            eventDateTime = CreateEventDateTimeOffset(
+                "America/Sao_Paulo",
+                new DateTime(2030, 8, 10, 0, 30, 0, DateTimeKind.Unspecified)),
+            timeZoneId = "America/Sao_Paulo",
+            locationName = ev.LocationName,
+            locationAddress = ev.LocationAddress,
+            locationMapsUrl = ev.LocationMapsUrl,
+            ceremonyInfo = ev.CeremonyInfo,
+            dressCode = ev.DressCode,
+            coverImageUrl = ev.CoverImageUrl
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.OK, updateEventResponse.StatusCode);
+
+        var rsvpResponse = await Client.GetAsync($"/api/events/{ev.Slug}/rsvp?guestCpf={guest.Cpf}");
+        var payload = await rsvpResponse.Content.ReadFromJsonAsync<EventGuestRsvpResponseContract>(JsonOptions);
+
+        Assert.NotNull(payload);
+        Assert.Equal("pending", payload.RsvpStatus);
+        Assert.False(payload.HasCompletedInvitationFlow);
+        Assert.Null(payload.InvitationFlowCompletedAt);
     }
 }

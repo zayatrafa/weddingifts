@@ -21,39 +21,70 @@
     </div>
   </nav>
 
-  <main class="page">
-    <section class="hero-panel">
-      <p class="hero-eyebrow">Lista pública</p>
-      <h1 id="event-title" class="hero-title">Evento não carregado</h1>
-      <p id="event-subtitle" class="hero-subtitle">Use o slug para abrir a lista pública de presentes.</p>
-      <div class="flow-grid event-summary-grid" style="margin-top: 24px;">
-        <article class="flow-step"><strong>Data</strong><span id="event-date" class="muted">--</span></article>
-        <article class="flow-step"><strong>Slug</strong><span id="event-slug" class="muted">--</span></article>
-        <article class="flow-step event-summary-total"><strong>Total de itens</strong><span id="event-total" class="muted">0 itens</span></article>
+  <main class="page public-invitation-page">
+    <section id="invitation-flow-root" class="section invitation-flow" data-state="loading">
+      <div class="invitation-shell">
+        <article class="hero-panel invitation-event-panel">
+          <p class="hero-eyebrow">Convite público</p>
+          <h1 id="event-title" class="hero-title">Carregando convite</h1>
+          <p id="event-subtitle" class="hero-subtitle">Aguarde enquanto buscamos as informações do evento.</p>
+          <div class="flow-grid event-summary-grid" style="margin-top: 24px;">
+            <article class="flow-step"><strong>Data e hora</strong><span id="event-date" class="muted">--</span></article>
+            <article class="flow-step"><strong>Casal</strong><span id="event-hosts" class="muted">--</span></article>
+            <article class="flow-step event-summary-total"><strong>Total de itens</strong><span id="event-total" class="muted">0 itens</span></article>
+          </div>
+          <span id="event-slug" hidden></span>
+          <div id="event-cover" class="public-event-cover" hidden><img id="event-cover-image" alt="Imagem de capa do evento" /></div>
+          <dl id="event-details" class="public-event-details" hidden></dl>
+        </article>
+
+        <article class="card card-pad invitation-step-card">
+          <div id="invitation-step-panel" class="invitation-step-panel" aria-live="polite">
+            <div class="center-empty">Carregando convite...</div>
+          </div>
+
+          <div id="invitation-identify-fields" class="invitation-identify-fields">
+            <div class="field" style="margin: 0;">
+              <label for="invitation-guest-cpf-input">CPF do convidado</label>
+              <input class="input" id="invitation-guest-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" />
+            </div>
+            <div class="invitation-fixed-action">
+              <button id="invitation-next-button" class="btn btn-primary with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 2.2-6 5v1h12v-1c0-2.8-2.7-5-6-5zm8-2a3 3 0 1 0-2.2-5 6 6 0 0 1 .4 2c0 1.2-.3 2.3-.9 3.2.8.5 1.7.8 2.7.8zm1 2c-.8 0-1.6.1-2.3.4 1.4 1.1 2.3 2.8 2.3 4.6v1h4v-1c0-2.8-1.8-5-4-5z" fill="currentColor"/></svg></span>Consultar RSVP</button>
+              <button id="invitation-complete-button" class="btn btn-primary" type="button" hidden>Concluir convite</button>
+            </div>
+          </div>
+
+          <p id="invitation-flow-status" class="status status-info">Carregando convite...</p>
+          <p id="rsvp-status" class="status status-info" hidden></p>
+          <div id="rsvp-panel" class="rsvp-panel" hidden></div>
+        </article>
       </div>
     </section>
 
-    <section class="section card card-pad">
-      <div class="row">
-        <div class="field" style="margin: 0;"><label for="slug-input">Slug</label><input class="input" id="slug-input" type="text" maxlength="24" placeholder="ex: abc12345" /></div>
-        <div class="field" style="margin: 0;"><label for="guest-cpf-input">CPF do convidado</label><input class="input" id="guest-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" /></div>
-      </div>
-      <div class="hero-actions" style="margin-top: 14px;"><button id="load-button" class="btn btn-primary with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0-2a8 8 0 1 0 4.9 14.3l4 4 1.4-1.4-4-4A8 8 0 0 0 10 2z" fill="currentColor"/></svg></span>Carregar evento</button></div>
-      <p id="status" class="status status-info">Informe o slug para carregar o evento.</p>
-    </section>
-
-    <section class="section card card-pad">
-      <div class="row event-filter-row" style="align-items: center;">
-        <strong>Filtrar presentes</strong>
+    <section id="public-gift-filter-section" class="section card card-pad" hidden>
+      <div class="gift-flow-toolbar">
+        <div class="field field-flat">
+          <label for="gift-search-input">Buscar presente</label>
+          <input class="input" id="gift-search-input" type="search" placeholder="Nome ou descrição" />
+        </div>
+        <div class="field field-flat">
+          <label for="gift-sort-select">Ordenar</label>
+          <select class="select" id="gift-sort-select">
+            <option value="availability">Disponibilidade</option>
+            <option value="price-asc">Menor preço</option>
+            <option value="price-desc">Maior preço</option>
+            <option value="name-asc">Nome A-Z</option>
+          </select>
+        </div>
         <div class="row event-filter-actions" style="margin-left: auto;">
-          <button class="btn btn-primary filter-button" data-filter="all" type="button">Todos</button>
-          <button class="btn btn-secondary filter-button" data-filter="available" type="button">Disponíveis</button>
-          <button class="btn btn-secondary filter-button" data-filter="reserved" type="button">Reservados</button>
+          <button class="btn btn-primary filter-button" data-filter="all" data-gift-filter="all" type="button">Todos</button>
+          <button class="btn btn-secondary filter-button" data-filter="available" data-gift-filter="available" type="button">Disponíveis</button>
+          <button class="btn btn-secondary filter-button" data-filter="reserved" data-gift-filter="reserved" type="button">Reservados</button>
         </div>
       </div>
     </section>
 
-    <section id="gift-grid" class="section grid-3"></section>
+    <section id="gift-grid" class="section grid-3" hidden></section>
 
     <template id="gift-template">
       <article class="card card-pad">

@@ -25,6 +25,7 @@ const guestCpfInput = document.getElementById("guest-cpf-input");
 const guestNameInput = document.getElementById("guest-name-input");
 const guestEmailInput = document.getElementById("guest-email-input");
 const guestPhoneInput = document.getElementById("guest-phone-input");
+const guestMaxExtraGuestsInput = document.getElementById("guest-max-extra-guests-input");
 const guestFormError = document.getElementById("guest-form-error");
 const guestSubmitButton = document.getElementById("guest-submit-button");
 const guestCancelEditButton = document.getElementById("guest-cancel-edit-button");
@@ -71,6 +72,10 @@ guestNameInput.addEventListener("input", () => {
 
 guestEmailInput.addEventListener("input", () => {
   clearFieldError(guestEmailInput);
+});
+
+guestMaxExtraGuestsInput.addEventListener("input", () => {
+  clearFieldError(guestMaxExtraGuestsInput);
 });
 
 eventSelect.addEventListener("input", () => {
@@ -124,6 +129,7 @@ async function submitGuestForm(event) {
   const name = guestNameInput.value.trim();
   const email = guestEmailInput.value.trim();
   const phoneDigits = digitsOnly(guestPhoneInput.value);
+  const maxExtraGuests = parseMaxExtraGuests(guestMaxExtraGuestsInput.value);
   const editing = state.editingGuestId !== null;
 
   clearAllFieldErrors();
@@ -136,6 +142,7 @@ async function submitGuestForm(event) {
   if (email.length > MAX_GUEST_EMAIL_LENGTH) return showFieldError(guestEmailInput, "O e-mail do convidado deve ter no máximo 120 caracteres.");
   if (!isValidEmail(email)) return showFieldError(guestEmailInput, "Informe um e-mail válido para o convidado.");
   if (!isValidPhone(phoneDigits)) return showFieldError(guestPhoneInput, "Informe um celular válido com 10 ou 11 dígitos.");
+  if (maxExtraGuests === null) return showFieldError(guestMaxExtraGuestsInput, "Informe uma quantidade válida de acompanhantes.");
 
   try {
     guestSubmitButton.disabled = true;
@@ -148,7 +155,7 @@ async function submitGuestForm(event) {
       await requestJson(`${apiBase}/api/events/${eventId}/guests/${state.editingGuestId}`, {
         method: "PUT",
         headers: authHeaders(token, true),
-        body: JSON.stringify({ name, email, phoneNumber: phoneDigits })
+        body: JSON.stringify({ name, email, phoneNumber: phoneDigits, maxExtraGuests })
       });
       await reloadSelectedEventData();
       resetGuestFormMode({ silent: true });
@@ -160,10 +167,11 @@ async function submitGuestForm(event) {
     await requestJson(`${apiBase}/api/events/${eventId}/guests`, {
       method: "POST",
       headers: authHeaders(token, true),
-      body: JSON.stringify({ cpf, name, email, phoneNumber: phoneDigits })
+      body: JSON.stringify({ cpf, name, email, phoneNumber: phoneDigits, maxExtraGuests })
     });
 
     createGuestForm.reset();
+    guestMaxExtraGuestsInput.value = "0";
     eventSelect.value = String(state.selectedEventId || "");
     await reloadSelectedEventData();
     setStatus(status, "status-success", UI_TEXT.guests.createSuccess);
@@ -178,6 +186,8 @@ async function submitGuestForm(event) {
       showFieldError(guestNameInput, error.message);
     } else if (lowerMessage.includes("telefone") || lowerMessage.includes("celular")) {
       showFieldError(guestPhoneInput, error.message);
+    } else if (lowerMessage.includes("acompanhante")) {
+      showFieldError(guestMaxExtraGuestsInput, error.message);
     } else {
       showFieldError(guestSubmitButton, `Não foi possível salvar o convidado: ${error.message}`);
     }
@@ -199,6 +209,7 @@ function startGuestEditMode(guest) {
   guestNameInput.value = guest.name || "";
   guestEmailInput.value = guest.email || "";
   guestPhoneInput.value = formatPhoneInput(guest.phoneNumber || "");
+  guestMaxExtraGuestsInput.value = String(toNonNegativeInteger(guest.maxExtraGuests));
   setGuestSubmitButtonLabel(UI_TEXT.common.save, ICON_SAVE);
   syncGuestEditUi();
   guestFormTitle.textContent = `Você está editando o convidado "${guest.name}".`;
@@ -208,6 +219,7 @@ function startGuestEditMode(guest) {
 function resetGuestFormMode() {
   state.editingGuestId = null;
   createGuestForm.reset();
+  guestMaxExtraGuestsInput.value = "0";
   guestCpfInput.disabled = false;
   setGuestSubmitButtonLabel("Adicionar convidado", ICON_USER_PLUS);
   syncGuestEditUi();
@@ -353,7 +365,7 @@ function renderGuests() {
           <button class="icon-button danger guest-delete" type="button" title="Excluir convidado" aria-label="Excluir convidado">${trashIconSvg()}</button>
         </div>
       </div>
-      <p class="meta">E-mail: ${escapeHtml(guest.email)} | Celular: ${escapeHtml(formatPhoneInput(guest.phoneNumber))}</p>
+      <p class="meta">E-mail: ${escapeHtml(guest.email)} | Celular: ${escapeHtml(formatPhoneInput(guest.phoneNumber))} | Acompanhantes: ${toNonNegativeInteger(guest.maxExtraGuests)}</p>
       <div class="guest-reservation-summary ${reservationSummary.active ? "is-active" : ""}">
         ${ICON_RESERVATION}
         <span class="guest-reservation-label">${escapeHtml(reservationSummary.label)}</span>
@@ -453,6 +465,20 @@ function isValidPhone(phoneDigits) {
   return /^\d{10,11}$/.test(String(phoneDigits || ""));
 }
 
+function parseMaxExtraGuests(value) {
+  if (String(value || "").trim() === "") return null;
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
+function toNonNegativeInteger(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
 function showFieldError(target, message) {
   const field = target?.closest?.(".field");
   if (field) {
@@ -480,7 +506,7 @@ function clearFieldError(target) {
 }
 
 function clearAllFieldErrors() {
-  [eventSelect, guestCpfInput, guestNameInput, guestEmailInput, guestPhoneInput].forEach(clearFieldError);
+  [eventSelect, guestCpfInput, guestNameInput, guestEmailInput, guestPhoneInput, guestMaxExtraGuestsInput].forEach(clearFieldError);
 }
 
 function setGuestSubmitButtonLabel(label, icon) {

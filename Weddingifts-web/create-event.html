@@ -69,8 +69,19 @@
       <p class="card-subtitle">Depois de criar, você poderá gerenciar convidados, presentes e reservas em "Meus eventos".</p>
 
       <form id="create-event-form" class="form form-compact">
-        <div class="field"><label for="event-name-input">Nome do evento</label><input class="input" id="event-name-input" type="text"  maxlength="120" placeholder="Casamento Maria e João" required /></div>
-        <div class="field"><label for="event-date-input">Data</label><input class="input" id="event-date-input" type="date" required /></div>
+        <div class="field"><label for="event-name-input">Nome do evento</label><input class="input" id="event-name-input" name="name" type="text" maxlength="120" placeholder="Casamento Maria e João" required /></div>
+        <div class="field"><label for="host-names-input">Nomes do casal</label><input class="input" id="host-names-input" name="hostNames" type="text" maxlength="160" placeholder="Maria e João" required /></div>
+        <div class="row row-tight">
+          <div class="field field-flat"><label for="event-date-time-input">Data e hora</label><input class="input" id="event-date-time-input" name="eventDateTime" type="datetime-local" max="2100-12-31T23:59" required /></div>
+          <div class="field field-flat"><label for="time-zone-input">Fuso do evento</label><select class="select" id="time-zone-input" name="timeZoneId" required></select></div>
+        </div>
+        <div class="field"><label for="location-name-input">Nome do local</label><input class="input" id="location-name-input" name="locationName" type="text" maxlength="160" placeholder="Espaço Jardim das Flores" required /></div>
+        <div class="field"><label for="location-address-input">Endereço do local</label><input class="input" id="location-address-input" name="locationAddress" type="text" maxlength="255" placeholder="Rua das Flores, 123 - São Paulo, SP" required /></div>
+        <div class="field"><label for="location-maps-url-input">Link do Google Maps</label><input class="input" id="location-maps-url-input" name="locationMapsUrl" type="url" maxlength="500" placeholder="https://maps.google.com/..." required /></div>
+        <div class="field"><label for="ceremony-info-input">Informações da cerimônia</label><textarea class="textarea" id="ceremony-info-input" name="ceremonyInfo" maxlength="500" placeholder="Cerimônia às 17h, recepção no mesmo local." required></textarea></div>
+        <div class="field"><label for="dress-code-input">Traje</label><input class="input" id="dress-code-input" name="dressCode" type="text" maxlength="160" placeholder="Esporte fino em tons claros" required /></div>
+        <div class="field"><label for="invitation-message-input">Mensagem do convite</label><textarea class="textarea" id="invitation-message-input" name="invitationMessage" maxlength="500" placeholder="Escreva uma mensagem carinhosa para seus convidados."></textarea></div>
+        <div class="field"><label for="cover-image-url-input">URL da imagem de capa</label><input class="input" id="cover-image-url-input" name="coverImageUrl" type="url" maxlength="500" placeholder="https://exemplo.com/imagem.jpg" /></div>
         <div class="row row-tight">
           <button id="event-submit-button" class="btn btn-primary btn-lg with-icon" type="submit"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2zm11 8H6v10h12V10zm-8 2h2v2h2v2h-2v2h-2v-2H8v-2h2v-2z" fill="currentColor"/></svg></span>Criar evento</button>
           <a class="btn btn-secondary btn-lg with-icon" href="./my-events.html"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v3H5V4zm0 6h14v3H5v-3zm0 6h14v3H5v-3z" fill="currentColor"/></svg></span>Ver meus eventos</a>

@@ -17,6 +17,7 @@ public sealed class EventResponse
     public string CeremonyInfo { get; init; } = string.Empty;
     public string DressCode { get; init; } = string.Empty;
     public string CoverImageUrl { get; init; } = string.Empty;
+    public string InvitationMessage { get; init; } = string.Empty;
     public string Slug { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
     public IReadOnlyList<GiftResponse> Gifts { get; init; } = [];
@@ -39,6 +40,7 @@ public sealed class EventResponse
             CeremonyInfo = ev.CeremonyInfo,
             DressCode = ev.DressCode,
             CoverImageUrl = ev.CoverImageUrl,
+            InvitationMessage = ev.InvitationMessage,
             Slug = ev.Slug,
             CreatedAt = ev.CreatedAt,
             Gifts = ev.Gifts.Select(GiftResponse.FromEntity).ToList(),

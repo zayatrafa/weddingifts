@@ -36,6 +36,7 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.Equal(DateTime.SpecifyKind(eventDate.Date, DateTimeKind.Utc), payload.EventDate);
         Assert.Equal("Casamento Primavera", payload.HostNames);
         Assert.Equal("America/Sao_Paulo", payload.TimeZoneId);
+        Assert.Equal(string.Empty, payload.InvitationMessage);
         Assert.False(string.IsNullOrWhiteSpace(payload.Slug));
         Assert.Empty(payload.Gifts);
         Assert.Equal(0, payload.GuestCount);
@@ -74,6 +75,52 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.NotNull(payload);
         Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
         Assert.Equal("A data do evento deve ser futura.", payload.Detail);
+    }
+
+    [Fact]
+    public async Task CreateEvent_ShouldReturnCreated_WithInvitationMessage()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+
+        var response = await PostAuthorizedJsonAsync("/api/events", new
+        {
+            name = "Casamento com Convite",
+            eventDate = DateTime.UtcNow.AddMonths(2),
+            invitationMessage = "Venha celebrar este dia especial com a gente."
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
+
+        Assert.NotNull(payload);
+        Assert.Equal("Casamento com Convite", payload.Name);
+        Assert.Equal("Venha celebrar este dia especial com a gente.", payload.InvitationMessage);
+    }
+
+    [Fact]
+    public async Task UpdateEvent_ShouldReturnOk_WithInvitationMessage()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var createdEvent = await CreateEventAsync(session.Token);
+
+        var response = await PutAuthorizedJsonAsync($"/api/events/{createdEvent.Id}", new
+        {
+            name = "Casamento Atualizado",
+            eventDate = DateTime.UtcNow.AddMonths(4),
+            invitationMessage = "Atualizamos nosso convite para voce."
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(createdEvent.Id, payload.Id);
+        Assert.Equal("Atualizamos nosso convite para voce.", payload.InvitationMessage);
     }
 
     [Fact]
@@ -140,6 +187,71 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.Equal("Cerimonia ao por do sol.", payload.CeremonyInfo);
         Assert.Equal("Social", payload.DressCode);
         Assert.Equal("https://images.example.com/casamento-enriquecido.jpg", payload.CoverImageUrl);
+    }
+
+    [Fact]
+    public async Task CreateEvent_ShouldReturnCreated_WithEnrichedFieldsAndBlankCoverImageUrl()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventDateTime = CreateEventDateTimeOffset(
+            "America/Sao_Paulo",
+            new DateTime(2030, 9, 12, 17, 0, 0, DateTimeKind.Unspecified));
+
+        var response = await PostAuthorizedJsonAsync("/api/events", new
+        {
+            name = "Casamento Sem Capa",
+            hostNames = "Clara e Daniel",
+            eventDateTime,
+            timeZoneId = "America/Sao_Paulo",
+            locationName = "Casa Jardim",
+            locationAddress = "Rua Central, 100",
+            locationMapsUrl = "https://maps.example.com/casa-jardim",
+            ceremonyInfo = "Recepcao no jardim.",
+            dressCode = "Passeio completo",
+            coverImageUrl = " "
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
+
+        Assert.NotNull(payload);
+        Assert.Equal("Casamento Sem Capa", payload.Name);
+        Assert.Equal(string.Empty, payload.CoverImageUrl);
+    }
+
+    [Fact]
+    public async Task UpdateEvent_ShouldReturnOk_WithBlankCoverImageUrl()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var createdEvent = await CreateRichEventAsync(session.Token);
+        var eventDateTime = CreateEventDateTimeOffset(
+            createdEvent.TimeZoneId,
+            new DateTime(2030, 10, 20, 18, 30, 0, DateTimeKind.Unspecified));
+
+        var response = await PutAuthorizedJsonAsync($"/api/events/{createdEvent.Id}", new
+        {
+            name = createdEvent.Name,
+            hostNames = createdEvent.HostNames,
+            eventDateTime,
+            timeZoneId = createdEvent.TimeZoneId,
+            locationName = createdEvent.LocationName,
+            locationAddress = createdEvent.LocationAddress,
+            locationMapsUrl = createdEvent.LocationMapsUrl,
+            ceremonyInfo = createdEvent.CeremonyInfo,
+            dressCode = createdEvent.DressCode,
+            coverImageUrl = ""
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(string.Empty, payload.CoverImageUrl);
     }
 
     [Fact]

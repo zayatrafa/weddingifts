@@ -13,4 +13,5 @@ public sealed class UpdateEventRequest
     public string? CeremonyInfo { get; set; }
     public string? DressCode { get; set; }
     public string? CoverImageUrl { get; set; }
+    public string? InvitationMessage { get; set; }
 }

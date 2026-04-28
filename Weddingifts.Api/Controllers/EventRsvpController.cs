@@ -39,4 +39,15 @@ public sealed class EventRsvpController : ControllerBase
         var response = await _eventRsvpService.UpdateRsvpAsync(slug, request ?? new UpsertEventGuestRsvpRequest());
         return Ok(response);
     }
+
+    [AllowAnonymous]
+    [HttpPost("{slug}/invitation-flow/complete")]
+    public async Task<IActionResult> CompleteInvitationFlow(string slug, [FromBody] CompleteInvitationFlowRequest? request)
+    {
+        var response = await _eventRsvpService.CompleteInvitationFlowAsync(
+            slug,
+            request ?? new CompleteInvitationFlowRequest());
+
+        return Ok(response);
+    }
 }

@@ -12,46 +12,6 @@ namespace Weddingifts.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_EventGuests_EventId",
-                table: "EventGuests");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Email",
-                table: "Users",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "Gifts",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Description",
-                table: "Gifts",
-                type: "character varying(120)",
-                maxLength: 120,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "Events",
-                type: "character varying(120)",
-                maxLength: 120,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
             migrationBuilder.AddColumn<string>(
                 name: "CeremonyInfo",
                 table: "Events",
@@ -139,24 +99,6 @@ namespace Weddingifts.Api.Migrations
                 WHERE "EventDateTime" = TIMESTAMPTZ '0001-01-01 00:00:00+00'
                   AND "TimeZoneId" = '';
                 """);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "EventGuests",
-                type: "character varying(120)",
-                maxLength: 120,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Email",
-                table: "EventGuests",
-                type: "character varying(120)",
-                maxLength: 120,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
 
             migrationBuilder.AddColumn<string>(
                 name: "DietaryRestrictions",
@@ -283,65 +225,6 @@ namespace Weddingifts.Api.Migrations
             migrationBuilder.DropColumn(
                 name: "RsvpStatus",
                 table: "EventGuests");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Email",
-                table: "Users",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(255)",
-                oldMaxLength: 255);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "Gifts",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(255)",
-                oldMaxLength: 255);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Description",
-                table: "Gifts",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(120)",
-                oldMaxLength: 120);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "Events",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(120)",
-                oldMaxLength: 120);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                table: "EventGuests",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(120)",
-                oldMaxLength: 120);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Email",
-                table: "EventGuests",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(120)",
-                oldMaxLength: 120);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EventGuests_EventId",
-                table: "EventGuests",
-                column: "EventId");
         }
     }
 }

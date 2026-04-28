@@ -58,6 +58,27 @@ public sealed class EventRsvpService
         return EventGuestRsvpResponse.FromEntity(ev, guest);
     }
 
+    public async Task<EventGuestRsvpResponse> CompleteInvitationFlowAsync(
+        string slug,
+        CompleteInvitationFlowRequest request)
+    {
+        var (ev, guest) = await LoadEventAndGuestAsync(slug, request.GuestCpf);
+
+        if (guest.RsvpStatus == RsvpStatus.Pending)
+        {
+            throw new DomainValidationException(
+                "Para concluir o convite, confirme ou recuse sua presença primeiro.");
+        }
+
+        if (guest.InvitationFlowCompletedAt is null)
+        {
+            guest.InvitationFlowCompletedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        return EventGuestRsvpResponse.FromEntity(ev, guest);
+    }
+
     public async Task ResetGuestsForEventTemporalChangeAsync(Event ev)
     {
         var guests = await _context.EventGuests
@@ -331,6 +352,7 @@ public sealed class EventRsvpService
         guest.RsvpRespondedAt = null;
         guest.MessageToCouple = null;
         guest.DietaryRestrictions = null;
+        guest.InvitationFlowCompletedAt = null;
 
         if (guest.Companions.Count == 0)
             return;

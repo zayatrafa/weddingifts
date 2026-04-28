@@ -59,6 +59,11 @@ namespace Weddingifts.Api.Migrations
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)");
 
+                    b.Property<string>("InvitationMessage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("LocationAddress")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -124,6 +129,9 @@ namespace Weddingifts.Api.Migrations
 
                     b.Property<int>("EventId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("InvitationFlowCompletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("MaxExtraGuests")
                         .HasColumnType("integer");

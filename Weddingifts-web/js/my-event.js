@@ -10,6 +10,11 @@
   setStatus,
   UI_TEXT
 } from "./common.js";
+import {
+  formatEventDateTime,
+  getEventTimeZoneId,
+  getTimeZoneLabel
+} from "./event-contract.js";
 
 const MIN_GIFT_PRICE = 0;
 const MAX_GIFT_PRICE_EXCLUSIVE = 1_000_000;
@@ -27,6 +32,7 @@ const eventSelect = document.getElementById("event-select");
 const giftsList = document.getElementById("gifts-list");
 const reservationsList = document.getElementById("reservations-list");
 const status = document.getElementById("status");
+const selectedEventSummary = document.getElementById("selected-event-summary");
 const giftNameInput = document.getElementById("gift-name-input");
 const giftDescriptionInput = document.getElementById("gift-description-input");
 const giftPriceInput = document.getElementById("gift-price-input");
@@ -58,6 +64,7 @@ giftCancelEditButton.addEventListener("click", () => {
 eventSelect.addEventListener("change", async () => {
   state.selectedEventId = Number(eventSelect.value) || null;
   resetGiftFormMode({ silent: true });
+  renderSelectedEventSummary();
   await reloadSelectedEventData();
 });
 
@@ -101,6 +108,7 @@ async function loadMyEvents() {
       state.reservations = [];
       state.guests = [];
       renderGiftSelect();
+      renderSelectedEventSummary();
       renderGifts();
       renderReservations();
       setStatus(status, "status-info", UI_TEXT.events.emptyWithAction);
@@ -113,6 +121,7 @@ async function loadMyEvents() {
       : (state.events.some((event) => event.id === state.selectedEventId) ? state.selectedEventId : state.events[0].id);
 
     renderGiftSelect();
+    renderSelectedEventSummary();
     await reloadSelectedEventData();
     setStatus(status, "status-success", UI_TEXT.events.loaded);
   } catch (error) {
@@ -315,6 +324,7 @@ async function loadSelectedEventGuests() {
 }
 
 async function reloadSelectedEventData() {
+  renderSelectedEventSummary();
   await loadSelectedEventGifts();
   await loadSelectedEventReservations();
   await loadSelectedEventGuests();
@@ -329,6 +339,51 @@ function renderGiftSelect() {
   });
 
   eventSelect.innerHTML = options.join("");
+}
+
+function renderSelectedEventSummary() {
+  const eventData = getSelectedEvent();
+
+  if (!eventData) {
+    selectedEventSummary.hidden = true;
+    selectedEventSummary.innerHTML = "";
+    return;
+  }
+
+  selectedEventSummary.hidden = false;
+  selectedEventSummary.innerHTML = `
+    <div class="selected-event-summary-head">
+      <div>
+        <p class="kicker">Evento selecionado</p>
+        <h2>${escapeHtml(eventData.name)}</h2>
+      </div>
+      <span class="tag tag-ok">${escapeHtml(formatEventDateTime(eventData))}</span>
+    </div>
+    <dl class="selected-event-details">
+      ${renderSelectedEventDetail("Casal", eventData.hostNames)}
+      ${renderSelectedEventDetail("Local", eventData.locationName)}
+      ${renderSelectedEventDetail("Endereço", eventData.locationAddress)}
+      ${renderSelectedEventDetail("Cerimônia", eventData.ceremonyInfo)}
+      ${renderSelectedEventDetail("Traje", eventData.dressCode)}
+      ${renderSelectedEventDetail("Fuso", getTimeZoneLabel(getEventTimeZoneId(eventData)))}
+      ${renderSelectedEventLink("Mapa", eventData.locationMapsUrl)}
+      ${renderSelectedEventLink("Imagem de capa", eventData.coverImageUrl)}
+    </dl>
+  `;
+}
+
+function getSelectedEvent() {
+  return state.events.find((event) => event.id === state.selectedEventId) || null;
+}
+
+function renderSelectedEventDetail(label, value) {
+  if (!String(value || "").trim()) return "";
+  return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
+}
+
+function renderSelectedEventLink(label, value) {
+  if (!String(value || "").trim()) return "";
+  return `<div><dt>${escapeHtml(label)}</dt><dd><a href="${escapeAttribute(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a></dd></div>`;
 }
 
 function renderGifts() {
@@ -496,6 +551,10 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function escapeAttribute(text) {
+  return escapeHtml(text).replaceAll("`", "&#096;");
 }
 
 function trashIconSvg() {

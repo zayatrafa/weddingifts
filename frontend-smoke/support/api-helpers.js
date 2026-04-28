@@ -54,6 +54,28 @@ export async function createEvent(token, overrides = {}) {
   });
 }
 
+export async function createEnrichedEvent(token, overrides = {}) {
+  const suffix = uniqueSuffix();
+
+  return requestJson("/api/events", {
+    method: "POST",
+    token,
+    body: {
+      name: overrides.name || `Evento Enriquecido ${suffix}`,
+      hostNames: overrides.hostNames || "Ana e Bruno",
+      eventDateTime: overrides.eventDateTime || futureEventDateTimeOffset(),
+      timeZoneId: overrides.timeZoneId || "America/Sao_Paulo",
+      locationName: overrides.locationName || "Espaco Smoke",
+      locationAddress: overrides.locationAddress || "Rua Smoke, 123 - Sao Paulo, SP",
+      locationMapsUrl: overrides.locationMapsUrl || "https://maps.google.com/?q=Espaco+Smoke",
+      ceremonyInfo: overrides.ceremonyInfo || "Cerimonia e recepcao no mesmo local.",
+      dressCode: overrides.dressCode || "Esporte fino",
+      invitationMessage: overrides.invitationMessage ?? "Com alegria, convidamos voce para celebrar conosco.",
+      coverImageUrl: overrides.coverImageUrl ?? ""
+    }
+  });
+}
+
 export async function createGuest(token, eventId, overrides = {}) {
   const suffix = uniqueSuffix();
   const cpf = overrides.cpf || generateUniqueCpf();
@@ -65,9 +87,21 @@ export async function createGuest(token, eventId, overrides = {}) {
       cpf,
       name: overrides.name || "Joao Silva",
       email: overrides.email || `guest-${suffix}@weddingifts.local`,
-      phoneNumber: overrides.phoneNumber || "11999990000"
+      phoneNumber: overrides.phoneNumber || "11999990000",
+      maxExtraGuests: overrides.maxExtraGuests
     }
   });
+}
+
+export async function getGuests(token, eventId) {
+  return requestJson(`/api/events/${eventId}/guests`, {
+    method: "GET",
+    token
+  });
+}
+
+export async function getRsvp(slug, guestCpf) {
+  return requestJson(`/api/events/${encodeURIComponent(slug)}/rsvp?guestCpf=${encodeURIComponent(guestCpf)}`);
 }
 
 export async function createGift(token, eventId, overrides = {}) {
@@ -88,6 +122,21 @@ export function futureDateInputValue(daysAhead = 30) {
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() + daysAhead);
   return formatDateInput(date);
+}
+
+export function futureDateTimeInputValue(daysAhead = 30) {
+  return `${futureDateInputValue(daysAhead)}T19:00`;
+}
+
+export function futureEventDateTimeOffset(daysAhead = 45) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + daysAhead);
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T19:00:00-03:00`;
 }
 
 export function formatCpf(value) {
@@ -166,7 +215,7 @@ function formatDateInput(date) {
   return `${year}-${month}-${day}`;
 }
 
-function generateUniqueCpf() {
+export function generateUniqueCpf() {
   while (true) {
     const numbers = new Array(11).fill(0);
 

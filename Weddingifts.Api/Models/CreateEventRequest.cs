@@ -25,4 +25,6 @@ public class CreateEventRequest
     public string? DressCode { get; set; }
 
     public string? CoverImageUrl { get; set; }
+
+    public string? InvitationMessage { get; set; }
 }

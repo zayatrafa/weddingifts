@@ -24,6 +24,8 @@ public class EventGuest
 
     public string? DietaryRestrictions { get; set; }
 
+    public DateTime? InvitationFlowCompletedAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Event Event { get; set; } = null!;

@@ -33,15 +33,11 @@ Desktop.ini
 .codex/
 .codex_tmp*/
 .cursor/
-AGENTS.md
 CLAUDE.md
 GEMINI.md
 COPILOT.md
 cursor.md
 *.ai.md
-
-# Private docs
-docs/
 
 # Temp files
 *.tmp

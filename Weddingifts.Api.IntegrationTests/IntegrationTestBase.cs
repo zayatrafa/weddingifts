@@ -118,7 +118,8 @@ public abstract class IntegrationTestBase
         string? locationMapsUrl = null,
         string? ceremonyInfo = null,
         string? dressCode = null,
-        string? coverImageUrl = null)
+        string? coverImageUrl = null,
+        string? invitationMessage = null)
     {
         var normalizedTimeZoneId = timeZoneId ?? "America/Sao_Paulo";
         var normalizedEventDateTime = eventDateTime ?? CreateEventDateTimeOffset(
@@ -136,7 +137,8 @@ public abstract class IntegrationTestBase
             locationMapsUrl = locationMapsUrl ?? "https://maps.example.com/evento",
             ceremonyInfo = ceremonyInfo ?? "Cerimonia no salao principal as 18h.",
             dressCode = dressCode ?? "Esporte fino",
-            coverImageUrl = coverImageUrl ?? "https://images.example.com/capa.jpg"
+            coverImageUrl = coverImageUrl ?? "https://images.example.com/capa.jpg",
+            invitationMessage
         }, token);
 
         var body = await response.Content.ReadAsStringAsync();
@@ -178,6 +180,14 @@ public abstract class IntegrationTestBase
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return await Client.SendAsync(request);
+    }
+
+    protected async Task<HttpResponseMessage> CompleteInvitationFlowAsync(string slug, string guestCpf)
+    {
+        return await Client.PostAsJsonAsync($"/api/events/{slug}/invitation-flow/complete", new
+        {
+            guestCpf
+        });
     }
 
     protected static DateTimeOffset CreateEventDateTimeOffset(string timeZoneId, DateTime localDateTime)
@@ -315,6 +325,7 @@ public sealed class EventResponseContract
     public string CeremonyInfo { get; set; } = string.Empty;
     public string DressCode { get; set; } = string.Empty;
     public string CoverImageUrl { get; set; } = string.Empty;
+    public string InvitationMessage { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public List<object> Gifts { get; set; } = [];
@@ -350,6 +361,8 @@ public sealed class EventGuestRsvpResponseContract
     public DateTime? RsvpRespondedAt { get; set; }
     public string? MessageToCouple { get; set; }
     public string? DietaryRestrictions { get; set; }
+    public bool HasCompletedInvitationFlow { get; set; }
+    public DateTime? InvitationFlowCompletedAt { get; set; }
     public List<EventGuestCompanionResponseContract> Companions { get; set; } = [];
 }
 

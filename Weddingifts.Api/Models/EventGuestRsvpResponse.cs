@@ -14,6 +14,8 @@ public sealed class EventGuestRsvpResponse
     public DateTime? RsvpRespondedAt { get; init; }
     public string? MessageToCouple { get; init; }
     public string? DietaryRestrictions { get; init; }
+    public bool HasCompletedInvitationFlow { get; init; }
+    public DateTime? InvitationFlowCompletedAt { get; init; }
     public IReadOnlyList<EventGuestCompanionResponse> Companions { get; init; } = [];
 
     public static EventGuestRsvpResponse FromEntity(Event ev, EventGuest guest)
@@ -30,6 +32,8 @@ public sealed class EventGuestRsvpResponse
             RsvpRespondedAt = guest.RsvpRespondedAt,
             MessageToCouple = guest.MessageToCouple,
             DietaryRestrictions = guest.DietaryRestrictions,
+            HasCompletedInvitationFlow = guest.InvitationFlowCompletedAt.HasValue,
+            InvitationFlowCompletedAt = guest.InvitationFlowCompletedAt,
             Companions = guest.Companions
                 .OrderBy(companion => companion.CreatedAt)
                 .Select(EventGuestCompanionResponse.FromEntity)

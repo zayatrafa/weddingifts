@@ -15,6 +15,7 @@ public sealed class EventService
     private const int MaxUrlLength = 500;
     private const int MaxCeremonyInfoLength = 500;
     private const int MaxDressCodeLength = 160;
+    private const int MaxInvitationMessageLength = 500;
     private const int MaxSlugLength = 24;
 
     private readonly AppDbContext _context;
@@ -37,6 +38,10 @@ public sealed class EventService
             throw new DomainValidationException("Id do usuário deve ser maior que zero.");
 
         var normalizedName = NormalizeEventName(request.Name);
+        var normalizedInvitationMessage = NormalizeOptionalText(
+            request.InvitationMessage,
+            "mensagem do convite",
+            MaxInvitationMessageLength);
 
         var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
         if (!userExists)
@@ -58,6 +63,7 @@ public sealed class EventService
             CeremonyInfo = eventData.CeremonyInfo,
             DressCode = eventData.DressCode,
             CoverImageUrl = eventData.CoverImageUrl,
+            InvitationMessage = normalizedInvitationMessage,
             Slug = await GenerateUniqueSlug()
         };
 
@@ -82,6 +88,12 @@ public sealed class EventService
             throw new DomainValidationException("Id do evento deve ser maior que zero.");
 
         var normalizedName = NormalizeEventName(request.Name);
+        var normalizedInvitationMessage = request.InvitationMessage is null
+            ? null
+            : NormalizeOptionalText(
+                request.InvitationMessage,
+                "mensagem do convite",
+                MaxInvitationMessageLength);
 
         var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == eventId && e.UserId == userId);
         if (ev is null)
@@ -119,6 +131,10 @@ public sealed class EventService
         }
 
         ev.Name = normalizedName;
+        if (normalizedInvitationMessage is not null)
+        {
+            ev.InvitationMessage = normalizedInvitationMessage;
+        }
 
         if (hadTemporalChange)
         {
@@ -272,7 +288,7 @@ public sealed class EventService
             LocationMapsUrl: NormalizeRequiredUrl(locationMapsUrl, "link do Maps"),
             CeremonyInfo: NormalizeRequiredText(ceremonyInfo, "informações da cerimônia", MaxCeremonyInfoLength),
             DressCode: NormalizeRequiredText(dressCode, "traje", MaxDressCodeLength),
-            CoverImageUrl: NormalizeRequiredUrl(coverImageUrl, "imagem de capa"));
+            CoverImageUrl: NormalizeOptionalUrl(coverImageUrl, "imagem de capa"));
     }
 
     private static bool HasEnrichedEventPayload(CreateEventRequest request)
@@ -358,6 +374,27 @@ public sealed class EventService
         }
 
         return normalized;
+    }
+
+    private static string NormalizeOptionalText(string? value, string fieldLabel, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var normalized = value.Trim();
+        if (normalized.Length > maxLength)
+            throw new DomainValidationException($"O campo '{fieldLabel}' excede o tamanho máximo permitido.");
+
+        InputThreatValidator.EnsureSafeText(normalized, fieldLabel);
+        return normalized;
+    }
+
+    private static string NormalizeOptionalUrl(string? value, string fieldLabel)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        return NormalizeRequiredUrl(value, fieldLabel);
     }
 
     private sealed record EventData(
