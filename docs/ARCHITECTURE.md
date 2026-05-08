@@ -1,12 +1,12 @@
 # Weddingifts Architecture
 
-Documento privado de referência arquitetural. O objetivo aqui é descrever o sistema como ele existe hoje no código, não como ele pode evoluir depois.
+Documento privado de referÃªncia arquitetural. O objetivo aqui Ã© descrever o sistema como ele existe hoje no cÃ³digo, nÃ£o como ele pode evoluir depois.
 
 ## 1. Resumo executivo
 
-Weddingifts é um MVP de lista de presentes para casamento com duas aplicações principais:
+Weddingifts Ã© um MVP de lista de presentes para casamento com duas aplicaÃ§Ãµes principais:
 
-- frontend estático multipágina em `Weddingifts-web/`
+- frontend estÃ¡tico multipÃ¡gina em `Weddingifts-web/`
 - API REST em `.NET 8` em `Weddingifts.Api/`
 
 Topologia atual:
@@ -17,13 +17,14 @@ Estado geral da arquitetura:
 
 - backend em camadas simples (`Controllers -> Services -> AppDbContext`)
 - frontend sem framework e sem build step
-- autenticação via JWT para áreas privadas
-- reservas públicas por CPF convidado
-- backend de RSVP público por CPF convidado com acompanhantes e fuso por evento
+- autenticaÃ§Ã£o via JWT para Ã¡reas privadas
+- reservas pÃºblicas por CPF convidado
+- backend de RSVP pÃºblico por CPF convidado com acompanhantes e fuso por evento
+- aceite pÃºblico do convite com conclusÃ£o explÃ­cita e tela separada de presentes em `gifts.html`
 - testes automatizados concentrados no backend
-- sem integrações externas confirmadas para e-mail, pagamento, storage, analytics ou observabilidade
+- sem integraÃ§Ãµes externas confirmadas para e-mail, pagamento, storage, analytics ou observabilidade
 
-Evidências principais:
+EvidÃªncias principais:
 
 - `Weddingifts.Api/Program.cs`
 - `Weddingifts.Api/Data/AppDbContext.cs`
@@ -31,24 +32,24 @@ Evidências principais:
 - `Weddingifts-web/js/common.js`
 - `.github/workflows/dotnet-ci.yml`
 
-## 2. Estrutura do repositório
+## 2. Estrutura do repositÃ³rio
 
 - `Weddingifts.Api/` -> API principal em ASP.NET Core
 - `Weddingifts.Api/Controllers/` -> endpoints HTTP
-- `Weddingifts.Api/Services/` -> regras de negócio
+- `Weddingifts.Api/Services/` -> regras de negÃ³cio
 - `Weddingifts.Api/Entities/` -> entidades persistidas
 - `Weddingifts.Api/Models/` -> contratos HTTP (request/response)
 - `Weddingifts.Api/Data/` -> `AppDbContext`
 - `Weddingifts.Api/Middleware/` -> middleware global de erro e headers
-- `Weddingifts.Api/Security/` -> geração de JWT
-- `Weddingifts.Api/Migrations/` -> histórico de schema do banco
-- `Weddingifts.Api.IntegrationTests/` -> testes de integração com `WebApplicationFactory`
-- `Weddingifts-web/` -> frontend multipágina em HTML/CSS/JS
+- `Weddingifts.Api/Security/` -> geraÃ§Ã£o de JWT
+- `Weddingifts.Api/Migrations/` -> histÃ³rico de schema do banco
+- `Weddingifts.Api.IntegrationTests/` -> testes de integraÃ§Ã£o com `WebApplicationFactory`
+- `Weddingifts-web/` -> frontend multipÃ¡gina em HTML/CSS/JS
 - `Weddingifts-web/js/` -> um script principal por tela + `common.js`
 - `.github/workflows/` -> CI de backend e smoke suite frontend
-- `docs/` -> base privada/local de documentação
+- `docs/` -> base privada/local de documentaÃ§Ã£o
 
-Áreas com sinal de legado ou utilidade auxiliar, não do fluxo principal do produto:
+Ãreas com sinal de legado ou utilidade auxiliar, nÃ£o do fluxo principal do produto:
 
 - `Weddingifts-web/app.js`
 - `Weddingifts.Api/Controllers/TestController.cs`
@@ -65,7 +66,7 @@ Evidências principais:
 - Swagger em ambiente `Development`
 - rate limiting nativo do ASP.NET Core
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts.Api/Weddingifts.Api.csproj`
 - `Weddingifts.Api/Program.cs`
@@ -75,10 +76,10 @@ Evidências:
 - HTML, CSS e JavaScript puros
 - sem framework frontend
 - sem build step do produto
-- `package.json` local apenas para automação mínima de smoke com Playwright
-- smoke suite frontend sobe backend próprio em ambiente `FrontendSmoke` com SQLite para reduzir dependência de segredos locais
+- `package.json` local apenas para automaÃ§Ã£o mÃ­nima de smoke com Playwright
+- smoke suite frontend sobe backend prÃ³prio em ambiente `FrontendSmoke` com SQLite para reduzir dependÃªncia de segredos locais
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts-web/*.html`
 - `Weddingifts-web/js/*.js`
@@ -89,9 +90,9 @@ Evidências:
 ### Banco de dados
 
 - PostgreSQL em runtime normal
-- SQLite in-memory apenas nos testes de integração
+- SQLite in-memory apenas nos testes de integraÃ§Ã£o
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts.Api/Program.cs`
 - `Weddingifts.Api.IntegrationTests/IntegrationTestWebApplicationFactory.cs`
@@ -101,43 +102,43 @@ Evidências:
 - GitHub Actions com:
   - `restore`, `build` e `test` da solution backend em `ubuntu-latest`
   - smoke suite frontend em `windows-latest` com Playwright Chromium
-  - backend em `FrontendSmoke` + SQLite local temporário no job frontend
+  - backend em `FrontendSmoke` + SQLite local temporÃ¡rio no job frontend
 
-Evidência:
+EvidÃªncia:
 
 - `.github/workflows/dotnet-ci.yml`
 
-## 4. Topologia da aplicação
+## 4. Topologia da aplicaÃ§Ã£o
 
 ### Fluxo principal
 
-1. O frontend estático é servido separadamente do backend.
+1. O frontend estÃ¡tico Ã© servido separadamente do backend.
 2. Os scripts em `Weddingifts-web/js/*.js` chamam a API via `fetch`.
-3. A base da API é inferida no frontend a partir do host atual, usando porta `5298`.
-4. Páginas privadas dependem de sessão JWT em `localStorage`.
+3. A base da API Ã© inferida no frontend a partir do host atual, usando porta `5298`.
+4. PÃ¡ginas privadas dependem de sessÃ£o JWT em `localStorage`.
 5. O backend persiste os dados em PostgreSQL via EF Core.
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts-web/js/common.js`
 - `Weddingifts.Api/Program.cs`
 - `Weddingifts.Api/Data/AppDbContext.cs`
 
-### Observações importantes
+### ObservaÃ§Ãµes importantes
 
-- Não há SSR, server actions ou BFF.
-- Não há serviço separado para pagamentos, e-mail, mensageria ou fila.
-- O sistema é um monólito simples com frontend desacoplado por HTTP.
+- NÃ£o hÃ¡ SSR, server actions ou BFF.
+- NÃ£o hÃ¡ serviÃ§o separado para pagamentos, e-mail, mensageria ou fila.
+- O sistema Ã© um monÃ³lito simples com frontend desacoplado por HTTP.
 
-## 5. Módulos centrais
+## 5. MÃ³dulos centrais
 
-### 5.1 Autenticação
+### 5.1 AutenticaÃ§Ã£o
 
 Responsabilidade:
 
-- login do usuário
-- emissão de JWT
-- controle de sessão nas páginas privadas
+- login do usuÃ¡rio
+- emissÃ£o de JWT
+- controle de sessÃ£o nas pÃ¡ginas privadas
 
 Arquivos principais:
 
@@ -148,12 +149,12 @@ Arquivos principais:
 - `Weddingifts-web/js/login.js`
 - `Weddingifts-web/js/common.js`
 
-### 5.2 Usuários
+### 5.2 UsuÃ¡rios
 
 Responsabilidade:
 
 - cadastro de conta
-- listagem autenticada de usuários
+- listagem autenticada de usuÃ¡rios
 - troca de senha autenticada
 - regras de CPF, nascimento e senha
 
@@ -169,9 +170,9 @@ Arquivos principais:
 
 Responsabilidade:
 
-- criar, listar, editar e excluir eventos do usuário
-- expor evento público por `slug`
-- persistir metadados enriquecidos do evento, `eventDateTime` canônico e `timeZoneId`
+- criar, listar, editar e excluir eventos do usuÃ¡rio
+- expor evento pÃºblico por `slug`
+- persistir metadados enriquecidos do evento, `eventDateTime` canÃ´nico e `timeZoneId`
 
 Arquivos principais:
 
@@ -189,8 +190,8 @@ Arquivos principais:
 Responsabilidade:
 
 - CRUD de presentes por evento
-- cálculo de disponibilidade e reserva atual
-- bloqueios de edição/exclusão quando há reserva ativa
+- cÃ¡lculo de disponibilidade e reserva atual
+- bloqueios de ediÃ§Ã£o/exclusÃ£o quando hÃ¡ reserva ativa
 
 Arquivos principais:
 
@@ -199,7 +200,7 @@ Arquivos principais:
 - `Weddingifts.Api/Entities/Gift.cs`
 - `Weddingifts.Api/Models/GiftResponse.cs`
 - `Weddingifts-web/js/my-event.js`
-- `Weddingifts-web/js/event.js`
+- `Weddingifts-web/js/gifts.js`
 
 ### 5.5 Convidados
 
@@ -207,7 +208,7 @@ Responsabilidade:
 
 - CRUD de convidados por evento
 - lookup de convidado por CPF
-- sumarização de reserva por convidado na gestão
+- sumarizaÃ§Ã£o de reserva por convidado na gestÃ£o
 - controle de `maxExtraGuests` e estado de RSVP do convidado principal
 
 Arquivos principais:
@@ -223,8 +224,8 @@ Arquivos principais:
 Responsabilidade:
 
 - reservar e cancelar presente por CPF convidado
-- manter histórico de reserva por presente/evento
-- expor histórico autenticado para os noivos
+- manter histÃ³rico de reserva por presente/evento
+- expor histÃ³rico autenticado para os noivos
 
 Arquivos principais:
 
@@ -232,7 +233,7 @@ Arquivos principais:
 - `Weddingifts.Api/Services/GiftService.cs`
 - `Weddingifts.Api/Entities/GiftReservation.cs`
 - `Weddingifts.Api/Models/GiftReservationResponse.cs`
-- `Weddingifts-web/js/event.js`
+- `Weddingifts-web/js/gifts.js`
 - `Weddingifts-web/js/my-event.js`
 - `Weddingifts-web/js/my-guests.js`
 
@@ -240,9 +241,10 @@ Arquivos principais:
 
 Responsabilidade:
 
-- expor leitura pública do RSVP por `slug` + CPF convidado
+- expor leitura pÃºblica do RSVP por `slug` + CPF convidado
 - confirmar ou atualizar RSVP do convidado principal
 - validar acompanhantes, CPF condicional por idade e resets administrativos
+- concluir o fluxo pÃºblico de convite antes de oferecer a lista separada de presentes
 
 Arquivos principais:
 
@@ -270,7 +272,7 @@ Arquivos principais:
 - `EventGuestCompanion`
 - `GiftReservation`
 
-### Relações observadas
+### RelaÃ§Ãµes observadas
 
 - `User` 1:N `Event`
 - `Event` 1:N `Gift`
@@ -279,16 +281,16 @@ Arquivos principais:
 - `EventGuest` 1:N `EventGuestCompanion`
 - `Gift` 1:N `GiftReservation`
 
-### Restrições e índices relevantes
+### RestriÃ§Ãµes e Ã­ndices relevantes
 
-- `User.Cpf` único quando preenchido
-- `EventGuest(EventId, Cpf)` único
-- índice em `EventGuestCompanion(EventGuestId)`
-- índice em `GiftReservation(GiftId, GuestCpf)`
-- índice em `GiftReservation(EventId, GuestCpf)`
+- `User.Cpf` Ãºnico quando preenchido
+- `EventGuest(EventId, Cpf)` Ãºnico
+- Ã­ndice em `EventGuestCompanion(EventGuestId)`
+- Ã­ndice em `GiftReservation(GiftId, GuestCpf)`
+- Ã­ndice em `GiftReservation(EventId, GuestCpf)`
 - cascade delete em reservas por `Event` e `Gift`
 
-Evidência:
+EvidÃªncia:
 
 - `Weddingifts.Api/Data/AppDbContext.cs`
 
@@ -306,39 +308,39 @@ Migrations presentes em `Weddingifts.Api/Migrations/`:
 - `AddGiftReservations`
 - `AddEventRsvpAndTimeZone`
 
-## 7. Autenticação e autorização
+## 7. AutenticaÃ§Ã£o e autorizaÃ§Ã£o
 
 ### Login
 
 - endpoint: `POST /api/auth/login`
 - resposta: token JWT, `expiresAt` e `user`
-- autenticação baseada em e-mail e senha
+- autenticaÃ§Ã£o baseada em e-mail e senha
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts.Api/Controllers/AuthController.cs`
 - `Weddingifts.Api/Models/LoginRequest.cs`
 - `Weddingifts.Api/Models/LoginResponse.cs`
 
-### Sessão no frontend
+### SessÃ£o no frontend
 
-- sessão persistida em `localStorage` na chave `wg_auth_session`
-- páginas privadas usam `requireAuth()`
-- expiração validada por `expiresAt` e fallback pelo `exp` do JWT
-- sincronização entre abas via evento `storage`
-- redirecionamento automático para `login.html` com `returnTo`, `sessionExpired` ou `loggedOut`
+- sessÃ£o persistida em `localStorage` na chave `wg_auth_session`
+- pÃ¡ginas privadas usam `requireAuth()`
+- expiraÃ§Ã£o validada por `expiresAt` e fallback pelo `exp` do JWT
+- sincronizaÃ§Ã£o entre abas via evento `storage`
+- redirecionamento automÃ¡tico para `login.html` com `returnTo`, `sessionExpired` ou `loggedOut`
 
-Evidência:
+EvidÃªncia:
 
 - `Weddingifts-web/js/common.js`
 
-### Autorização
+### AutorizaÃ§Ã£o
 
 - rotas privadas usam `[Authorize]`
-- ownership é reforçado nos services, não apenas no controller
-- ações de evento, presente e convidado dependem do `userId` autenticado
+- ownership Ã© reforÃ§ado nos services, nÃ£o apenas no controller
+- aÃ§Ãµes de evento, presente e convidado dependem do `userId` autenticado
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts.Api/Controllers/*.cs`
 - `Weddingifts.Api/Services/EventService.cs`
@@ -367,6 +369,7 @@ Evidências:
 - `GET /api/events/{slug}/rsvp`
 - `POST /api/events/{slug}/rsvp`
 - `PUT /api/events/{slug}/rsvp`
+- `POST /api/events/{slug}/invitation-flow/complete`
 
 ### Guests
 
@@ -389,7 +392,7 @@ Evidências:
 - `POST /api/gifts/{giftId}/reserve`
 - `POST /api/gifts/{giftId}/unreserve`
 
-## 9. Middleware, segurança e comportamento HTTP
+## 9. Middleware, seguranÃ§a e comportamento HTTP
 
 ### Middleware confirmados
 
@@ -403,16 +406,16 @@ Evidências:
 - `UnauthorizedRequestException` -> `401`
 - `ForbiddenOperationException` -> `403`
 - `ResourceNotFoundException` -> `404`
-- exceção inesperada -> `500`
+- exceÃ§Ã£o inesperada -> `500`
 
-### Headers e políticas
+### Headers e polÃ­ticas
 
 - CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP e CORP
-- HSTS quando a requisição é HTTPS
+- HSTS quando a requisiÃ§Ã£o Ã© HTTPS
 - CORS liberado amplamente em `Development`; mais restrito fora dele
 - rate limiting desativado apenas em `Testing`
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts.Api/Program.cs`
 - `Weddingifts.Api/Middleware/GlobalExceptionMiddleware.cs`
@@ -420,14 +423,15 @@ Evidências:
 
 ## 10. Frontend atual
 
-### Páginas confirmadas
+### PÃ¡ginas confirmadas
 
-Públicas:
+PÃºblicas:
 
 - `Weddingifts-web/index.html`
 - `Weddingifts-web/register.html`
 - `Weddingifts-web/login.html`
 - `Weddingifts-web/event.html`
+- `Weddingifts-web/gifts.html`
 
 Privadas:
 
@@ -437,24 +441,25 @@ Privadas:
 - `Weddingifts-web/my-event.html`
 - `Weddingifts-web/account.html`
 
-### Organização dos scripts
+### OrganizaÃ§Ã£o dos scripts
 
-- `Weddingifts-web/js/common.js` -> utilitários compartilhados, sessão, navegação, header mobile, catálogo PT-BR
-- `Weddingifts-web/js/event-contract.js` -> contrato compartilhado de evento enriquecido, fusos brasileiros, parsing UTC da API e formatação por `timeZoneId`
-- um script principal por página (`landing.js`, `register.js`, `login.js`, `create-event.js`, `my-events.js`, `my-guests.js`, `my-event.js`, `account.js`, `event.js`)
+- `Weddingifts-web/js/common.js` -> utilitÃ¡rios compartilhados, sessÃ£o, navegaÃ§Ã£o, header mobile, catÃ¡logo PT-BR
+- `Weddingifts-web/js/event-contract.js` -> contrato compartilhado de evento enriquecido, fusos brasileiros, parsing UTC da API e formataÃ§Ã£o por `timeZoneId`
+- um script principal por pÃ¡gina (`landing.js`, `register.js`, `login.js`, `create-event.js`, `my-events.js`, `my-guests.js`, `my-event.js`, `account.js`, `event.js`, `gifts.js`)
 
-### Observações relevantes
+### ObservaÃ§Ãµes relevantes
 
-- a navegação mobile global é injetada por `common.js`
+- a navegaÃ§Ã£o mobile global Ã© injetada por `common.js`
 - o frontend consome a API diretamente, sem camada adicional
-- o fluxo privado de criação/listagem/edição de eventos já consome e exibe o contrato enriquecido de evento
-- a página pública do evento já exibe dados enriquecidos e consome o RSVP público por CPF
-- a gestão privada de convidados já coleta, edita e lista o limite de acompanhantes (`maxExtraGuests`)
-- `account.html` integra com backend real para troca de senha usando senha atual obrigatória
+- o fluxo privado de criaÃ§Ã£o/listagem/ediÃ§Ã£o de eventos jÃ¡ consome e exibe o contrato enriquecido de evento
+- a pÃ¡gina pÃºblica do evento jÃ¡ exibe dados enriquecidos, consome o RSVP pÃºblico por CPF e conclui o convite antes de encaminhar para presentes
+- a pÃ¡gina pÃºblica de presentes (`gifts.html`) concentra busca, filtros, carrinho, reserva/cancelamento por CPF e retorno ao convite
+- a gestÃ£o privada de convidados jÃ¡ coleta, edita e lista o limite de acompanhantes (`maxExtraGuests`)
+- `account.html` integra com backend real para troca de senha usando senha atual obrigatÃ³ria
 
-## 11. Integrações externas
+## 11. IntegraÃ§Ãµes externas
 
-Nenhuma integração externa de produção foi confirmada pelo código atual para:
+Nenhuma integraÃ§Ã£o externa de produÃ§Ã£o foi confirmada pelo cÃ³digo atual para:
 
 - e-mail
 - WhatsApp
@@ -465,12 +470,12 @@ Nenhuma integração externa de produção foi confirmada pelo código atual para:
 
 Incerto:
 
-- não há integração real de e-mail confirmada no backend atual
+- nÃ£o hÃ¡ integraÃ§Ã£o real de e-mail confirmada no backend atual
 
-Evidências:
+EvidÃªncias:
 
-- ausência de SDKs/pacotes correspondentes no `Weddingifts.Api.csproj`
-- ausência de endpoints/serviços específicos no backend
+- ausÃªncia de SDKs/pacotes correspondentes no `Weddingifts.Api.csproj`
+- ausÃªncia de endpoints/serviÃ§os especÃ­ficos no backend
 - `Weddingifts-web/js/common.js`
 - `Weddingifts-web/js/login.js`
 
@@ -478,10 +483,10 @@ Evidências:
 
 ### Testes automatizados confirmados
 
-- testes de integração backend em `Weddingifts.Api.IntegrationTests/`
-- smoke tests mínimos de frontend em `frontend-smoke/` com Playwright
-- foco atual em cadastro, login, troca de senha, eventos, convidados, reservas e restrições de mutação
-- foco frontend atual em login, criação de evento, listagem de eventos, gestão de convidados, reserva/cancelamento público e RSVP público
+- testes de integraÃ§Ã£o backend em `Weddingifts.Api.IntegrationTests/`
+- smoke tests mÃ­nimos de frontend em `frontend-smoke/` com Playwright
+- foco atual em cadastro, login, troca de senha, eventos, convidados, reservas e restriÃ§Ãµes de mutaÃ§Ã£o
+- foco frontend atual em login, criaÃ§Ã£o de evento, listagem de eventos, gestÃ£o de convidados, reserva/cancelamento pÃºblico e RSVP pÃºblico
 
 ### CI confirmada
 
@@ -490,9 +495,9 @@ Evidências:
 
 ### Lacunas confirmadas
 
-- validação mobile ainda depende de checklist manual
+- validaÃ§Ã£o mobile ainda depende de checklist manual
 
-Evidências:
+EvidÃªncias:
 
 - `Weddingifts.Api.IntegrationTests/GiftReservationIntegrationTests.cs`
 - `Weddingifts.Api.IntegrationTests/ChangePasswordIntegrationTests.cs`
@@ -505,16 +510,16 @@ Evidências:
 - `.github/workflows/dotnet-ci.yml`
 - `docs/MOBILE_TEST_CHECKLIST.md`
 
-## 13. Inconsistências e dívida arquitetural visível
+## 13. InconsistÃªncias e dÃ­vida arquitetural visÃ­vel
 
-- `docs/` é uma base privada relevante, mas está ignorada no Git e pode desalinhar com facilidade.
-- `AGENTS.md` também está ignorado no Git, então as instruções operacionais locais não são distribuídas automaticamente.
-- `Weddingifts-web/app.js` aparenta ser legado e pode confundir manutenção futura.
-- ainda não há validação mobile automatizada no CI; mobile depende de checklist manual.
+- `docs/` Ã© uma base privada relevante, mas estÃ¡ ignorada no Git e pode desalinhar com facilidade.
+- `AGENTS.md` tambÃ©m estÃ¡ ignorado no Git, entÃ£o as instruÃ§Ãµes operacionais locais nÃ£o sÃ£o distribuÃ­das automaticamente.
+- `Weddingifts-web/app.js` aparenta ser legado e pode confundir manutenÃ§Ã£o futura.
+- ainda nÃ£o hÃ¡ validaÃ§Ã£o mobile automatizada no CI; mobile depende de checklist manual.
 
 ## 14. Incertos
 
-- não há evidência suficiente de estratégia de deploy/infra futura para documentar produção.
-- não há confirmação de uso real dos controllers auxiliares `TestController` e `WeatherForecastController`.
-- não há evidência de observabilidade centralizada, fila, cache distribuído ou storage externo.
+- nÃ£o hÃ¡ evidÃªncia suficiente de estratÃ©gia de deploy/infra futura para documentar produÃ§Ã£o.
+- nÃ£o hÃ¡ confirmaÃ§Ã£o de uso real dos controllers auxiliares `TestController` e `WeatherForecastController`.
+- nÃ£o hÃ¡ evidÃªncia de observabilidade centralizada, fila, cache distribuÃ­do ou storage externo.
 

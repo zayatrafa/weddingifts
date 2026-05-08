@@ -40,11 +40,12 @@ Entregues:
 - Gestão de eventos (criar, listar, editar e excluir).
 - Gestão de convidados por evento (criar, listar e buscar por CPF).
 - Gestão de presentes por evento.
-- Página pública por `slug` com reserva e cancelamento por CPF.
+- Página pública por `slug` com RSVP, acompanhantes e conclusão do convite.
+- Página pública de presentes em `gifts.html` com carrinho, reserva e cancelamento por CPF.
 - Validações de domínio para usuários, eventos, convidados e presentes.
 
 Próximas:
-- RSVP e contagem de confirmações.
+- Contagem de confirmações no painel privado.
 - Controles de privacidade por evento.
 - Evolução do fluxo de pagamento.
 - Recursos finais para piloto real.
@@ -91,7 +92,7 @@ Acessos:
 - Gestão de eventos: adicionar print ou GIF.
 - Gestão de convidados: adicionar print ou GIF.
 - Gestão de presentes: adicionar print ou GIF.
-- Página pública de reserva: adicionar print ou GIF.
+- Página pública de aceite e lista de presentes: adicionar print ou GIF.
 
 Sugestão de pasta para evidências: `assets/readme/`.
 
@@ -153,11 +154,12 @@ Delivered:
 - Event management (create, list, update, delete).
 - Guest management per event (create, list, CPF lookup).
 - Gift management per event.
-- Public event page by `slug` with CPF-based reserve and unreserve.
+- Public event page by `slug` with RSVP, companions, and invitation completion.
+- Public gifts page in `gifts.html` with cart, CPF-based reserve, and unreserve.
 - Domain-level validation for users, events, guests, and gifts.
 
 Upcoming:
-- RSVP and confirmation counters.
+- Confirmation counters in the private dashboard.
 - Event-level privacy controls.
 - Payment flow evolution.
 - Final pilot-ready features.

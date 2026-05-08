@@ -12,6 +12,7 @@ Padrões privados de engenharia para evoluir Weddingifts sem quebrar comportamen
 - declarar riscos e incertezas quando a confiança for baixa
 - manter PT-BR correto como padrão do produto
 - tratar mobile como requisito nativo, não ajuste posterior
+- usar o comportamento padrão do Codex; não usar `tlc-spec-driven`, SDD ou fluxos spec-driven salvo pedido explícito do dono do projeto
 
 ## 2. Regras de alteração
 

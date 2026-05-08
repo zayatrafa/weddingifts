@@ -1,16 +1,16 @@
 # Feature Map
 
-Mapa privado do que existe hoje no Weddingifts. Este documento n„o descreve ideias futuras; ele lista telas, endpoints, mÛdulos e testes realmente identificados no cÛdigo atual.
+Mapa privado do que existe hoje no Weddingifts. Este documento n√£o descreve ideias futuras; ele lista telas, endpoints, m√≥dulos e testes realmente identificados no c√≥digo atual.
 
-## 1. Frontend p˙blico
+## 1. Frontend p√∫blico
 
 ### `Weddingifts-web/index.html`
 
 Responsabilidade:
 
 - landing page do produto
-- entrada principal para navegaÁ„o p˙blica
-- CTA adaptado para sess„o logada/deslogada
+- entrada principal para navega√ß√£o p√∫blica
+- CTA adaptado para sess√£o logada/deslogada
 
 Scripts principais:
 
@@ -21,7 +21,7 @@ Scripts principais:
 
 Responsabilidade:
 
-- cadastro de usu·rio
+- cadastro de usu√°rio
 - coleta de nome, e-mail, CPF, data de nascimento e senha
 
 Script principal:
@@ -36,8 +36,8 @@ API consumida:
 
 Responsabilidade:
 
-- login do usu·rio
-- entrada para fluxos com `returnTo`, sess„o expirada e pÛs-cadastro
+- login do usu√°rio
+- entrada para fluxos com `returnTo`, sess√£o expirada e p√≥s-cadastro
 
 Script principal:
 
@@ -51,13 +51,13 @@ API consumida:
 
 Responsabilidade:
 
-- p·gina p˙blica por `slug`
-- exibir dados enriquecidos do evento: casal, data/hora no fuso do evento, local, endereÁo, Maps, cerimÙnia, traje e capa
-- exibir presentes disponÌveis/reservados
-- reservar e cancelar presente por CPF
+- p√°gina p√∫blica por `slug`
+- exibir dados enriquecidos do evento: casal, data/hora no fuso do evento, local, endere√ßo, Maps, cerim√¥nia, traje e capa
 - consultar RSVP por CPF do convidado
 - confirmar ou atualizar RSVP como `accepted` ou `declined`
-- coletar mensagem, restriÁıes alimentares e acompanhantes atÈ `maxExtraGuests`, com CPF condicional por idade
+- coletar mensagem, restri√ß√µes alimentares e acompanhantes at√© `maxExtraGuests`, com CPF condicional por idade
+- concluir o convite depois da confirma√ß√£o e mostrar CTA para presentear em tela separada
+- quando o convite j√° foi conclu√≠do, abrir menu de retorno com a√ß√µes para presentear, rever informa√ß√µes ou editar RSVP/acompanhantes
 
 Script principal:
 
@@ -71,6 +71,28 @@ APIs consumidas:
 - `GET /api/events/{slug}/rsvp?guestCpf={cpf}`
 - `POST /api/events/{slug}/rsvp`
 - `PUT /api/events/{slug}/rsvp`
+- `POST /api/events/{slug}/invitation-flow/complete`
+
+### `Weddingifts-web/gifts.html`
+
+Responsabilidade:
+
+- p√°gina p√∫blica separada para lista de presentes por `slug`
+- validar CPF do convidado antes de montar o carrinho, reaproveitando contexto do convite quando dispon√≠vel
+- exibir presentes dispon√≠veis/reservados com busca, filtros e ordena√ß√£o
+- adicionar e remover presentes do carrinho por CPF
+- finalizar pedido de presentes e permitir voltar ao convite
+
+Script principal:
+
+- `Weddingifts-web/js/gifts.js`
+- `Weddingifts-web/js/event-contract.js`
+
+APIs consumidas:
+
+- `GET /api/events/{slug}`
+- `GET /api/events/{eventId}/gifts`
+- `GET /api/events/{slug}/rsvp?guestCpf={cpf}`
 - `POST /api/gifts/{giftId}/reserve`
 - `POST /api/gifts/{giftId}/unreserve`
 
@@ -81,7 +103,7 @@ APIs consumidas:
 Responsabilidade:
 
 - criar evento autenticado
-- coletar dados enriquecidos do evento: nomes do casal, data/hora com fuso, local, endereÁo, Maps, cerimÙnia, traje e URL da imagem de capa
+- coletar dados enriquecidos do evento: nomes do casal, data/hora com fuso, local, endere√ßo, Maps, cerim√¥nia, traje e URL da imagem de capa
 
 Script principal:
 
@@ -95,12 +117,12 @@ API consumida:
 
 Responsabilidade:
 
-- listar eventos do usu·rio
+- listar eventos do usu√°rio
 - exibir metadados enriquecidos do evento
 - editar evento com o contrato enriquecido
 - excluir evento
-- copiar link p˙blico
-- navegar para convidados, presentes e histÛrico
+- copiar link p√∫blico
+- navegar para convidados, presentes e hist√≥rico
 
 Script principal:
 
@@ -116,10 +138,10 @@ APIs consumidas:
 
 Responsabilidade:
 
-- selecionar evento do usu·rio
+- selecionar evento do usu√°rio
 - listar convidados do evento
 - criar, editar e excluir convidado, incluindo limite de acompanhantes (`maxExtraGuests`)
-- autofill por CPF no prÛprio evento
+- autofill por CPF no pr√≥prio evento
 - exibir indicador de reserva ativa e valor por convidado
 
 Script principal:
@@ -140,11 +162,11 @@ APIs consumidas:
 
 Responsabilidade:
 
-- selecionar evento do usu·rio
+- selecionar evento do usu√°rio
 - exibir resumo enriquecido do evento selecionado
 - listar presentes do evento
 - criar, editar e excluir presente
-- exibir histÛrico de reservas cruzado com convidados
+- exibir hist√≥rico de reservas cruzado com convidados
 
 Script principal:
 
@@ -164,14 +186,14 @@ APIs consumidas:
 
 Responsabilidade:
 
-- exibir dados b·sicos da conta autenticada
-- permitir troca de senha autenticada com confirmaÁ„o da senha atual
+- exibir dados b√°sicos da conta autenticada
+- permitir troca de senha autenticada com confirma√ß√£o da senha atual
 
 Script principal:
 
 - `Weddingifts-web/js/account.js`
 
-ObservaÁ„o:
+Observa√ß√£o:
 
 - a troca de senha exige senha atual e nova senha forte
 
@@ -183,11 +205,11 @@ Responsabilidade transversal:
 
 - inferir base da API
 - encapsular requests e tratamento de erro
-- persistir sess„o JWT
-- validar expiraÁ„o local da sess„o
-- proteger p·ginas privadas
+- persistir sess√£o JWT
+- validar expira√ß√£o local da sess√£o
+- proteger p√°ginas privadas
 - redirecionar para login com `returnTo`
-- montar header mobile global e drawer de navegaÁ„o
+- montar header mobile global e drawer de navega√ß√£o
 - centralizar mensagens compartilhadas em PT-BR
 - formatar datas, hora e moeda
 
@@ -196,11 +218,11 @@ Responsabilidade transversal:
 Responsabilidade transversal:
 
 - design system visual principal
-- layout das p·ginas p˙blicas e privadas
+- layout das p√°ginas p√∫blicas e privadas
 - responsividade
 - header mobile, drawer e componentes compartilhados
 
-## 4. Backend por domÌnio
+## 4. Backend por dom√≠nio
 
 ### Auth
 
@@ -297,7 +319,7 @@ Arquivos:
 
 - `Weddingifts.Api/Controllers/GiftReservationController.cs`
 - `Weddingifts.Api/Entities/GiftReservation.cs`
-- regras distribuÌdas principalmente em `Weddingifts.Api/Services/GiftService.cs`
+- regras distribu√≠das principalmente em `Weddingifts.Api/Services/GiftService.cs`
 
 Contratos:
 
@@ -433,22 +455,22 @@ Testes automatizados confirmados:
 
 Cobertura observada:
 
-- cadastro de usu·rio
+- cadastro de usu√°rio
 - login
 - troca de senha autenticada
-- criaÁ„o, ediÁ„o e exclus„o de evento
+- cria√ß√£o, edi√ß√£o e exclus√£o de evento
 - CRUD principal de convidados
-- leitura, confirmaÁ„o, atualizaÁ„o e reset de RSVP
-- autenticaÁ„o obrigatÛria em rotas privadas
-- criaÁ„o de presente por propriet·rio
+- leitura, confirma√ß√£o, atualiza√ß√£o e reset de RSVP
+- autentica√ß√£o obrigat√≥ria em rotas privadas
+- cria√ß√£o de presente por propriet√°rio
 - reserva e cancelamento
-- bloqueio de ediÁ„o quando h· reserva ativa
-- bloqueio de exclus„o quando h· reserva ativa
-- validaÁıes de domÌnio em reservas e presentes
+- bloqueio de edi√ß√£o quando h√° reserva ativa
+- bloqueio de exclus√£o quando h√° reserva ativa
+- valida√ß√µes de dom√≠nio em reservas e presentes
 
 ### Frontend
 
-Existe uma suÌte mÌnima de smoke com Playwright em:
+Existe uma su√≠te m√≠nima de smoke com Playwright em:
 
 - `frontend-smoke/weddingifts.smoke.spec.js`
 - `frontend-smoke/support/api-helpers.js`
@@ -456,23 +478,24 @@ Existe uma suÌte mÌnima de smoke com Playwright em:
 - `package.json`
 - backend `FrontendSmoke` autocontido com SQLite
 
-A validaÁ„o atual depende de:
+A valida√ß√£o atual depende de:
 
-- smoke automatizado local dos fluxos crÌticos
-- smoke automatizado do RSVP p˙blico com consulta por CPF, POST/PUT, limite de acompanhantes, acompanhante menor sem CPF, acompanhante 16+ com CPF obrigatÛrio e recusa limpando acompanhantes
-- execuÁ„o manual local complementar
+- smoke automatizado local dos fluxos cr√≠ticos
+- smoke automatizado do RSVP p√∫blico com consulta por CPF, POST/PUT, limite de acompanhantes, acompanhante menor sem CPF, acompanhante 16+ com CPF obrigat√≥rio e recusa limpando acompanhantes
+- smoke automatizado da lista p√∫blica de presentes em `gifts.html`, incluindo carrinho, reserve/unreserve, retorno ao convite e gaveta mobile
+- execu√ß√£o manual local complementar
 - checklist em `docs/MOBILE_TEST_CHECKLIST.md`
 
-## 7. Scripts e operaÁ„o local
+## 7. Scripts e opera√ß√£o local
 
 - `run.bat` -> sobe backend + frontend local e abre o navegador
-- `start-dev.ps1` -> sobe backend + frontend, com opÁ„o ˙til para teste em celular na mesma rede
+- `start-dev.ps1` -> sobe backend + frontend, com op√ß√£o √∫til para teste em celular na mesma rede
 
 ## 8. Fora do mapa atual
 
-N„o existem implementaÁıes confirmadas para:
+N√£o existem implementa√ß√µes confirmadas para:
 
-- upload/gest„o visual de foto de capa no frontend
+- upload/gest√£o visual de foto de capa no frontend
 - privacidade por evento
 - envio real de e-mail
 - convites por WhatsApp

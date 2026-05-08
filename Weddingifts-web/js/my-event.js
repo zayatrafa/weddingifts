@@ -351,24 +351,27 @@ function renderSelectedEventSummary() {
   }
 
   selectedEventSummary.hidden = false;
+  const eventDateLabel = formatEventDateTime(eventData);
   selectedEventSummary.innerHTML = `
     <div class="selected-event-summary-head">
-      <div>
+      <div class="selected-event-summary-title">
         <p class="kicker">Evento selecionado</p>
-        <h2>${escapeHtml(eventData.name)}</h2>
+        <h2 title="${escapeAttribute(eventData.name)}">${escapeHtml(eventData.name)}</h2>
       </div>
-      <span class="tag tag-ok">${escapeHtml(formatEventDateTime(eventData))}</span>
+      <span class="tag tag-ok" title="${escapeAttribute(eventDateLabel)}">${escapeHtml(eventDateLabel)}</span>
     </div>
-    <dl class="selected-event-details">
-      ${renderSelectedEventDetail("Casal", eventData.hostNames)}
-      ${renderSelectedEventDetail("Local", eventData.locationName)}
-      ${renderSelectedEventDetail("Endereço", eventData.locationAddress)}
-      ${renderSelectedEventDetail("Cerimônia", eventData.ceremonyInfo)}
-      ${renderSelectedEventDetail("Traje", eventData.dressCode)}
-      ${renderSelectedEventDetail("Fuso", getTimeZoneLabel(getEventTimeZoneId(eventData)))}
-      ${renderSelectedEventLink("Mapa", eventData.locationMapsUrl)}
-      ${renderSelectedEventLink("Imagem de capa", eventData.coverImageUrl)}
-    </dl>
+    <div class="selected-event-summary-scroll">
+      <dl class="selected-event-details">
+        ${renderSelectedEventDetail("Casal", eventData.hostNames)}
+        ${renderSelectedEventDetail("Local", eventData.locationName)}
+        ${renderSelectedEventDetail("Endereço", eventData.locationAddress)}
+        ${renderSelectedEventDetail("Cerimônia", eventData.ceremonyInfo)}
+        ${renderSelectedEventDetail("Traje", eventData.dressCode)}
+        ${renderSelectedEventDetail("Fuso", getTimeZoneLabel(getEventTimeZoneId(eventData)))}
+        ${renderSelectedEventLink("Mapa", eventData.locationMapsUrl)}
+        ${renderSelectedEventLink("Imagem de capa", eventData.coverImageUrl)}
+      </dl>
+    </div>
   `;
 }
 
@@ -377,13 +380,16 @@ function getSelectedEvent() {
 }
 
 function renderSelectedEventDetail(label, value) {
-  if (!String(value || "").trim()) return "";
-  return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
+  const displayValue = String(value || "").trim();
+  if (!displayValue) return "";
+  return `<div><dt>${escapeHtml(label)}</dt><dd title="${escapeAttribute(displayValue)}">${escapeHtml(displayValue)}</dd></div>`;
 }
 
 function renderSelectedEventLink(label, value) {
-  if (!String(value || "").trim()) return "";
-  return `<div><dt>${escapeHtml(label)}</dt><dd><a href="${escapeAttribute(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a></dd></div>`;
+  const displayValue = String(value || "").trim();
+  if (!displayValue) return "";
+  const safeValue = escapeAttribute(displayValue);
+  return `<div><dt>${escapeHtml(label)}</dt><dd title="${safeValue}"><a href="${safeValue}" target="_blank" rel="noopener noreferrer" title="${safeValue}">${escapeHtml(displayValue)}</a></dd></div>`;
 }
 
 function renderGifts() {

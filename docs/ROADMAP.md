@@ -9,10 +9,10 @@ Quando houver divergência entre este arquivo e o código, o código vence.
 
 ## 1. Estado atual
 
-Status geral em 2026-04-24:
+Status geral em 2026-05-08:
 
 - Onda 1 consolidada no código
-- Onda 2 em andamento no código
+- Onda 2 avançada no código, com RSVP público, conclusão do convite e lista pública de presentes separada já implementados
 - Onda 3 e Onda 4 seguem planejadas, sem implementação confirmada
 
 ## 2. O que já está entregue no código
@@ -56,7 +56,9 @@ Entregas confirmadas:
 - limite de acompanhantes (`maxExtraGuests`) na gestão privada de convidados
 - backend de RSVP público com acompanhantes e CPF condicional por idade
 - frontend público de RSVP em `event.html` com consulta por CPF, confirmação, recusa e atualização
-- smoke frontend cobrindo RSVP público, acompanhantes e manutenção do fluxo de reserva/cancelamento
+- conclusão do convite com opção posterior de presentear
+- lista pública de presentes em `gifts.html` com busca, filtros, carrinho, reserva/cancelamento por CPF e retorno ao convite
+- smoke frontend cobrindo RSVP público, acompanhantes, conclusão do convite, retorno de convidado confirmado e carrinho de presentes
 
 Evidências:
 
@@ -77,7 +79,6 @@ Itens restantes planejados:
 - mostrar contagem de confirmados no painel privado
 - adicionar filtros na gestão de presentes
 - adicionar filtros na gestão de convidados
-- adicionar filtros na página pública de presentes
 - fechar política de edição de presente reservado
 - fechar política de exclusão de evento
 

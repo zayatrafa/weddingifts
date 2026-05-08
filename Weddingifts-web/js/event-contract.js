@@ -13,12 +13,12 @@ export const EVENT_FIELD_LIMITS = {
 };
 
 export const SUPPORTED_EVENT_TIME_ZONES = [
-  { value: "America/Sao_Paulo", label: "Brasilia, Sul e Sudeste (UTC-03)" },
+  { value: "America/Sao_Paulo", label: "Brasília, Sul e Sudeste (UTC-03)" },
   { value: "America/Manaus", label: "Amazonas e Roraima (UTC-04)" },
   { value: "America/Rio_Branco", label: "Acre (UTC-05)" },
   { value: "America/Campo_Grande", label: "Mato Grosso do Sul (UTC-04)" },
-  { value: "America/Belem", label: "Belem e Para (UTC-03)" },
-  { value: "America/Fortaleza", label: "Fortaleza e Ceara (UTC-03)" },
+  { value: "America/Belem", label: "Belém e Pará (UTC-03)" },
+  { value: "America/Fortaleza", label: "Fortaleza e Ceará (UTC-03)" },
   { value: "America/Recife", label: "Recife e Pernambuco (UTC-03)" },
   { value: "America/Bahia", label: "Bahia (UTC-03)" },
   { value: "America/Noronha", label: "Fernando de Noronha (UTC-02)" }
@@ -44,7 +44,7 @@ export function getEventTimeZoneId(eventData) {
 
 export function getTimeZoneLabel(timeZoneId) {
   const supported = SUPPORTED_EVENT_TIME_ZONES.find((timeZone) => timeZone.value === timeZoneId);
-  return supported?.label || timeZoneId || "Fuso nao informado";
+  return supported?.label || timeZoneId || "Fuso não informado";
 }
 
 export function readEnrichedEventFormValues(elements) {
@@ -88,7 +88,7 @@ export function getEnrichedEventValidationError(values) {
     ["locationName", "nome do local"],
     ["locationAddress", "endereco do local"],
     ["locationMapsUrl", "link do Maps"],
-    ["ceremonyInfo", "informacoes da cerimonia"],
+    ["ceremonyInfo", "informações da cerimônia"],
     ["dressCode", "traje"]
   ];
 
@@ -102,21 +102,21 @@ export function getEnrichedEventValidationError(values) {
     ["hostNames", EVENT_FIELD_LIMITS.hostNames, "Os nomes do casal"],
     ["locationName", EVENT_FIELD_LIMITS.locationName, "O nome do local"],
     ["locationAddress", EVENT_FIELD_LIMITS.locationAddress, "O endereco do local"],
-    ["ceremonyInfo", EVENT_FIELD_LIMITS.ceremonyInfo, "As informacoes da cerimonia"],
+    ["ceremonyInfo", EVENT_FIELD_LIMITS.ceremonyInfo, "As informações da cerimônia"],
     ["dressCode", EVENT_FIELD_LIMITS.dressCode, "O traje"],
     ["invitationMessage", EVENT_FIELD_LIMITS.invitationMessage, "A mensagem do convite"]
   ].find(([key, maxLength]) => String(values[key] || "").length > maxLength);
 
   if (lengthValidation) {
-    return `${lengthValidation[2]} deve ter no maximo ${lengthValidation[1]} caracteres.`;
+    return `${lengthValidation[2]} deve ter no máximo ${lengthValidation[1]} caracteres.`;
   }
 
   if (!isSupportedEventTimeZone(values.timeZoneId)) {
-    return "Selecione um fuso brasileiro valido para o evento.";
+    return "Selecione um fuso brasileiro válido para o evento.";
   }
 
   if (!isValidLocalDateTimeValue(values.eventDateTimeLocal)) {
-    return "Informe uma data e hora validas para o evento.";
+    return "Informe uma data e hora válidas para o evento.";
   }
 
   if (!isFutureEventDateTime(values.eventDateTimeLocal, values.timeZoneId)) {
@@ -132,7 +132,7 @@ export function getEnrichedEventValidationError(values) {
   });
 
   if (invalidUrl) {
-    return `Informe uma URL valida para ${invalidUrl[1]}.`;
+    return `Informe uma URL válida para ${invalidUrl[1]}.`;
   }
 
   return "";
@@ -194,10 +194,10 @@ export function toEventDateTimeInputValue(eventData) {
 
 export function formatEventDateTime(eventData) {
   const source = eventData?.eventDateTime || eventData?.eventDate;
-  if (!source) return "Data nao informada";
+  if (!source) return "Data não informada";
 
   const date = parseEventInstant(source);
-  if (!date) return "Data invalida";
+  if (!date) return "Data inválida";
 
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "medium",

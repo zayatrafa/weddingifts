@@ -279,6 +279,8 @@ Depois de subir o ambiente de desenvolvimento manual, validar pelo menos:
 - CRUD básico de presentes
 - reserva pública por CPF convidado
 - cancelamento da reserva
+- aceite público de convite com RSVP, acompanhantes e conclusão
+- lista pública de presentes em `gifts.html` com carrinho e retorno ao convite
 
 Para mobile, complementar com:
 
@@ -286,12 +288,13 @@ Para mobile, complementar com:
 
 ## 11. Smoke test automatizado de frontend
 
-O repositório agora possui uma smoke suite mínima de frontend com Playwright para proteger regressões nos fluxos:
+O repositório possui uma smoke suite mínima de frontend com Playwright para proteger regressões nos fluxos:
 
 - login
 - create-event
 - my-events
-- reserve / unreserve
+- aceite público de convite com RSVP e acompanhantes
+- lista pública de presentes com carrinho, reserve / unreserve e checkout
 
 Arquivos principais:
 
@@ -363,7 +366,8 @@ cmd /c npm run test:frontend-smoke
 - executa login via browser
 - valida criação de evento via UI
 - valida listagem e ações principais de `my-events`
-- valida reserva e cancelamento na página pública
+- valida aceite público do convite, conclusão e retorno de convidados já confirmados
+- valida reserva e cancelamento na lista pública de presentes
 
 ### Limitações atuais
 

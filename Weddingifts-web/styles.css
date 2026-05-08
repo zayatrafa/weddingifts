@@ -1079,6 +1079,12 @@ body.mobile-nav-open {
   background: #fff9f8;
 }
 
+.rsvp-fieldset.input-invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(178, 108, 102, 0.16);
+  background: #fff9f8;
+}
+
 .field-error {
   margin: 6px 0 0;
   color: #8f4843;
@@ -1136,6 +1142,10 @@ body.mobile-nav-open {
 
 .dashboard-grid > * {
   min-width: 0;
+}
+
+#reservations-section {
+  grid-column: 1 / -1;
 }
 
 .dashboard-grid.single-column { grid-template-columns: 1fr; }
@@ -1583,26 +1593,55 @@ body.mobile-nav-open {
 
 .invitation-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  grid-template-columns: minmax(0, 720px);
   gap: 18px;
   align-items: start;
+  justify-content: center;
 }
 
-.invitation-event-panel,
 .invitation-step-card {
   min-width: 0;
 }
 
+.public-event-metadata {
+  display: none;
+}
+
 .invitation-step-card {
-  position: sticky;
-  top: 86px;
+  position: static;
   display: grid;
   gap: 14px;
   animation: none;
+  width: 100%;
 }
 
 .invitation-step-card:hover {
   transform: none;
+}
+
+.invitation-flow[data-state="location"] .invitation-step-card,
+.invitation-flow[data-state="direct-info"] .invitation-step-card,
+.invitation-flow[data-state="complete"] .invitation-step-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: clamp(4px, 2vw, 14px) 0;
+}
+
+.invitation-flow[data-state="location"] .invitation-step-card:hover,
+.invitation-flow[data-state="direct-info"] .invitation-step-card:hover,
+.invitation-flow[data-state="complete"] .invitation-step-card:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.invitation-flow[data-state="location"] .invitation-identify-fields,
+.invitation-flow[data-state="direct-info"] .invitation-identify-fields {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 8px;
 }
 
 .invitation-step-panel {
@@ -1653,6 +1692,65 @@ body.mobile-nav-open {
   gap: 8px;
 }
 
+.invitation-completion {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  max-width: 620px;
+}
+
+.invitation-gift-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(163, 177, 138, 0.44);
+  border-radius: 50%;
+  background: rgba(234, 241, 225, 0.88);
+  color: #607452;
+  box-shadow: 0 14px 28px rgba(87, 74, 58, 0.1);
+}
+
+.invitation-gift-icon .btn-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.invitation-completion h2 {
+  max-width: 18ch;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  line-height: 1.08;
+}
+
+.invitation-completion p:not(.kicker) {
+  max-width: 54ch;
+}
+
+.invitation-completion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.invitation-completion-actions .btn {
+  min-height: 46px;
+}
+
+.invitation-completion-actions .btn-secondary {
+  background: transparent;
+  border-color: transparent;
+  color: #665e55;
+  box-shadow: none;
+}
+
+.invitation-completion-actions .btn-secondary:hover {
+  background: rgba(255, 252, 247, 0.74);
+  border-color: rgba(229, 221, 209, 0.72);
+  box-shadow: none;
+}
+
 .invitation-return-menu {
   display: grid;
   gap: 10px;
@@ -1666,11 +1764,81 @@ body.mobile-nav-open {
 
 .invitation-event-info {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  max-width: 680px;
 }
 
-.invitation-inline-details {
+.invitation-event-subtitle {
+  max-width: 58ch;
+}
+
+.invitation-info-list {
+  display: grid;
+  gap: 18px;
+  margin: 12px 0 0;
+}
+
+.invitation-info-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.24fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.invitation-info-row dt {
+  color: #92877b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.invitation-info-row dd {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  min-width: 0;
+  color: #403931;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.invitation-location-row dd span {
+  color: #5f574e;
+  font-weight: 500;
+}
+
+.invitation-map-link {
+  width: max-content;
+  max-width: 100%;
+  color: #6d8060;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.invitation-map-link:hover {
+  color: #526a49;
+  text-decoration: underline;
+}
+
+.invitation-event-note {
   margin-top: 4px;
+  color: #514940;
+  font-weight: 600;
+}
+
+@media (max-width: 680px) {
+  .invitation-info-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .invitation-completion-actions .btn {
+    width: 100%;
+  }
 }
 
 .gift-flow-toolbar {
@@ -1678,6 +1846,203 @@ body.mobile-nav-open {
   grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.35fr) auto;
   gap: 12px;
   align-items: end;
+}
+
+.gift-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gift-card-actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  height: auto;
+  padding-block: 8px;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.gift-card-actions .btn-icon {
+  align-self: center;
+}
+
+.gift-cart-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(191, 174, 150, 0.45);
+  border-radius: var(--radius-md);
+  background: rgba(255, 252, 248, 0.72);
+}
+
+.gift-cart-head,
+.gift-cart-total,
+.gift-cart-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gift-cart-head h3 {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+
+.gift-cart-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.gift-cart-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid rgba(229, 221, 209, 0.82);
+}
+
+.gift-cart-item strong,
+.gift-cart-item span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.gift-cart-item span,
+.gift-cart-empty,
+.gift-cart-total span {
+  color: #6e655b;
+  font-size: 0.9rem;
+}
+
+.gift-cart-empty {
+  padding: 10px 0;
+  border-top: 1px solid rgba(229, 221, 209, 0.82);
+}
+
+.gift-cart-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.gift-cart-close,
+.gift-cart-mobile-overlay,
+.gift-cart-mobile-bar {
+  display: none;
+}
+
+.public-gifts-page {
+  max-width: 1360px;
+  padding-bottom: 44px;
+}
+
+.public-gifts-root {
+  display: grid;
+  gap: 16px;
+}
+
+.public-gifts-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 170px);
+  gap: 22px;
+  align-items: center;
+}
+
+.public-gifts-hero h1 {
+  margin: 0;
+  color: #3f3831;
+  font-size: clamp(1.65rem, 2.4vw, 2.45rem);
+  line-height: 1.08;
+}
+
+.public-gifts-hero p {
+  margin: 8px 0 0;
+}
+
+.public-gifts-art {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255, 248, 238, 0.98), rgba(241, 231, 216, 0.78));
+  border: 1px solid rgba(205, 185, 155, 0.55);
+  box-shadow: 0 22px 42px rgba(87, 74, 58, 0.11);
+}
+
+.public-gifts-art svg {
+  width: 84%;
+  height: 84%;
+  display: block;
+}
+
+.public-gifts-identification,
+.public-gifts-experience,
+.public-gifts-success {
+  display: grid;
+  gap: 14px;
+}
+
+.public-gifts-experience {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) minmax(280px, 330px);
+  gap: 16px;
+  align-items: start;
+}
+
+.public-gifts-experience > .section {
+  margin-top: 0;
+}
+
+.public-gift-filter-panel {
+  position: sticky;
+  top: 88px;
+}
+
+.public-gift-filter-panel .gift-flow-toolbar,
+.public-gift-filter-panel .event-filter-actions {
+  grid-template-columns: 1fr;
+}
+
+.public-gift-filter-panel .gift-flow-toolbar {
+  align-items: stretch;
+}
+
+.public-gift-filter-panel .event-filter-actions {
+  display: grid;
+  gap: 8px;
+  justify-content: stretch;
+}
+
+.public-gift-filter-panel .event-filter-actions .btn {
+  width: 100%;
+}
+
+.public-gifts-layout {
+  display: contents;
+}
+
+.public-gifts-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-gifts-layout .gift-cart-panel {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 112px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.82rem;
 }
 
 .rsvp-card-head {
@@ -1760,6 +2125,23 @@ body.mobile-nav-open {
   margin: 0;
   color: #4a433b;
   font-size: 0.95rem;
+}
+
+.rsvp-companion-docs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+.rsvp-companion-docs .field label {
+  min-height: 2.2em;
+  display: flex;
+  align-items: flex-end;
+}
+
+.field-help-placeholder {
+  visibility: hidden;
 }
 
 .rsvp-help,
@@ -1886,17 +2268,27 @@ body.mobile-nav-open {
 
 .selected-event-summary {
   margin-top: 12px;
-  border: 1px solid rgba(229, 221, 209, 0.86);
-  border-radius: 16px;
-  background: rgba(255, 252, 247, 0.72);
-  padding: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 0 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 9px;
+  max-height: 190px;
+  overflow: hidden;
 }
 
 .selected-event-summary-head {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: start;
   justify-content: space-between;
+}
+
+.selected-event-summary-title {
+  min-width: 0;
 }
 
 .selected-event-summary-head .kicker {
@@ -1906,14 +2298,84 @@ body.mobile-nav-open {
 .selected-event-summary-head h2 {
   margin: 0;
   color: #4a433b;
-  font-size: 1.05rem;
+  font-size: 1.06rem;
+  font-weight: 700;
+  line-height: 1.18;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .selected-event-summary-head .tag {
   flex-shrink: 0;
-  max-width: 46%;
-  white-space: normal;
+  display: block;
+  max-width: min(38ch, 42vw);
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: right;
+  color: #5c7255;
+  background: rgba(111, 138, 98, 0.11);
+}
+
+.selected-event-summary-scroll {
+  min-height: 0;
+  max-height: 118px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+}
+
+.selected-event-details {
+  margin: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 22px;
+}
+
+.selected-event-details div {
+  grid-template-columns: 1fr;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.selected-event-details dt {
+  color: #9a8f84;
+  font-size: 0.65rem;
+  line-height: 1;
+  letter-spacing: 0.07em;
+}
+
+.selected-event-details dd,
+.selected-event-details a {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-event-details dd {
+  color: #4c453d;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.selected-event-details a {
+  color: #6f5e4d;
+  font-weight: 600;
+}
+
+@media (max-width: 1120px) {
+  .selected-event-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .page-footer {
@@ -2138,6 +2600,15 @@ body.mobile-nav-open {
     font-size: 1rem;
   }
 
+  .gift-card-actions,
+  .rsvp-companion-docs {
+    grid-template-columns: 1fr;
+  }
+
+  .rsvp-companion-docs .field label {
+    min-height: 0;
+  }
+
   .auth-card,
   .form,
   .field {
@@ -2200,6 +2671,9 @@ body.mobile-nav-open {
     max-width: 100%;
     text-align: left;
   }
+  .selected-event-details {
+    grid-template-columns: 1fr;
+  }
   .my-event-meta { margin-top: 6px; }
   .my-event-primary-actions { display: grid; grid-template-columns: 1fr; }
   .my-event-primary-actions .btn-main-action {
@@ -2259,10 +2733,12 @@ body.mobile-nav-open {
   .invitation-identify-fields .btn { width: 100%; }
   .invitation-fixed-action {
     position: fixed;
+    left: max(16px, env(safe-area-inset-left, 0px));
     right: max(16px, env(safe-area-inset-right, 0px));
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     z-index: 40;
     pointer-events: none;
+    flex-wrap: wrap;
   }
   .invitation-identify-fields .invitation-fixed-action .btn {
     width: auto;
@@ -2274,6 +2750,168 @@ body.mobile-nav-open {
     box-shadow: 0 14px 30px rgba(111, 104, 95, 0.24);
   }
   .gift-flow-toolbar { grid-template-columns: 1fr; }
+  .public-gifts-page { padding-bottom: 124px; }
+  .public-gifts-experience {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .public-gifts-hero,
+  .public-gifts-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .public-gifts-art {
+    max-width: 170px;
+  }
+
+  .public-gift-filter-panel {
+    position: static;
+  }
+
+  .public-gifts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-gifts-layout .gift-cart-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1050;
+    max-height: min(78vh, 620px);
+    overflow-y: auto;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius: 22px 22px 0 0;
+    border-color: rgba(214, 199, 181, 0.96);
+    background: #fffdf9;
+    box-shadow: 0 -22px 48px rgba(40, 35, 30, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(110%);
+    transition: transform 0.26s ease, opacity 0.26s ease;
+  }
+
+  .public-gifts-layout .gift-cart-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .gift-cart-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    display: block;
+    background: rgba(34, 31, 27, 0.42);
+    opacity: 0;
+    transition: opacity 0.24s ease;
+  }
+
+  .gift-cart-mobile-overlay.is-open {
+    opacity: 1;
+  }
+
+  .gift-cart-mobile-bar {
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    left: max(14px, env(safe-area-inset-left, 0px));
+    z-index: 1030;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 58px;
+    padding: 9px 10px 9px 16px;
+    border: 1px solid rgba(104, 126, 88, 0.62);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #78906a, #647b59);
+    color: #fff;
+    box-shadow: 0 16px 34px rgba(55, 48, 40, 0.24);
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .gift-cart-mobile-summary {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .gift-cart-mobile-summary strong,
+  .gift-cart-mobile-summary span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gift-cart-mobile-summary strong {
+    font-size: 0.96rem;
+    line-height: 1.15;
+  }
+
+  .gift-cart-mobile-summary span {
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 0.82rem;
+    line-height: 1.2;
+  }
+
+  .gift-cart-mobile-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 13px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  body.gift-cart-drawer-open {
+    overflow: hidden;
+  }
+
+  .gift-cart-head,
+  .gift-cart-total,
+  .gift-cart-actions,
+  .gift-cart-item {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .gift-cart-actions .btn,
+  .gift-cart-item .btn {
+    width: 100%;
+  }
+  .gift-cart-panel .gift-cart-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .gift-cart-panel .gift-cart-head .tag {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .gift-cart-close {
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(229, 221, 209, 0.95);
+    border-radius: 999px;
+    background: #fff;
+    color: #62594f;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1;
+  }
   .event-filter-row { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: stretch !important; }
   .event-filter-actions { margin-left: 0 !important; width: 100%; justify-content: stretch; }
   .event-filter-actions .btn { width: 100%; }

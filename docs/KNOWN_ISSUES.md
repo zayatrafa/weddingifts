@@ -4,19 +4,7 @@ Problemas, lacunas e riscos confirmados no estado atual do Weddingifts.
 
 ## Alto
 
-### 1. Documentação privada não é versionada
-
-- `docs/` está ignorado no `.gitignore`
-- `AGENTS.md` também está ignorado
-- efeito: contexto operacional e memória técnica local podem divergir entre máquinas e sessões
-
-Arquivos relacionados:
-
-- `.gitignore`
-- `AGENTS.md`
-- `docs/*`
-
-### 2. Segredos antigos já passaram pelo histórico do Git
+### 1. Segredos antigos já passaram pelo histórico do Git
 
 Arquivos afetados historicamente:
 
@@ -30,6 +18,18 @@ Risco:
 - se essas credenciais ou chaves foram reutilizadas fora de ambiente local controlado, precisam ser trocadas
 
 ## Médio
+
+### 2. Documentação restaurada ainda exige atenção contra drift
+
+- `AGENTS.md`
+- `docs/*`
+- `README.md`
+
+Risco:
+
+- a documentação ativa voltou de `old/` para os paths principais após a remoção de `.specs/`
+- partes antigas podem voltar a divergir se mudanças de fluxo não atualizarem `docs/` no mesmo trabalho
+- por decisão operacional atual, não usar `tlc-spec-driven`/SDD salvo pedido explícito
 
 ### 3. Cobertura automatizada de frontend ainda é estreita
 
@@ -66,7 +66,7 @@ Risco:
 ### 6. A base documental já sofreu drift histórico
 
 - vários arquivos em `docs/` estavam parcialmente desatualizados antes desta revisão
-- como continuam privados e fora do Git, o risco de novo drift permanece
+- como a documentação acabou de ser restaurada para os paths ativos, o risco de novo drift permanece se agentes não revisarem docs no fechamento das tarefas
 
 ### 7. Há roteiro antigo mantido só por compatibilidade histórica
 

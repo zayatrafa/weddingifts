@@ -65,12 +65,12 @@ export async function createEnrichedEvent(token, overrides = {}) {
       hostNames: overrides.hostNames || "Ana e Bruno",
       eventDateTime: overrides.eventDateTime || futureEventDateTimeOffset(),
       timeZoneId: overrides.timeZoneId || "America/Sao_Paulo",
-      locationName: overrides.locationName || "Espaco Smoke",
-      locationAddress: overrides.locationAddress || "Rua Smoke, 123 - Sao Paulo, SP",
+      locationName: overrides.locationName || "Espaço Smoke",
+      locationAddress: overrides.locationAddress || "Rua Smoke, 123 - São Paulo, SP",
       locationMapsUrl: overrides.locationMapsUrl || "https://maps.google.com/?q=Espaco+Smoke",
-      ceremonyInfo: overrides.ceremonyInfo || "Cerimonia e recepcao no mesmo local.",
+      ceremonyInfo: overrides.ceremonyInfo || "Cerimônia e recepção no mesmo local.",
       dressCode: overrides.dressCode || "Esporte fino",
-      invitationMessage: overrides.invitationMessage ?? "Com alegria, convidamos voce para celebrar conosco.",
+      invitationMessage: overrides.invitationMessage ?? "Com alegria, convidamos você para celebrar conosco.",
       coverImageUrl: overrides.coverImageUrl ?? ""
     }
   });

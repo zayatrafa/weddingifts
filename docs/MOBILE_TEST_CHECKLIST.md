@@ -102,15 +102,26 @@ Arquivos relacionados:
 
 - evento carrega por `slug`
 - dados enriquecidos do evento não geram overflow
-- consulta de RSVP por CPF fica clara antes da lista de presentes
+- consulta de RSVP por CPF fica clara antes da confirmação
 - formulário de RSVP accepted/declined cabe em telas pequenas
 - campos dinâmicos de acompanhantes mantêm área de toque adequada
+- campo de CPF do acompanhante fica alinhado com a data de nascimento em desktop e empilha corretamente no mobile
 - dica de CPF obrigatório/opcional por idade fica legível
-- filtros funcionam em telas pequenas
-- reservar/cancelar não gera overflow
+- tela de informações finais mantém `Voltar` próximo de `Continuar` e deixa claro que a próxima escolha é presentear ou não
 - erro de CPF ausente ou inválido fica claramente visível
+- ao retornar com convite já concluído, a consulta por CPF não exibe mensagem intermediária de `Consultando RSVP`
 
-### 4.9 Conta (`account.html`)
+### 4.9 Presentes públicos (`gifts.html`)
+
+- tela aberta por `Quero presentear` oferece opção de voltar ao convite fora do carrinho
+- identificação por CPF mantém `Voltar` próximo do `OK`
+- filtros, busca e ordenação funcionam em telas pequenas
+- botões `Adicionar ao carrinho` e `Remover do carrinho` ficam dentro dos limites do card
+- carrinho lateral no desktop e gaveta no mobile exibem apenas ações do carrinho; `Voltar ao convite` não deve aparecer dentro do carrinho
+- tela de escolha entre `Quero presentear` e `Não vou presentear` destaca visualmente a ação de presente com ícone
+- finalizar pedido mostra confirmação sem esconder a navegação de retorno
+
+### 4.10 Conta (`account.html`)
 
 - dados da conta ficam legíveis
 - formulário de troca de senha não quebra layout
