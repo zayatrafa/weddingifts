@@ -49,6 +49,8 @@ API consumida:
 
 ### `Weddingifts-web/event.html`
 
+Estado atual: hub publico do evento por `slug`, exibindo informacoes cadastradas antes de qualquer CPF. RSVP abre como acao independente por CPF; presentes continuam em `gifts.html`.
+
 Responsabilidade:
 
 - página pública por `slug`
@@ -345,6 +347,10 @@ Campos principais:
 - `ceremonyInfo`
 - `dressCode`
 - `coverImageUrl`
+- `invitationMessage`
+- `foodInfo`
+- `scheduleInfo`
+- `galleryImageUrls`
 - `slug`
 - `createdAt`
 - `gifts`

@@ -45,8 +45,8 @@
       <article id="gift-guest-identification" class="card card-pad public-gifts-identification" hidden>
         <div>
           <p class="kicker">Identificação do convidado</p>
-          <h2>Informe seu CPF para montar o carrinho</h2>
-          <p>Usaremos o CPF apenas para validar seu convite e registrar suas reservas.</p>
+          <h2>Informe seu CPF para escolher seu presente</h2>
+          <p>Usaremos o CPF apenas para validar seu convite e registrar os presentes escolhidos.</p>
         </div>
         <div class="invitation-identify-fields">
           <div class="field" style="margin: 0;">
@@ -82,21 +82,21 @@
             <div class="row event-filter-actions">
               <button class="btn btn-primary filter-button" data-filter="all" data-gift-filter="all" type="button">Todos</button>
               <button class="btn btn-secondary filter-button" data-filter="available" data-gift-filter="available" type="button">Disponíveis</button>
-              <button class="btn btn-secondary filter-button" data-filter="reserved" data-gift-filter="reserved" type="button">Reservados</button>
+              <button class="btn btn-secondary filter-button" data-filter="reserved" data-gift-filter="reserved" type="button">Escolhidos</button>
             </div>
           </div>
         </section>
 
         <section class="section public-gifts-layout">
           <div id="gift-grid" class="grid-3 public-gifts-grid"></div>
-          <aside id="gift-cart-panel" class="gift-cart-panel" aria-live="polite" aria-label="Carrinho de presentes"></aside>
+          <aside id="gift-cart-panel" class="gift-cart-panel" aria-live="polite" aria-label="Presentes escolhidos"></aside>
         </section>
         <button id="gift-cart-mobile-bar" class="gift-cart-mobile-bar" type="button" aria-controls="gift-cart-panel" aria-expanded="false" hidden></button>
       </div>
 
       <article id="gift-order-success" class="card card-pad public-gifts-success" hidden>
-        <p class="kicker">Pedido finalizado</p>
-        <h2>Presentes reservados com sucesso</h2>
+        <p class="kicker">Presentes registrados</p>
+        <h2>Presentes registrados com sucesso</h2>
         <p>Obrigado pelo carinho. Suas escolhas ficaram registradas para os noivos.</p>
         <a id="gift-back-to-invitation-link" class="btn btn-secondary" href="./event.html">Voltar ao convite</a>
       </article>
@@ -107,7 +107,7 @@
         <div class="gift-head"><h3 class="gift-name"></h3><strong class="gift-price"></strong></div>
         <p class="gift-description muted"></p>
         <div class="row" style="align-items: center; margin-top: 4px;"><span class="gift-badge"></span><span class="gift-meta muted"></span></div>
-        <div class="gift-card-actions" style="margin-top: 10px;"><button class="btn btn-primary reserve-button with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7V5a5 5 0 0 1 10 0v2h2v14H5V7h2zm2 0h6V5a3 3 0 0 0-6 0v2zm2 6h2v5h-2v-5z" fill="currentColor"/></svg></span>Reservar</button><button class="btn btn-secondary unreserve-button with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>Cancelar</button></div>
+        <div class="gift-card-actions" style="margin-top: 10px;"><button class="btn btn-primary reserve-button with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7V5a5 5 0 0 1 10 0v2h2v14H5V7h2zm2 0h6V5a3 3 0 0 0-6 0v2zm2 6h2v5h-2v-5z" fill="currentColor"/></svg></span>Presentear</button><button class="btn btn-secondary unreserve-button with-icon" type="button"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>Retirar</button></div>
       </article>
     </template>
   </main>

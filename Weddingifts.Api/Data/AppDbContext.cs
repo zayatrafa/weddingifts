@@ -72,6 +72,21 @@ public class AppDbContext : DbContext
             .HasMaxLength(500)
             .IsRequired();
 
+        modelBuilder.Entity<Event>()
+            .Property(e => e.FoodInfo)
+            .HasMaxLength(800)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.ScheduleInfo)
+            .HasMaxLength(800)
+            .IsRequired();
+
+        modelBuilder.Entity<Event>()
+            .Property(e => e.GalleryImageUrls)
+            .HasMaxLength(6000)
+            .IsRequired();
+
         modelBuilder.Entity<Gift>()
             .Property(g => g.Name)
             .HasMaxLength(255)

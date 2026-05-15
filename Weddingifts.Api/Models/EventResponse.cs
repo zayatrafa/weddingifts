@@ -18,6 +18,9 @@ public sealed class EventResponse
     public string DressCode { get; init; } = string.Empty;
     public string CoverImageUrl { get; init; } = string.Empty;
     public string InvitationMessage { get; init; } = string.Empty;
+    public string FoodInfo { get; init; } = string.Empty;
+    public string ScheduleInfo { get; init; } = string.Empty;
+    public IReadOnlyList<string> GalleryImageUrls { get; init; } = [];
     public string Slug { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
     public IReadOnlyList<GiftResponse> Gifts { get; init; } = [];
@@ -41,10 +44,24 @@ public sealed class EventResponse
             DressCode = ev.DressCode,
             CoverImageUrl = ev.CoverImageUrl,
             InvitationMessage = ev.InvitationMessage,
+            FoodInfo = ev.FoodInfo,
+            ScheduleInfo = ev.ScheduleInfo,
+            GalleryImageUrls = ParseGalleryImageUrls(ev.GalleryImageUrls),
             Slug = ev.Slug,
             CreatedAt = ev.CreatedAt,
             Gifts = ev.Gifts.Select(GiftResponse.FromEntity).ToList(),
             GuestCount = ev.Guests.Count
         };
+    }
+
+    private static IReadOnlyList<string> ParseGalleryImageUrls(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return [];
+
+        return value
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .ToList();
     }
 }

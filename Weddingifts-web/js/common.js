@@ -67,6 +67,7 @@ export const UI_TEXT = {
     deleteSuccess: "Presente excluído com sucesso.",
     deleteError: "Não foi possível excluir o presente.",
     empty: "Nenhum presente cadastrado para este evento.",
+    emptyFilter: "Nenhum presente encontrado para este filtro.",
     emptyReservations: "Nenhuma reserva registrada para este evento."
   },
   guests: {
@@ -82,6 +83,7 @@ export const UI_TEXT = {
     deleteSuccess: "Convidado excluído com sucesso.",
     deleteError: "Não foi possível excluir o convidado.",
     empty: "Nenhum convidado cadastrado para este evento.",
+    emptyFilter: "Nenhum convidado encontrado para este filtro.",
     reservationNone: "Sem reserva ativa",
     reservationActive: "Reserva ativa"
   },
@@ -89,12 +91,12 @@ export const UI_TEXT = {
     initial: "Informe o slug para carregar o evento público.",
     loading: "Carregando evento e presentes...",
     loadError: "Não foi possível carregar o evento.",
-    reserveLoading: "Reservando presente...",
-    reserveSuccess: "Reserva realizada com sucesso.",
-    reserveError: "Não foi possível reservar o presente.",
-    unreserveLoading: "Cancelando reserva...",
-    unreserveSuccess: "Reserva cancelada com sucesso.",
-    unreserveError: "Não foi possível cancelar a reserva.",
+    reserveLoading: "Registrando presente...",
+    reserveSuccess: "Presente registrado com sucesso.",
+    reserveError: "Não foi possível registrar o presente.",
+    unreserveLoading: "Retirando presente...",
+    unreserveSuccess: "Presente retirado com sucesso.",
+    unreserveError: "Não foi possível retirar o presente.",
     emptyEvent: "Nenhum evento carregado.",
     emptyFilter: "Nenhum presente encontrado para este filtro."
   },

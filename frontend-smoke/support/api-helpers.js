@@ -71,7 +71,10 @@ export async function createEnrichedEvent(token, overrides = {}) {
       ceremonyInfo: overrides.ceremonyInfo || "Cerimônia e recepção no mesmo local.",
       dressCode: overrides.dressCode || "Esporte fino",
       invitationMessage: overrides.invitationMessage ?? "Com alegria, convidamos você para celebrar conosco.",
-      coverImageUrl: overrides.coverImageUrl ?? ""
+      coverImageUrl: overrides.coverImageUrl ?? "",
+      foodInfo: overrides.foodInfo ?? "Jantar completo, mesa de doces e bebidas sem alcool.",
+      scheduleInfo: overrides.scheduleInfo ?? "Cerimonia as 17h, jantar as 19h e pista de danca as 21h.",
+      galleryImageUrls: overrides.galleryImageUrls ?? []
     }
   });
 }

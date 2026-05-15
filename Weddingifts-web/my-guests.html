@@ -90,6 +90,15 @@
 
       <article class="card card-pad">
         <h2 class="card-title">Convidados do evento selecionado</h2>
+        <div class="management-filter" role="search" aria-label="Filtrar convidados">
+          <div class="field management-filter-field">
+            <label for="guest-search-input">Buscar convidado</label>
+            <input class="input" id="guest-search-input" type="search" placeholder="Nome ou CPF" autocomplete="off" />
+          </div>
+          <div class="management-filter-actions">
+            <button id="guest-filter-apply-button" class="btn btn-primary btn-sm" type="button">OK</button>
+          </div>
+        </div>
         <div id="guests-list" class="gifts-list"></div>
       </article>
     </section>

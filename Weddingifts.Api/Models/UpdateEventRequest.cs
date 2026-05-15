@@ -14,4 +14,7 @@ public sealed class UpdateEventRequest
     public string? DressCode { get; set; }
     public string? CoverImageUrl { get; set; }
     public string? InvitationMessage { get; set; }
+    public string? FoodInfo { get; set; }
+    public string? ScheduleInfo { get; set; }
+    public List<string>? GalleryImageUrls { get; set; }
 }

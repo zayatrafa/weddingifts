@@ -93,6 +93,15 @@
 
       <article class="card card-pad">
         <h2 class="card-title">Presentes do evento selecionado</h2>
+        <div class="management-filter" role="search" aria-label="Filtrar presentes">
+          <div class="field management-filter-field">
+            <label for="gift-search-input">Buscar presente</label>
+            <input class="input" id="gift-search-input" type="search" placeholder="Nome do presente" autocomplete="off" />
+          </div>
+          <div class="management-filter-actions">
+            <button id="gift-filter-apply-button" class="btn btn-primary btn-sm" type="button">OK</button>
+          </div>
+        </div>
         <div id="gifts-list" class="gifts-list"></div>
       </article>
 

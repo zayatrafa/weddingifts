@@ -49,6 +49,8 @@ Evidências:
 
 ### Onda 2 - Núcleo do casamento (`Parcial`)
 
+Atualizacao: `event.html` agora funciona como hub publico do evento, mostrando informacoes cadastradas antes do CPF; RSVP e presentes sao acoes independentes.
+
 Entregas confirmadas:
 
 - eventos enriquecidos persistidos e exibidos no frontend privado e público

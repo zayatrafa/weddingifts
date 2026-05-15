@@ -36,6 +36,7 @@ const focusEventIdFromQuery = Number(query.get("focusEventId"));
 let shouldFocusFromQuery = Number.isInteger(focusEventIdFromQuery) && focusEventIdFromQuery > 0;
 
 const state = { events: [] };
+const MOBILE_EDIT_SCROLL_QUERY = "(max-width: 680px)";
 const ICON_EDIT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg>';
 const ICON_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.59 13.41a1 1 0 0 1 0-1.41l2.83-2.83a3 3 0 0 1 4.24 4.24l-1.42 1.42a3 3 0 0 1-4.24 0 1 1 0 1 0-1.41 1.41 5 5 0 0 0 7.07 0l1.42-1.42a5 5 0 0 0-7.07-7.07l-2.83 2.83a1 1 0 0 1-1.41 0z" fill="currentColor"/><path d="M13.41 10.59a1 1 0 0 1 0 1.41l-2.83 2.83a3 3 0 0 1-4.24-4.24l1.42-1.42a3 3 0 0 1 4.24 0 1 1 0 1 0 1.41-1.41 5 5 0 0 0-7.07 0L4.93 9.17a5 5 0 1 0 7.07 7.07l2.83-2.83a1 1 0 0 1 1.41 0z" fill="currentColor"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M10 3h4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
@@ -167,8 +168,20 @@ function renderEvents() {
           <textarea class="textarea" id="${editFieldPrefix}-invitation-message" name="invitationMessage" maxlength="500">${escapeHtml(eventData.invitationMessage)}</textarea>
         </div>
         <div class="field field-flat">
+          <label for="${editFieldPrefix}-food-info">Comida e bebida</label>
+          <textarea class="textarea" id="${editFieldPrefix}-food-info" name="foodInfo" maxlength="800">${escapeHtml(eventData.foodInfo)}</textarea>
+        </div>
+        <div class="field field-flat">
+          <label for="${editFieldPrefix}-schedule-info">Programação do evento</label>
+          <textarea class="textarea" id="${editFieldPrefix}-schedule-info" name="scheduleInfo" maxlength="800">${escapeHtml(eventData.scheduleInfo)}</textarea>
+        </div>
+        <div class="field field-flat">
           <label for="${editFieldPrefix}-cover-image-url">URL da imagem de capa</label>
           <input class="input" id="${editFieldPrefix}-cover-image-url" type="url" name="coverImageUrl" maxlength="500" value="${escapeAttribute(eventData.coverImageUrl)}" />
+        </div>
+        <div class="field field-flat">
+          <label for="${editFieldPrefix}-gallery-image-urls">Galeria de fotos</label>
+          <textarea class="textarea" id="${editFieldPrefix}-gallery-image-urls" name="galleryImageUrls">${escapeHtml(galleryUrlsToText(eventData.galleryImageUrls))}</textarea>
         </div>
         <div class="row row-tight fit-content">
           <button class="btn btn-primary" type="submit">${UI_TEXT.common.save}</button>
@@ -208,6 +221,9 @@ function renderEvents() {
       editForm.hidden = nextStateHidden;
       editButton.classList.toggle("is-active", !nextStateHidden);
       editButton.setAttribute("aria-pressed", String(!nextStateHidden));
+      if (!nextStateHidden) {
+        scrollEditFormIntoViewOnMobile(editForm);
+      }
       editButton.setAttribute("aria-label", nextStateHidden ? "Editar evento" : "Fechar edição");
       editButton.setAttribute("title", nextStateHidden ? "Editar evento" : "Fechar edição");
     });
@@ -298,12 +314,15 @@ function renderEventDetails(eventData) {
     ["Cerimônia", eventData.ceremonyInfo],
     ["Traje", eventData.dressCode],
     ["Mensagem do convite", eventData.invitationMessage],
+    ["Comida e bebida", eventData.foodInfo],
+    ["Programação", eventData.scheduleInfo],
     ["Fuso", getTimeZoneLabel(getEventTimeZoneId(eventData))]
   ].filter(([, value]) => String(value || "").trim());
 
   const linkRows = [
     ["Mapa", eventData.locationMapsUrl],
-    ["Imagem de capa", eventData.coverImageUrl]
+    ["Imagem de capa", eventData.coverImageUrl],
+    ...galleryLinkRows(eventData.galleryImageUrls)
   ].filter(([, value]) => String(value || "").trim());
 
   if (!rows.length && !linkRows.length) return "";
@@ -347,9 +366,22 @@ function fillEventEditForm(editForm, eventData) {
   editForm.elements.ceremonyInfo.value = eventData.ceremonyInfo || "";
   editForm.elements.dressCode.value = eventData.dressCode || "";
   editForm.elements.invitationMessage.value = eventData.invitationMessage || "";
+  editForm.elements.foodInfo.value = eventData.foodInfo || "";
+  editForm.elements.scheduleInfo.value = eventData.scheduleInfo || "";
   editForm.elements.coverImageUrl.value = eventData.coverImageUrl || "";
+  editForm.elements.galleryImageUrls.value = galleryUrlsToText(eventData.galleryImageUrls);
   syncEditDateTimeBounds(editForm);
   validateEditDateTimeField(editForm);
+}
+
+function galleryUrlsToText(galleryImageUrls) {
+  return Array.isArray(galleryImageUrls) ? galleryImageUrls.join("\n") : "";
+}
+
+function galleryLinkRows(galleryImageUrls) {
+  if (!Array.isArray(galleryImageUrls)) return [];
+
+  return galleryImageUrls.map((url, index) => [`Foto ${index + 1}`, url]);
 }
 
 function applyFocusFromQueryIfNeeded() {
@@ -368,6 +400,21 @@ function applyFocusFromQueryIfNeeded() {
   }, 2600);
 
   return true;
+}
+
+function scrollEditFormIntoViewOnMobile(editForm) {
+  if (!window.matchMedia(MOBILE_EDIT_SCROLL_QUERY).matches) return;
+
+  window.requestAnimationFrame(() => {
+    const shellNav = document.querySelector(".shell-nav");
+    const topOffset = (shellNav?.getBoundingClientRect().height || 0) + 12;
+    const targetTop = editForm.getBoundingClientRect().top + window.scrollY - topOffset;
+
+    window.scrollTo({
+      top: Math.max(targetTop, 0),
+      behavior: "smooth"
+    });
+  });
 }
 
 async function copyToClipboard(text) {

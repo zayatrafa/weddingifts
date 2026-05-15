@@ -119,7 +119,10 @@ public abstract class IntegrationTestBase
         string? ceremonyInfo = null,
         string? dressCode = null,
         string? coverImageUrl = null,
-        string? invitationMessage = null)
+        string? invitationMessage = null,
+        string? foodInfo = null,
+        string? scheduleInfo = null,
+        List<string>? galleryImageUrls = null)
     {
         var normalizedTimeZoneId = timeZoneId ?? "America/Sao_Paulo";
         var normalizedEventDateTime = eventDateTime ?? CreateEventDateTimeOffset(
@@ -138,7 +141,10 @@ public abstract class IntegrationTestBase
             ceremonyInfo = ceremonyInfo ?? "Cerimonia no salao principal as 18h.",
             dressCode = dressCode ?? "Esporte fino",
             coverImageUrl = coverImageUrl ?? "https://images.example.com/capa.jpg",
-            invitationMessage
+            invitationMessage,
+            foodInfo,
+            scheduleInfo,
+            galleryImageUrls
         }, token);
 
         var body = await response.Content.ReadAsStringAsync();
@@ -326,6 +332,9 @@ public sealed class EventResponseContract
     public string DressCode { get; set; } = string.Empty;
     public string CoverImageUrl { get; set; } = string.Empty;
     public string InvitationMessage { get; set; } = string.Empty;
+    public string FoodInfo { get; set; } = string.Empty;
+    public string ScheduleInfo { get; set; } = string.Empty;
+    public List<string> GalleryImageUrls { get; set; } = [];
     public string Slug { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public List<object> Gifts { get; set; } = [];

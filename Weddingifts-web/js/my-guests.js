@@ -21,6 +21,8 @@ const createGuestForm = document.getElementById("create-guest-form");
 const eventSelect = document.getElementById("event-select");
 const guestsList = document.getElementById("guests-list");
 const status = ensureStatusElement();
+const guestSearchInput = document.getElementById("guest-search-input");
+const guestFilterApplyButton = document.getElementById("guest-filter-apply-button");
 const guestCpfInput = document.getElementById("guest-cpf-input");
 const guestNameInput = document.getElementById("guest-name-input");
 const guestEmailInput = document.getElementById("guest-email-input");
@@ -36,7 +38,7 @@ const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 
 const ICON_EDIT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg></span>';
 const ICON_RESERVATION = '<span class="guest-reservation-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
 
-const state = { events: [], selectedEventId: null, guests: [], reservations: [], editingGuestId: null };
+const state = { events: [], selectedEventId: null, guests: [], reservations: [], editingGuestId: null, guestQuery: "" };
 
 initUserDropdown({
   session,
@@ -81,6 +83,18 @@ guestMaxExtraGuestsInput.addEventListener("input", () => {
 eventSelect.addEventListener("input", () => {
   clearFieldError(eventSelect);
 });
+
+guestSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  applyGuestFilter();
+});
+guestSearchInput?.addEventListener("input", () => {
+  if (normalizeSearchText(guestSearchInput.value) || !state.guestQuery) return;
+  state.guestQuery = "";
+  renderGuests();
+});
+guestFilterApplyButton?.addEventListener("click", applyGuestFilter);
 
 guestCpfInput.addEventListener("blur", autoFillGuestByCpf);
 
@@ -234,6 +248,11 @@ function syncGuestEditUi() {
   guestCancelEditButton.style.display = isEditing ? "" : "none";
 }
 
+function applyGuestFilter() {
+  state.guestQuery = normalizeSearchText(guestSearchInput?.value);
+  renderGuests();
+}
+
 async function deleteGuest(guest) {
   if (!state.selectedEventId) return;
 
@@ -347,12 +366,19 @@ function renderGuests() {
     return;
   }
 
+  const guests = filteredGuests();
+  if (!guests.length) {
+    guestsList.innerHTML = `<div class="center-empty">${UI_TEXT.guests.emptyFilter}</div>`;
+    return;
+  }
+
   guestsList.innerHTML = "";
 
-  state.guests.forEach((guest) => {
+  guests.forEach((guest) => {
     const item = document.createElement("article");
     item.className = "gift-item guest-card";
     const reservationSummary = buildGuestReservationSummary(guest.cpf);
+    const rsvpStatus = guestRsvpStatusBadge(guest.rsvpStatus);
 
     item.innerHTML = `
       <div class="gift-head gift-head-actions">
@@ -361,7 +387,7 @@ function renderGuests() {
           <p class="meta">CPF: ${escapeHtml(formatCpfInput(guest.cpf))}</p>
         </div>
         <div class="gift-card-side-actions">
-          <span class="tag tag-ok">Convidado</span>
+          <span class="tag ${rsvpStatus.className}">${escapeHtml(rsvpStatus.label)}</span>
           <button class="icon-button danger guest-delete" type="button" title="Excluir convidado" aria-label="Excluir convidado">${trashIconSvg()}</button>
         </div>
       </div>
@@ -385,6 +411,31 @@ function renderGuests() {
     });
 
     guestsList.appendChild(item);
+  });
+}
+
+function guestRsvpStatusBadge(status) {
+  switch (normalizeRsvpStatus(status)) {
+    case "accepted":
+      return { label: "Confirmado", className: "tag-ok" };
+    case "declined":
+      return { label: "Não comparecerá", className: "tag-muted" };
+    default:
+      return { label: "Pendente", className: "tag-warning" };
+  }
+}
+
+function filteredGuests() {
+  const query = state.guestQuery;
+  if (!query) return state.guests;
+
+  const queryDigits = digitsOnly(query);
+
+  return state.guests.filter((guest) => {
+    const guestName = normalizeSearchText(guest.name);
+    const guestCpf = digitsOnly(guest.cpf);
+
+    return guestName.includes(query) || (queryDigits && guestCpf.includes(queryDigits));
   });
 }
 
@@ -414,6 +465,18 @@ function buildGuestReservationSummary(cpf) {
 
 function digitsOnly(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function normalizeRsvpStatus(value) {
+  return String(value || "pending").trim().toLowerCase();
 }
 
 function formatCpfInput(value) {

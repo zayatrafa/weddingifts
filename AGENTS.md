@@ -63,10 +63,12 @@ Never trust outdated documentation over code.
 Use normal Codex behavior for this project.
 
 - Do not use `tlc-spec-driven`, SDD, or spec-driven workflow files unless the user explicitly asks for that workflow in the current request.
+- Do not run automated tests unless the user explicitly asks for tests in the current request. This applies across the whole project and future contexts: no `dotnet test`, frontend smoke tests, Playwright tests, npm test scripts, CI-style suites, or equivalent automated test runs by default.
 - For clear small tasks, make the focused change directly after a quick inspection.
 - Use deeper analysis when the change touches sensitive flows, shared contracts, data models, authentication, routing, or unclear behavior.
 - Avoid unrelated refactors, broad rewrites, and framework changes unless explicitly requested.
 - If something important is not confirmed in code, say so briefly instead of guessing.
+- When tests would normally be appropriate, skip them and mention that they were not run because tests are opt-in for this project.
 
 ---
 
@@ -80,7 +82,7 @@ Keep the existing ASP.NET Core architecture:
 - Preserve auth boundaries and ProblemDetails-style errors.
 - Avoid leaking sensitive fields.
 
-Run `dotnet build` and relevant tests when backend changes are functional, contractual, risky, or touch critical flows. For documentation-only or obviously trivial changes, tests can be skipped with a short note.
+Do not run backend tests unless the user explicitly asks. If a backend change is functional, contractual, risky, or touches critical flows, report the unrun test/build recommendation instead of running the suite by default.
 
 ---
 
@@ -112,7 +114,7 @@ Be careful with:
 9. Redirect flows
 10. Mobile navigation
 
-When a change touches these flows, validate more carefully and mention any remaining risk.
+When a change touches these flows, inspect more carefully and mention any remaining risk. Automated tests remain opt-in and should only run when explicitly requested.
 
 ---
 

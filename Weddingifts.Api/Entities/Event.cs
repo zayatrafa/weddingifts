@@ -30,6 +30,12 @@ public class Event
 
     public string InvitationMessage { get; set; } = string.Empty;
 
+    public string FoodInfo { get; set; } = string.Empty;
+
+    public string ScheduleInfo { get; set; } = string.Empty;
+
+    public string GalleryImageUrls { get; set; } = string.Empty;
+
     public string Slug { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

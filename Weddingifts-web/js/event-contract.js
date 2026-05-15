@@ -9,7 +9,10 @@ export const EVENT_FIELD_LIMITS = {
   url: 500,
   ceremonyInfo: 500,
   dressCode: 160,
-  invitationMessage: 500
+  invitationMessage: 500,
+  foodInfo: 800,
+  scheduleInfo: 800,
+  galleryImageUrls: 12
 };
 
 export const SUPPORTED_EVENT_TIME_ZONES = [
@@ -59,7 +62,10 @@ export function readEnrichedEventFormValues(elements) {
     ceremonyInfo: elements.ceremonyInfo.value.trim(),
     dressCode: elements.dressCode.value.trim(),
     invitationMessage: elements.invitationMessage?.value.trim() || "",
-    coverImageUrl: elements.coverImageUrl.value.trim()
+    coverImageUrl: elements.coverImageUrl.value.trim(),
+    foodInfo: elements.foodInfo?.value.trim() || "",
+    scheduleInfo: elements.scheduleInfo?.value.trim() || "",
+    galleryImageUrls: parseGalleryImageUrls(elements.galleryImageUrls?.value || "")
   };
 }
 
@@ -75,7 +81,10 @@ export function buildEnrichedEventPayload(values) {
     ceremonyInfo: values.ceremonyInfo,
     dressCode: values.dressCode,
     invitationMessage: values.invitationMessage,
-    coverImageUrl: values.coverImageUrl
+    coverImageUrl: values.coverImageUrl,
+    foodInfo: values.foodInfo,
+    scheduleInfo: values.scheduleInfo,
+    galleryImageUrls: values.galleryImageUrls
   };
 }
 
@@ -104,7 +113,9 @@ export function getEnrichedEventValidationError(values) {
     ["locationAddress", EVENT_FIELD_LIMITS.locationAddress, "O endereco do local"],
     ["ceremonyInfo", EVENT_FIELD_LIMITS.ceremonyInfo, "As informações da cerimônia"],
     ["dressCode", EVENT_FIELD_LIMITS.dressCode, "O traje"],
-    ["invitationMessage", EVENT_FIELD_LIMITS.invitationMessage, "A mensagem do convite"]
+    ["invitationMessage", EVENT_FIELD_LIMITS.invitationMessage, "A mensagem do convite"],
+    ["foodInfo", EVENT_FIELD_LIMITS.foodInfo, "As informações de comida e bebida"],
+    ["scheduleInfo", EVENT_FIELD_LIMITS.scheduleInfo, "A programação do evento"]
   ].find(([key, maxLength]) => String(values[key] || "").length > maxLength);
 
   if (lengthValidation) {
@@ -135,7 +146,23 @@ export function getEnrichedEventValidationError(values) {
     return `Informe uma URL válida para ${invalidUrl[1]}.`;
   }
 
+  if (values.galleryImageUrls.length > EVENT_FIELD_LIMITS.galleryImageUrls) {
+    return `A galeria deve ter no máximo ${EVENT_FIELD_LIMITS.galleryImageUrls} imagens.`;
+  }
+
+  const invalidGalleryUrl = values.galleryImageUrls.find((url) => !isHttpUrl(url));
+  if (invalidGalleryUrl) {
+    return "Informe URLs válidas para as imagens da galeria.";
+  }
+
   return "";
+}
+
+export function parseGalleryImageUrls(value) {
+  return String(value || "")
+    .split(/\r?\n/u)
+    .map((url) => url.trim())
+    .filter(Boolean);
 }
 
 export function isSupportedEventTimeZone(timeZoneId) {

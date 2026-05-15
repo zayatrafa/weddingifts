@@ -16,6 +16,10 @@ public sealed class EventService
     private const int MaxCeremonyInfoLength = 500;
     private const int MaxDressCodeLength = 160;
     private const int MaxInvitationMessageLength = 500;
+    private const int MaxFoodInfoLength = 800;
+    private const int MaxScheduleInfoLength = 800;
+    private const int MaxGalleryImageUrls = 12;
+    private const int MaxGalleryImageUrlsStorageLength = 6000;
     private const int MaxSlugLength = 24;
 
     private readonly AppDbContext _context;
@@ -42,6 +46,15 @@ public sealed class EventService
             request.InvitationMessage,
             "mensagem do convite",
             MaxInvitationMessageLength);
+        var normalizedFoodInfo = NormalizeOptionalText(
+            request.FoodInfo,
+            "informações sobre comida e bebida",
+            MaxFoodInfoLength);
+        var normalizedScheduleInfo = NormalizeOptionalText(
+            request.ScheduleInfo,
+            "programação do evento",
+            MaxScheduleInfoLength);
+        var normalizedGalleryImageUrls = NormalizeGalleryImageUrls(request.GalleryImageUrls);
 
         var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
         if (!userExists)
@@ -64,6 +77,9 @@ public sealed class EventService
             DressCode = eventData.DressCode,
             CoverImageUrl = eventData.CoverImageUrl,
             InvitationMessage = normalizedInvitationMessage,
+            FoodInfo = normalizedFoodInfo,
+            ScheduleInfo = normalizedScheduleInfo,
+            GalleryImageUrls = normalizedGalleryImageUrls,
             Slug = await GenerateUniqueSlug()
         };
 
@@ -94,6 +110,21 @@ public sealed class EventService
                 request.InvitationMessage,
                 "mensagem do convite",
                 MaxInvitationMessageLength);
+        var normalizedFoodInfo = request.FoodInfo is null
+            ? null
+            : NormalizeOptionalText(
+                request.FoodInfo,
+                "informações sobre comida e bebida",
+                MaxFoodInfoLength);
+        var normalizedScheduleInfo = request.ScheduleInfo is null
+            ? null
+            : NormalizeOptionalText(
+                request.ScheduleInfo,
+                "programação do evento",
+                MaxScheduleInfoLength);
+        var normalizedGalleryImageUrls = request.GalleryImageUrls is null
+            ? null
+            : NormalizeGalleryImageUrls(request.GalleryImageUrls);
 
         var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == eventId && e.UserId == userId);
         if (ev is null)
@@ -134,6 +165,18 @@ public sealed class EventService
         if (normalizedInvitationMessage is not null)
         {
             ev.InvitationMessage = normalizedInvitationMessage;
+        }
+        if (normalizedFoodInfo is not null)
+        {
+            ev.FoodInfo = normalizedFoodInfo;
+        }
+        if (normalizedScheduleInfo is not null)
+        {
+            ev.ScheduleInfo = normalizedScheduleInfo;
+        }
+        if (normalizedGalleryImageUrls is not null)
+        {
+            ev.GalleryImageUrls = normalizedGalleryImageUrls;
         }
 
         if (hadTemporalChange)
@@ -395,6 +438,41 @@ public sealed class EventService
             return string.Empty;
 
         return NormalizeRequiredUrl(value, fieldLabel);
+    }
+
+    private static string NormalizeGalleryImageUrls(IReadOnlyCollection<string>? values)
+    {
+        if (values is null || values.Count == 0)
+            return string.Empty;
+
+        var normalizedUrls = values
+            .Select(value => value?.Trim() ?? string.Empty)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToList();
+
+        if (normalizedUrls.Count == 0)
+            return string.Empty;
+
+        if (normalizedUrls.Count > MaxGalleryImageUrls)
+            throw new DomainValidationException($"A galeria deve ter no máximo {MaxGalleryImageUrls} imagens.");
+
+        foreach (var normalizedUrl in normalizedUrls)
+        {
+            if (normalizedUrl.Length > MaxUrlLength)
+                throw new DomainValidationException("URL de imagem da galeria excede o tamanho máximo permitido.");
+
+            if (!Uri.TryCreate(normalizedUrl, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new DomainValidationException("A galeria deve conter apenas URLs http ou https válidas.");
+            }
+        }
+
+        var serialized = string.Join('\n', normalizedUrls);
+        if (serialized.Length > MaxGalleryImageUrlsStorageLength)
+            throw new DomainValidationException("A galeria excede o tamanho máximo permitido.");
+
+        return serialized;
     }
 
     private sealed record EventData(

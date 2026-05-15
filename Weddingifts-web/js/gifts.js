@@ -18,6 +18,7 @@ const MAX_SLUG_LENGTH = 24;
 const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
 const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
 const ICON_UNDO = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>';
+const ICON_TRASH = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4l1-2zm-1 6h2v10h1V9h2v10h1V9h2v10.5A1.5 1.5 0 0 1 14.5 21h-5A1.5 1.5 0 0 1 8 19.5V9z" fill="currentColor"/></svg></span>';
 
 const state = {
   event: null,
@@ -65,6 +66,13 @@ guestCpfInput.addEventListener("input", () => {
   guestCpfInput.value = formatCpfInput(guestCpfInput.value);
   clearFieldError(guestCpfInput);
 });
+guestCpfInput.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+
+  event.preventDefault();
+  if (identifyButton.disabled) return;
+  acceptGuestCpf(digitsOnly(guestCpfInput.value));
+});
 
 identifyButton.addEventListener("click", () => acceptGuestCpf(digitsOnly(guestCpfInput.value)));
 
@@ -93,6 +101,7 @@ giftSortSelect.addEventListener("change", () => {
 
 giftCartMobileBar?.addEventListener("click", openGiftCartDrawer);
 giftCartMobileOverlay?.addEventListener("click", closeGiftCartDrawer);
+giftCartPanel?.addEventListener("click", handleGiftCartPanelClick);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.cartDrawerOpen) {
@@ -205,7 +214,7 @@ function renderCpfGate() {
   experience.hidden = true;
   orderSuccess.hidden = true;
   identifyButton.disabled = false;
-  setStatus(status, "status-info", "Informe seu CPF para acessar o carrinho de presentes.");
+  setStatus(status, "status-info", "Informe seu CPF para ver a lista e escolher seu presente.");
 }
 
 async function acceptGuestCpf(guestCpf, options = {}) {
@@ -245,7 +254,7 @@ async function renderGiftExperience() {
 
   await refreshGifts();
   renderGiftList();
-  setStatus(status, "status-success", "Presentes carregados. Monte seu carrinho e finalize o pedido.");
+  setStatus(status, "status-success", "Presentes carregados. Escolha com carinho e registre seus presentes.");
 }
 
 function renderGiftList() {
@@ -286,15 +295,21 @@ function renderGiftList() {
     giftDescription.textContent = gift.description || UI_TEXT.common.noDescription;
     giftBadge.textContent = badge.label;
     giftBadge.classList.add("tag", badge.className);
-    giftMeta.textContent = `${available} disponíveis | ${reserved} reservados${cartQuantity ? ` | No carrinho: ${cartQuantity}` : ""}`;
+    giftMeta.textContent = `${giftAvailabilityQuantityLabel(available)} | ${giftChoiceQuantityLabel(reserved)}${cartQuantity ? ` | Escolhidos: ${cartQuantity}` : ""}`;
 
     reserveButton.disabled = busy || available === 0;
-    reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}${busy ? "Aguarde..." : "Adicionar ao carrinho"}`;
-    reserveButton.addEventListener("click", () => reserveGift(gift.id));
+    reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}${busy ? "Registrando..." : "Presentear com este item"}`;
+    reserveButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      reserveGift(gift.id);
+    });
 
     unreserveButton.disabled = busy || cartQuantity === 0;
-    unreserveButton.innerHTML = `${ICON_UNDO}Remover do carrinho`;
-    unreserveButton.addEventListener("click", () => unreserveGift(gift.id));
+    unreserveButton.innerHTML = `${ICON_UNDO}Retirar escolha`;
+    unreserveButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      unreserveGift(gift.id);
+    });
 
     giftGrid.appendChild(fragment);
   });
@@ -315,40 +330,67 @@ function renderGiftCart() {
           <strong>${escapeHtml(gift.name)}</strong>
           <span>${giftCartQuantityLabel(quantity)} | ${escapeHtml(formatCurrency(Number(gift.price || 0) * quantity))}</span>
         </div>
-        <button class="btn btn-secondary btn-sm" type="button" data-cart-remove-gift-id="${escapeAttribute(gift.id)}">Remover</button>
+        <button class="btn btn-secondary btn-sm gift-selection-remove" type="button" data-cart-remove-gift-id="${escapeAttribute(gift.id)}" aria-label="Retirar ${escapeAttribute(gift.name)} dos presentes escolhidos" title="Retirar presente" ${state.actionGiftId === gift.id ? "disabled" : ""}>
+          ${state.actionGiftId === gift.id ? ICON_SPINNER : ICON_TRASH}
+          <span class="gift-selection-remove-label">${state.actionGiftId === gift.id ? "Retirando..." : "Retirar"}</span>
+        </button>
       </li>
     `).join("")
-    : '<li class="gift-cart-empty">Seu carrinho está vazio. Escolha um presente para finalizar o pedido.</li>';
+    : '<li class="gift-cart-empty">Nenhum presente escolhido ainda. Escolha um presente para registrar seu carinho.</li>';
 
   giftCartPanel.innerHTML = `
     <div class="gift-cart-head">
       <div>
-        <p class="kicker">Carrinho de presentes</p>
-        <h3>Presentes escolhidos</h3>
+        <p class="kicker">Presentes escolhidos</p>
+        <h3>Sua seleção para os noivos</h3>
       </div>
-      <button class="gift-cart-close" type="button" aria-label="Fechar carrinho" data-cart-close>
+      <button class="gift-cart-close" type="button" aria-label="Fechar seleção de presentes" data-cart-close>
         <span aria-hidden="true">x</span>
       </button>
       <span class="tag tag-ok">${escapeHtml(giftCartQuantityLabel(totalQuantity))}</span>
     </div>
     <ul class="gift-cart-list">${itemMarkup}</ul>
     <div class="gift-cart-total">
-      <span>Total reservado</span>
+      <span>Total dos presentes</span>
       <strong>${escapeHtml(formatCurrency(totalValue))}</strong>
     </div>
     <div class="gift-cart-actions">
-      <button id="gift-checkout-button" class="btn btn-primary" type="button" ${items.length ? "" : "disabled"}>Finalizar pedido</button>
+      <button id="gift-checkout-button" class="btn btn-primary" type="button" ${items.length ? "" : "disabled"}>Registrar presentes</button>
     </div>
   `;
 
-  giftCartPanel.querySelectorAll("[data-cart-remove-gift-id]").forEach((button) => {
-    button.addEventListener("click", () => unreserveGift(Number(button.dataset.cartRemoveGiftId)));
-  });
-
-  giftCartPanel.querySelector("[data-cart-close]")?.addEventListener("click", closeGiftCartDrawer);
-  giftCartPanel.querySelector("#gift-checkout-button")?.addEventListener("click", finalizeGiftOrder);
   renderGiftCartMobileBar(summary);
   syncGiftCartDrawerState(summary);
+}
+
+function handleGiftCartPanelClick(event) {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+
+  const removeButton = target.closest("[data-cart-remove-gift-id]");
+  if (removeButton && giftCartPanel.contains(removeButton)) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const giftId = Number(removeButton.dataset.cartRemoveGiftId);
+    if (Number.isFinite(giftId)) {
+      unreserveGift(giftId);
+    }
+    return;
+  }
+
+  const closeButton = target.closest("[data-cart-close]");
+  if (closeButton && giftCartPanel.contains(closeButton)) {
+    event.preventDefault();
+    closeGiftCartDrawer();
+    return;
+  }
+
+  const checkoutButton = target.closest("#gift-checkout-button");
+  if (checkoutButton && giftCartPanel.contains(checkoutButton)) {
+    event.preventDefault();
+    finalizeGiftOrder();
+  }
 }
 
 async function refreshGifts() {
@@ -380,7 +422,7 @@ async function reserveGift(giftId) {
     adjustGiftCartQuantity(giftId, 1);
     await refreshGifts();
     renderGiftList();
-    setStatus(status, "status-success", "Presente adicionado ao carrinho.");
+    setStatus(status, "status-success", "Presente escolhido.");
   } catch (error) {
     setStatus(status, "status-error", `${UI_TEXT.publicEvent.reserveError}: ${error.message}`);
   } finally {
@@ -411,7 +453,7 @@ async function unreserveGift(giftId) {
     adjustGiftCartQuantity(giftId, -1);
     await refreshGifts();
     renderGiftList();
-    setStatus(status, "status-success", "Presente removido do carrinho.");
+    setStatus(status, "status-success", "Presente retirado.");
   } catch (error) {
     setStatus(status, "status-error", `${UI_TEXT.publicEvent.unreserveError}: ${error.message}`);
   } finally {
@@ -423,7 +465,7 @@ async function unreserveGift(giftId) {
 function finalizeGiftOrder() {
   const items = getGiftCartItems();
   if (!items.length) {
-    setStatus(status, "status-error", "Escolha ao menos um presente para finalizar o pedido.");
+    setStatus(status, "status-error", "Escolha ao menos um presente para registrar seu carinho.");
     return;
   }
 
@@ -432,7 +474,7 @@ function finalizeGiftOrder() {
   guestIdentification.hidden = true;
   experience.hidden = true;
   orderSuccess.hidden = false;
-  setStatus(status, "status-success", "Pedido finalizado com sucesso.");
+  setStatus(status, "status-success", "Presentes registrados com sucesso.");
 }
 
 function readPublicGiftContext() {
@@ -543,7 +585,7 @@ function renderGiftCartMobileBar(summary) {
       <strong>${escapeHtml(giftCartQuantityLabel(summary.totalQuantity))}</strong>
       <span>${escapeHtml(formatCurrency(summary.totalValue))}</span>
     </span>
-    <span class="gift-cart-mobile-action">Ver carrinho</span>
+    <span class="gift-cart-mobile-action">Ver presentes</span>
   `;
 }
 
@@ -588,9 +630,19 @@ function giftCartQuantityLabel(quantity) {
   return `${normalizedQuantity} ${normalizedQuantity === 1 ? "presente" : "presentes"}`;
 }
 
+function giftAvailabilityQuantityLabel(quantity) {
+  const normalizedQuantity = toNonNegativeInteger(quantity);
+  return `${normalizedQuantity} ${normalizedQuantity === 1 ? "disponível" : "disponíveis"}`;
+}
+
+function giftChoiceQuantityLabel(quantity) {
+  const normalizedQuantity = toNonNegativeInteger(quantity);
+  return `${normalizedQuantity} ${normalizedQuantity === 1 ? "escolhido" : "escolhidos"}`;
+}
+
 function badgeForGift(gift) {
   const available = availableUnits(gift);
-  if (available === 0) return { label: "Reservado", className: "tag-muted" };
+  if (available === 0) return { label: "Escolhido", className: "tag-muted" };
   if (available === 1) return { label: "Última unidade", className: "tag-warning" };
   return { label: "Disponível", className: "tag-ok" };
 }

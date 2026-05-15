@@ -33,6 +33,8 @@ const giftsList = document.getElementById("gifts-list");
 const reservationsList = document.getElementById("reservations-list");
 const status = document.getElementById("status");
 const selectedEventSummary = document.getElementById("selected-event-summary");
+const giftSearchInput = document.getElementById("gift-search-input");
+const giftFilterApplyButton = document.getElementById("gift-filter-apply-button");
 const giftNameInput = document.getElementById("gift-name-input");
 const giftDescriptionInput = document.getElementById("gift-description-input");
 const giftPriceInput = document.getElementById("gift-price-input");
@@ -47,7 +49,7 @@ const ICON_EDIT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 2
 
 createGiftForm.noValidate = true;
 
-const state = { events: [], selectedEventId: null, gifts: [], reservations: [], guests: [], editingGiftId: null };
+const state = { events: [], selectedEventId: null, gifts: [], reservations: [], guests: [], editingGiftId: null, giftQuery: "" };
 
 initUserDropdown({
   session,
@@ -67,6 +69,18 @@ eventSelect.addEventListener("change", async () => {
   renderSelectedEventSummary();
   await reloadSelectedEventData();
 });
+
+giftSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  applyGiftFilter();
+});
+giftSearchInput?.addEventListener("input", () => {
+  if (normalizeSearchText(giftSearchInput.value) || !state.giftQuery) return;
+  state.giftQuery = "";
+  renderGifts();
+});
+giftFilterApplyButton?.addEventListener("click", applyGiftFilter);
 
 giftPriceInput.addEventListener("input", () => {
   giftPriceInput.value = formatCurrencyInput(giftPriceInput.value);
@@ -237,6 +251,11 @@ function syncGiftEditUi() {
   giftCancelEditButton.style.display = isEditing ? "" : "none";
 }
 
+function applyGiftFilter() {
+  state.giftQuery = normalizeSearchText(giftSearchInput?.value);
+  renderGifts();
+}
+
 async function deleteGift(gift) {
   if (!state.selectedEventId) return;
 
@@ -367,9 +386,13 @@ function renderSelectedEventSummary() {
         ${renderSelectedEventDetail("Endereço", eventData.locationAddress)}
         ${renderSelectedEventDetail("Cerimônia", eventData.ceremonyInfo)}
         ${renderSelectedEventDetail("Traje", eventData.dressCode)}
+        ${renderSelectedEventDetail("Mensagem do convite", eventData.invitationMessage)}
+        ${renderSelectedEventDetail("Comida e bebida", eventData.foodInfo)}
+        ${renderSelectedEventDetail("Programação", eventData.scheduleInfo)}
         ${renderSelectedEventDetail("Fuso", getTimeZoneLabel(getEventTimeZoneId(eventData)))}
         ${renderSelectedEventLink("Mapa", eventData.locationMapsUrl)}
         ${renderSelectedEventLink("Imagem de capa", eventData.coverImageUrl)}
+        ${renderSelectedGalleryLinks(eventData.galleryImageUrls)}
       </dl>
     </div>
   `;
@@ -392,6 +415,14 @@ function renderSelectedEventLink(label, value) {
   return `<div><dt>${escapeHtml(label)}</dt><dd title="${safeValue}"><a href="${safeValue}" target="_blank" rel="noopener noreferrer" title="${safeValue}">${escapeHtml(displayValue)}</a></dd></div>`;
 }
 
+function renderSelectedGalleryLinks(galleryImageUrls) {
+  if (!Array.isArray(galleryImageUrls) || !galleryImageUrls.length) return "";
+
+  return galleryImageUrls
+    .map((url, index) => renderSelectedEventLink(`Foto ${index + 1}`, url))
+    .join("");
+}
+
 function renderGifts() {
   if (!state.selectedEventId) {
     giftsList.innerHTML = '<div class="center-empty">Selecione um evento para visualizar os presentes.</div>';
@@ -403,9 +434,15 @@ function renderGifts() {
     return;
   }
 
+  const gifts = filteredGifts();
+  if (!gifts.length) {
+    giftsList.innerHTML = `<div class="center-empty">${UI_TEXT.gifts.emptyFilter}</div>`;
+    return;
+  }
+
   giftsList.innerHTML = "";
 
-  state.gifts.forEach((gift) => {
+  gifts.forEach((gift) => {
     const item = document.createElement("article");
     item.className = "gift-item";
 
@@ -443,6 +480,13 @@ function renderGifts() {
 
     giftsList.appendChild(item);
   });
+}
+
+function filteredGifts() {
+  const query = state.giftQuery;
+  if (!query) return state.gifts;
+
+  return state.gifts.filter((gift) => normalizeSearchText(gift.name).includes(query));
 }
 
 function renderReservations() {
@@ -496,6 +540,14 @@ function findGuestNameByCpf(cpf) {
 
 function normalizeCpf(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function parseCurrencyToNumber(value) {

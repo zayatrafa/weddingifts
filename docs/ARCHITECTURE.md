@@ -17,6 +17,7 @@ Estado geral da arquitetura:
 
 - backend em camadas simples (`Controllers -> Services -> AppDbContext`)
 - frontend sem framework e sem build step
+- pagina publica do evento como hub aberto por `slug`, com RSVP e presentes como acoes independentes
 - autenticação via JWT para áreas privadas
 - reservas públicas por CPF convidado
 - backend de RSVP público por CPF convidado com acompanhantes e fuso por evento
@@ -239,6 +240,8 @@ Arquivos principais:
 
 ### 5.7 RSVP
 
+Observacao atual: o endpoint de conclusao do convite continua disponivel por compatibilidade, mas `event.html` nao depende mais dele para conduzir a experiencia publica.
+
 Responsabilidade:
 
 - expor leitura pública do RSVP por `slug` + CPF convidado
@@ -451,6 +454,7 @@ Privadas:
 
 - a navegação mobile global é injetada por `common.js`
 - o frontend consome a API diretamente, sem camada adicional
+- o contrato enriquecido de evento inclui comida/bebida, programacao e galeria por URLs externas
 - o fluxo privado de criação/listagem/edição de eventos já consome e exibe o contrato enriquecido de evento
 - a página pública do evento já exibe dados enriquecidos, consome o RSVP público por CPF e conclui o convite antes de encaminhar para presentes
 - a página pública de presentes (`gifts.html`) concentra busca, filtros, carrinho, reserva/cancelamento por CPF e retorno ao convite

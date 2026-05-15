@@ -51,6 +51,9 @@ Fonte principal:
 Regras confirmadas:
 
 - evento precisa de nome
+- `foodInfo`, `scheduleInfo` e `galleryImageUrls` sao campos publicos opcionais do evento
+- `foodInfo` e `scheduleInfo` tem maximo de 800 caracteres cada
+- `galleryImageUrls` aceita no maximo 12 URLs externas `http` ou `https`, com ate 500 caracteres por URL
 - nome do evento tem máximo de 120 caracteres
 - no fluxo legado, `eventDate` continua aceito e é tratado como data local do evento
 - no fluxo enriquecido, `hostNames`, `eventDateTime`, `timeZoneId`, `locationName`, `locationAddress`, `locationMapsUrl`, `ceremonyInfo`, `dressCode` e `coverImageUrl` são obrigatórios
@@ -101,6 +104,8 @@ Regras confirmadas:
 - RSVP do convidado principal usa `pending | accepted | declined`
 - o contrato público de escrita aceita apenas `accepted` e `declined`
 - `GET /api/events/{slug}/rsvp` exige `guestCpf` convidado para o evento
+- a pagina publica do evento mostra as informacoes cadastradas antes do CPF; CPF e exigido apenas para RSVP e reserva de presentes
+- `POST /api/events/{slug}/invitation-flow/complete` continua disponivel por compatibilidade, mas a UX publica atual nao depende mais da conclusao do convite
 - `POST /api/events/{slug}/rsvp` exige convidado em `pending`
 - `PUT /api/events/{slug}/rsvp` exige convidado já respondido
 - `POST /api/events/{slug}/invitation-flow/complete` conclui o convite após RSVP aceito ou recusado

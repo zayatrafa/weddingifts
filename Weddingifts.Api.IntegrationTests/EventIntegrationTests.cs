@@ -37,6 +37,9 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.Equal("Casamento Primavera", payload.HostNames);
         Assert.Equal("America/Sao_Paulo", payload.TimeZoneId);
         Assert.Equal(string.Empty, payload.InvitationMessage);
+        Assert.Equal(string.Empty, payload.FoodInfo);
+        Assert.Equal(string.Empty, payload.ScheduleInfo);
+        Assert.Empty(payload.GalleryImageUrls);
         Assert.False(string.IsNullOrWhiteSpace(payload.Slug));
         Assert.Empty(payload.Gifts);
         Assert.Equal(0, payload.GuestCount);
@@ -169,7 +172,14 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
             locationMapsUrl = "https://maps.example.com/solar-das-aguas",
             ceremonyInfo = "Cerimonia ao por do sol.",
             dressCode = "Social",
-            coverImageUrl = "https://images.example.com/casamento-enriquecido.jpg"
+            coverImageUrl = "https://images.example.com/casamento-enriquecido.jpg",
+            foodInfo = "Jantar, sobremesas e bebidas sem alcool.",
+            scheduleInfo = "Recepcao as 19h30 e pista de danca as 22h.",
+            galleryImageUrls = new[]
+            {
+                "https://images.example.com/galeria/entrada.jpg",
+                "https://images.example.com/galeria/salao.jpg"
+            }
         }, session.Token);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -187,6 +197,45 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.Equal("Cerimonia ao por do sol.", payload.CeremonyInfo);
         Assert.Equal("Social", payload.DressCode);
         Assert.Equal("https://images.example.com/casamento-enriquecido.jpg", payload.CoverImageUrl);
+        Assert.Equal("Jantar, sobremesas e bebidas sem alcool.", payload.FoodInfo);
+        Assert.Equal("Recepcao as 19h30 e pista de danca as 22h.", payload.ScheduleInfo);
+        Assert.Equal(new[]
+        {
+            "https://images.example.com/galeria/entrada.jpg",
+            "https://images.example.com/galeria/salao.jpg"
+        }, payload.GalleryImageUrls);
+    }
+
+    [Fact]
+    public async Task CreateEvent_ShouldReturnBadRequest_WhenGalleryImageUrlIsInvalid()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventDateTime = CreateEventDateTimeOffset(
+            "America/Sao_Paulo",
+            new DateTime(2030, 9, 12, 17, 0, 0, DateTimeKind.Unspecified));
+
+        var response = await PostAuthorizedJsonAsync("/api/events", new
+        {
+            name = "Casamento Galeria Invalida",
+            hostNames = "Clara e Daniel",
+            eventDateTime,
+            timeZoneId = "America/Sao_Paulo",
+            locationName = "Casa Jardim",
+            locationAddress = "Rua Central, 100",
+            locationMapsUrl = "https://maps.example.com/casa-jardim",
+            ceremonyInfo = "Recepcao no jardim.",
+            dressCode = "Passeio completo",
+            galleryImageUrls = new[] { "ftp://images.example.com/foto.jpg" }
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<ProblemDetails>(JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal("Erro de valida\u00E7\u00E3o", payload.Title);
+        Assert.Contains("galeria", payload.Detail, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -244,7 +293,10 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
             locationMapsUrl = createdEvent.LocationMapsUrl,
             ceremonyInfo = createdEvent.CeremonyInfo,
             dressCode = createdEvent.DressCode,
-            coverImageUrl = ""
+            coverImageUrl = "",
+            foodInfo = "Buffet atualizado.",
+            scheduleInfo = "Cerimonia e recepcao no mesmo espaco.",
+            galleryImageUrls = new[] { "https://images.example.com/foto-atualizada.jpg" }
         }, session.Token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -252,6 +304,9 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
         Assert.NotNull(payload);
         Assert.Equal(string.Empty, payload.CoverImageUrl);
+        Assert.Equal("Buffet atualizado.", payload.FoodInfo);
+        Assert.Equal("Cerimonia e recepcao no mesmo espaco.", payload.ScheduleInfo);
+        Assert.Equal(new[] { "https://images.example.com/foto-atualizada.jpg" }, payload.GalleryImageUrls);
     }
 
     [Fact]

@@ -54,6 +54,16 @@ namespace Weddingifts.Api.Migrations
                     b.Property<DateTime>("EventDateTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FoodInfo")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("character varying(800)");
+
+                    b.Property<string>("GalleryImageUrls")
+                        .IsRequired()
+                        .HasMaxLength(6000)
+                        .HasColumnType("character varying(6000)");
+
                     b.Property<string>("HostNames")
                         .IsRequired()
                         .HasMaxLength(160)
@@ -87,6 +97,11 @@ namespace Weddingifts.Api.Migrations
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("ScheduleInfo")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("character varying(800)");
 
                     b.Property<string>("TimeZoneId")
                         .IsRequired()
