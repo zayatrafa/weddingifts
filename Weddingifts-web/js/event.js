@@ -19,6 +19,7 @@ const MAX_SLUG_LENGTH = 24;
 const MAX_RSVP_TEXT_LENGTH = 500;
 const MAX_COMPANION_NAME_LENGTH = 120;
 const PUBLIC_GIFT_CONTEXT_KEY = "wg_public_gift_context";
+const DEFAULT_EVENT_COVER_IMAGE_URL = "./assets/images/event-default-hero.webp";
 const UTC_MINUS_THREE_TIME_ZONES = new Set([
   "America/Sao_Paulo",
   "America/Belem",
@@ -99,12 +100,7 @@ function enhanceHeaderForLoggedUser(sessionData) {
   const navRight = document.querySelector(".shell-nav-right");
   if (!navRight) return;
 
-  navRight.innerHTML = `
-    <div class="shell-links">
-      <a href="./event.html" class="active">Evento público</a>
-    </div>
-    ${getUserMenuMarkup()}
-  `;
+  navRight.innerHTML = getUserMenuMarkup();
 
   initUserDropdown({
     session: sessionData,
@@ -207,10 +203,10 @@ function renderEventHub() {
     coverImage.hidden = false;
     hero.dataset.cover = "image";
   } else {
-    coverImage.removeAttribute("src");
-    coverImage.alt = "";
-    coverImage.hidden = true;
-    hero.dataset.cover = "fallback";
+    coverImage.src = DEFAULT_EVENT_COVER_IMAGE_URL;
+    coverImage.alt = "Imagem decorativa de casamento";
+    coverImage.hidden = false;
+    hero.dataset.cover = "default";
   }
 
   if (state.event.locationMapsUrl) {

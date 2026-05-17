@@ -30,12 +30,7 @@ function enhanceHeaderForLoggedUser() {
   const navRight = document.querySelector(".shell-nav-right");
   if (!navRight) return;
 
-  navRight.innerHTML = `
-    <div class="shell-links">
-      <a href="./event.html">Evento público</a>
-    </div>
-    ${getUserMenuMarkup()}
-  `;
+  navRight.innerHTML = getUserMenuMarkup();
 
   updateHeroCtasForLoggedUser();
   refreshMobileHeader();

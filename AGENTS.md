@@ -2,139 +2,160 @@
 
 ## Mission
 
-Maintain Weddingifts with the normal Codex workflow: inspect enough to understand the task, make focused changes, validate proportionally, and report the result clearly.
+Manter o Weddingifts com o workflow normal do Codex: inspecionar o suficiente para entender a tarefa, fazer mudanças focadas, validar proporcionalmente e reportar o resultado com clareza.
 
-Preserve working user flows and avoid unrelated rewrites.
+Preserve os fluxos de usuário que já funcionam e evite rewrites não relacionados.
 
 ---
 
-## Project Snapshot
+## Visão Do Projeto
 
-Weddingifts is a multi-page web product for event gift lists.
+Weddingifts é um produto web multipágina para listas de presentes de eventos.
 
-Current architecture:
+Arquitetura atual:
 
-- Frontend: HTML / CSS / Vanilla JavaScript
+- Frontend: HTML / CSS / JavaScript puro
 - Backend: ASP.NET Core Web API (.NET 8)
-- Database: PostgreSQL (EF Core)
-- Authentication: JWT Bearer
-- Tests: Integration tests
+- Banco: PostgreSQL (EF Core)
+- Autenticação: JWT Bearer
+- Testes: testes de integração
 
-Main areas:
+Áreas principais:
 
-- Public event pages
-- User registration/login
-- Private event management
-- Gift management
-- Guest management
-- Gift reservation flows
-
----
-
-## Repository Map
-
-Typical structure:
-
-- `/Weddingifts-web` -> frontend application
-- `/Weddingifts.Api` -> backend API
-- `/Weddingifts.Api.IntegrationTests` -> automated tests
-- `/docs` -> private local documentation
-- `/.github/workflows` -> CI pipelines
-- `/AGENTS.md` -> operational rules for AI agents
+- páginas públicas de evento
+- cadastro e login de usuário
+- gestão privada de eventos
+- gestão de presentes
+- gestão de convidados
+- fluxos de reserva de presentes
 
 ---
 
-## Source of Truth Priority
+## Mapa Do Repositório
 
-When information conflicts, use this order:
+Estrutura típica:
 
-1. Current codebase
-2. Runtime configs / environment behavior
-3. Versioned project files
-4. Private local docs in `/docs`
-5. Old notes / historical chats
-
-Never trust outdated documentation over code.
-
----
-
-## Default Codex Workflow
-
-Use normal Codex behavior for this project.
-
-- Do not use `tlc-spec-driven`, SDD, or spec-driven workflow files unless the user explicitly asks for that workflow in the current request.
-- Do not run automated tests unless the user explicitly asks for tests in the current request. This applies across the whole project and future contexts: no `dotnet test`, frontend smoke tests, Playwright tests, npm test scripts, CI-style suites, or equivalent automated test runs by default.
-- For clear small tasks, make the focused change directly after a quick inspection.
-- Use deeper analysis when the change touches sensitive flows, shared contracts, data models, authentication, routing, or unclear behavior.
-- Avoid unrelated refactors, broad rewrites, and framework changes unless explicitly requested.
-- If something important is not confirmed in code, say so briefly instead of guessing.
-- When tests would normally be appropriate, skip them and mention that they were not run because tests are opt-in for this project.
+- `/Weddingifts-web` -> aplicação frontend
+- `/Weddingifts.Api` -> API backend
+- `/Weddingifts.Api.IntegrationTests` -> testes automatizados
+- `/.specs` -> documentação ativa do projeto
+- `/.github/workflows` -> pipelines de CI
+- `/AGENTS.md` -> regras operacionais para agentes de IA
 
 ---
 
-## Backend Guidance
+## Prioridade De Fonte De Verdade
 
-Keep the existing ASP.NET Core architecture:
+Quando houver conflito de informação, use esta ordem:
 
-- Controllers should stay thin.
-- Business logic belongs in services.
-- Data access goes through DbContext / EF Core.
-- Preserve auth boundaries and ProblemDetails-style errors.
-- Avoid leaking sensitive fields.
+1. Código atual
+2. Configs de runtime / comportamento de ambiente
+3. Arquivos versionados do projeto
+4. Docs ativos em `/.specs`
+5. Material arquivado em `/.specs/archive`
+6. Notas antigas / chats históricos
 
-Do not run backend tests unless the user explicitly asks. If a backend change is functional, contractual, risky, or touches critical flows, report the unrun test/build recommendation instead of running the suite by default.
-
----
-
-## Frontend Guidance
-
-Keep the existing multi-page vanilla JS approach:
-
-- No React, Next.js, or build step unless explicitly requested.
-- Preserve PT-BR user-facing text style.
-- Keep loading, success, and error states clear.
-- Preserve current navigation and successful flows unless the task asks to change them.
-
-Check mobile impact when changing layout, visual behavior, forms, navigation, modals, or touch interactions.
+Nunca confie em documentação desatualizada acima do código.
 
 ---
 
-## Critical Flows
+## Workflow Padrão Do Codex
 
-Be careful with:
+Use `tlc-spec-driven` como workflow padrão deste projeto, com auto-sizing baseado na complexidade da tarefa.
 
-1. User registration
-2. Login / logout
-3. Session persistence
-4. Event creation, edit, and delete
-5. Gift CRUD
-6. Guest CRUD
-7. Public event page loading
-8. Reserve / cancel reservation
-9. Redirect flows
-10. Mobile navigation
-
-When a change touches these flows, inspect more carefully and mention any remaining risk. Automated tests remain opt-in and should only run when explicitly requested.
-
----
-
-## Documentation
-
-Private local docs in `/docs` are useful context, but do not require review for every task.
-
-Update docs only when the change actually alters architecture, public behavior, roadmap status, coding standards, mobile guidance, or a known issue.
-
-Do not recommend publishing private docs unless explicitly requested.
+- Quick Mode se aplica a tarefas descritas em uma frase, tocando no máximo 3 arquivos e sem decisão arquitetural.
+- Não force cerimônia completa de spec/design/tasks em trabalho pequeno. Use a menor profundidade TLC que mantenha a tarefa segura e clara.
+- A validação deve ser proporcional ao impacto da mudança. Trabalho trivial ou só de documentação usa validação leve; mudanças arriscadas em backend, auth, contrato, dados, rotas ou fluxos críticos de frontend devem usar validação mais forte compatível com `.specs/codebase/TESTING.md`.
+- Antes de rodar backend, testes de integração, smoke ou Playwright, verifique se o Docker está ativo e se o PostgreSQL/container necessário para a API está disponível. Se esse pré-requisito falhar, reporte a ausência e não rode smoke nem suíte Playwright.
+- Para tarefas pequenas e claras, faça a mudança focada diretamente após uma inspeção rápida.
+- Use análise mais profunda quando a mudança tocar fluxos sensíveis, contratos compartilhados, modelos de dados, autenticação, roteamento ou comportamento pouco claro.
+- Evite refactors não relacionados, rewrites amplos e mudanças de framework, salvo pedido explícito.
+- Se algo importante não estiver confirmado no código, diga isso brevemente em vez de chutar.
+- Se testes forem pulados, diga qual validação leve foi feita e por que esse nível foi escolhido.
+- Se uma tarefa que parecia simples crescer para mais de 3 arquivos, precisar de mais de 5 passos atômicos, exigir coleta substancial de contexto, provavelmente passar de cerca de 1 hora ou entrar em zona de alto contexto, reporte explicitamente esse aumento de complexidade e mude para a profundidade TLC adequada em vez de continuar tratando como tarefa simples.
+- Não use sub-agentes a menos que o usuário peça explicitamente trabalho delegado ou paralelo.
 
 ---
 
-## Task Closing
+## Diretrizes De Backend
 
-Default final responses should be short:
+Mantenha a arquitetura ASP.NET Core existente:
 
-- what changed
-- files changed
-- validation performed or skipped
-- relevant risks or unvalidated areas
+- Controllers devem permanecer finos.
+- A lógica de negócio pertence aos services.
+- O acesso a dados deve passar por DbContext / EF Core.
+- Preserve limites de auth e erros no estilo ProblemDetails.
+- Evite vazar campos sensíveis.
 
-Use a more detailed report only when the user asks for it or when the change is broad, risky, or spans multiple areas.
+Se uma mudança de backend for funcional, contratual, arriscada ou tocar fluxos críticos, use validação proporcional e siga `.specs/codebase/TESTING.md` para o gate adequado de build/teste.
+
+---
+
+## Diretrizes De Frontend
+
+Mantenha a abordagem multipágina atual em vanilla JS:
+
+- Sem React, Next.js ou build step, salvo pedido explícito.
+- Preserve o estilo de texto visível ao usuário em PT-BR.
+- Mantenha claros os estados de loading, sucesso e erro.
+- Preserve a navegação atual e os fluxos bem-sucedidos, salvo quando a tarefa pedir mudança.
+- Toda feature de frontend deve ser pensada para uso em navegador desktop e em navegador mobile.
+- Não trate desktop como padrão e mobile como adaptação posterior, nem o contrário.
+- Ao desenhar ou alterar uma feature web, considere desde o início responsividade, legibilidade, tocabilidade e navegação em ambos os contextos.
+
+Cheque impacto mobile ao mudar layout, comportamento visual, formulários, navegação, modais ou interações touch.
+
+---
+
+## Fluxos Críticos
+
+Tenha cuidado com:
+
+1. cadastro de usuário
+2. login / logout
+3. persistência de sessão
+4. criação, edição e exclusão de evento
+5. CRUD de presentes
+6. CRUD de convidados
+7. carregamento da página pública do evento
+8. reserva / cancelamento de reserva
+9. fluxos de redirect
+10. navegação mobile
+
+Quando uma mudança tocar esses fluxos, inspecione com mais cuidado, use validação proporcional e mencione qualquer risco remanescente.
+
+Para validação padrão de fluxos web:
+
+1. confirmar Docker/PostgreSQL disponível
+2. subir backend e confirmar HTTP 200
+3. encerrar backend se a etapa isolada pedir isso ou seguir com controle explícito do processo
+4. subir frontend e confirmar HTTP 200
+5. encerrar frontend se a etapa isolada pedir isso ou seguir com controle explícito do processo
+6. rodar apenas um teste Playwright específico relacionado à mudança
+7. encerrar os processos ao final e reportar logs se alguma etapa passar de 60 a 90 segundos
+
+Não rode `npx playwright test` puro neste projeto. A suíte completa só deve ser rodada quando o usuário pedir explicitamente.
+
+---
+
+## Documentação
+
+Os docs ativos do projeto vivem em `/.specs/`. O material histórico arquivado vive em `/.specs/archive/`.
+
+Atualize docs apenas quando a mudança realmente alterar arquitetura, comportamento público, estado do roadmap, padrões de código, orientação mobile ou algum problema conhecido.
+
+Não trate material arquivado como verdade ativa quando o código ou `.specs/` discordarem.
+Não recomende publicar docs privados sem pedido explícito.
+
+---
+
+## Fechamento Da Tarefa
+
+As respostas finais padrão devem ser curtas:
+
+- o que mudou
+- arquivos alterados
+- validação executada ou pulada
+- riscos relevantes ou áreas não validadas
+
+Use um relatório mais detalhado apenas quando o usuário pedir ou quando a mudança for ampla, arriscada ou atravessar múltiplas áreas.

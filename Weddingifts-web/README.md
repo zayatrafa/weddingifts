@@ -13,6 +13,7 @@ Frontend em HTML/CSS/JavaScript puro, sem framework e sem build step.
 - `my-event.html` - Gerenciar presentes de um evento (privado)
 - `account.html` - Minha conta (privado)
 - `event.html` - Página pública do evento por slug
+- `gifts.html` - Página pública de presentes por slug
 
 ## Organização dos scripts
 
@@ -26,6 +27,8 @@ Frontend em HTML/CSS/JavaScript puro, sem framework e sem build step.
 - `js/my-event.js`
 - `js/account.js`
 - `js/event.js`
+- `js/gifts.js`
+- `js/event-contract.js`
 
 ## Como rodar localmente
 
@@ -53,6 +56,10 @@ py -m http.server 5500
 ### Público
 
 - carregar evento por slug (`GET /api/events/{slug}`)
+- consultar RSVP por CPF convidado (`GET /api/events/{slug}/rsvp`)
+- confirmar RSVP (`POST /api/events/{slug}/rsvp`)
+- atualizar RSVP (`PUT /api/events/{slug}/rsvp`)
+- concluir fluxo público compatível (`POST /api/events/{slug}/invitation-flow/complete`)
 - listar presentes (`GET /api/events/{eventId}/gifts`)
 - reservar (`POST /api/gifts/{giftId}/reserve`) com CPF
 - cancelar reserva (`POST /api/gifts/{giftId}/unreserve`)
@@ -103,4 +110,4 @@ Se aparecer erro `501 Unsupported method ('POST')` no browser, normalmente a API
 
 ## Testes mobile recomendados
 
-Use o checklist em `../docs/MOBILE_TEST_CHECKLIST.md` para validar os fluxos principais antes do go-live de testes.
+Use `.specs/codebase/TESTING.md` como baseline de validação para mobile e frontend antes de considerar alterações de frontend estáveis.

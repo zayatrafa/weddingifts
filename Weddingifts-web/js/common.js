@@ -113,14 +113,12 @@ const MOBILE_NAV_AUTH_LINKS = deepFreeze([
   { href: "./my-event.html", label: "Gerenciar presentes", activePages: ["my-event.html"] },
   { href: "./my-guests.html", label: "Gerenciar convidados", activePages: ["my-guests.html"] },
   { href: "./account.html", label: "Minha conta", activePages: ["account.html"] },
-  { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] },
   { kind: "button", label: "Sair", buttonClass: "js-mobile-nav-logout", activePages: [] }
 ]);
 
 const MOBILE_NAV_PUBLIC_LINKS = deepFreeze([
   { href: "./login.html", label: "Entrar", activePages: ["login.html"] },
-  { href: "./register.html", label: "Criar conta", activePages: ["register.html"] },
-  { href: "./event.html", label: "Ver lista pública", activePages: ["event.html"] }
+  { href: "./register.html", label: "Criar conta", activePages: ["register.html"] }
 ]);
 
 deepFreeze(UI_TEXT);
@@ -844,9 +842,9 @@ function getMobileNavConfig({ session, currentPage }) {
       links: MOBILE_NAV_AUTH_LINKS,
       cta: {
         href: "./create-event.html",
-        label: currentPage === "create-event.html" ? "Continuar edição" : "Criar minha lista"
+        label: currentPage === "create-event.html" ? "Continuar edição" : "Organizar meu evento"
       },
-      copy: "Celebrar o amor com organização, clareza e um painel discreto."
+      copy: "Organize cerimônia, convidados, RSVP e presentes com clareza."
     };
   }
 
@@ -855,9 +853,9 @@ function getMobileNavConfig({ session, currentPage }) {
     links: MOBILE_NAV_PUBLIC_LINKS,
     cta: {
       href: "./register.html",
-      label: "Criar minha lista"
+      label: "Organizar meu evento"
     },
-    copy: "Celebrar o amor em cada detalhe."
+    copy: "Um hub claro para cerimônia, RSVP e presentes."
   };
 }
 

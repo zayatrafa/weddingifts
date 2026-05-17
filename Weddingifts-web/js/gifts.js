@@ -121,12 +121,7 @@ function enhanceHeaderForLoggedUser(sessionData) {
   const navRight = document.querySelector(".shell-nav-right");
   if (!navRight) return;
 
-  navRight.innerHTML = `
-    <div class="shell-links">
-      <a href="./event.html">Evento público</a>
-    </div>
-    ${getUserMenuMarkup()}
-  `;
+  navRight.innerHTML = getUserMenuMarkup();
 
   initUserDropdown({
     session: sessionData,
@@ -282,7 +277,6 @@ function renderGiftList() {
     const giftBadge = fragment.querySelector(".gift-badge");
     const giftMeta = fragment.querySelector(".gift-meta");
     const reserveButton = fragment.querySelector(".reserve-button");
-    const unreserveButton = fragment.querySelector(".unreserve-button");
 
     const available = availableUnits(gift);
     const reserved = reservedUnits(gift);
@@ -298,17 +292,10 @@ function renderGiftList() {
     giftMeta.textContent = `${giftAvailabilityQuantityLabel(available)} | ${giftChoiceQuantityLabel(reserved)}${cartQuantity ? ` | Escolhidos: ${cartQuantity}` : ""}`;
 
     reserveButton.disabled = busy || available === 0;
-    reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}${busy ? "Registrando..." : "Presentear com este item"}`;
+    reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}<span class="reserve-button-label">${busy ? "Adicionando..." : "Adicionar"}</span>`;
     reserveButton.addEventListener("click", (event) => {
       event.preventDefault();
       reserveGift(gift.id);
-    });
-
-    unreserveButton.disabled = busy || cartQuantity === 0;
-    unreserveButton.innerHTML = `${ICON_UNDO}Retirar escolha`;
-    unreserveButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      unreserveGift(gift.id);
     });
 
     giftGrid.appendChild(fragment);
