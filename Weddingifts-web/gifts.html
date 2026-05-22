@@ -29,16 +29,7 @@
           <p id="public-gifts-subtitle">Aguarde enquanto buscamos as informações do evento.</p>
           <p id="public-gifts-date" class="muted"></p>
         </div>
-        <div class="public-gifts-art" aria-hidden="true">
-          <svg viewBox="0 0 140 140" role="img" focusable="false">
-            <path d="M25 58h90v58H25V58z" fill="#ffffff" stroke="#dddddd" stroke-width="3"/>
-            <path d="M19 42h102v22H19V42z" fill="#ff385c" stroke="#e00b41" stroke-width="3"/>
-            <path d="M64 42h12v74H64V42z" fill="#7c3f4f"/>
-            <path d="M34 41c1-17 22-22 35 1-24 4-36 1-35-1z" fill="#fff1f4" stroke="#ff385c" stroke-width="3"/>
-            <path d="M106 41c-1-17-22-22-35 1 24 4 36 1 35-1z" fill="#fff1f4" stroke="#ff385c" stroke-width="3"/>
-            <circle cx="70" cy="24" r="7" fill="#ff385c"/>
-          </svg>
-        </div>
+        <img class="public-gifts-art" src="./assets/images/public-gifts-hero.webp" alt="" aria-hidden="true" />
       </article>
 
       <article id="gift-guest-identification" class="card card-pad public-gifts-identification" hidden>
@@ -67,10 +58,15 @@
           <div class="gift-flow-toolbar">
             <div class="field field-flat">
               <label for="gift-search-input">Buscar presente</label>
-              <input class="input" id="gift-search-input" type="search" placeholder="Nome ou descrição" />
+              <div class="gift-search-shell">
+                <input class="input" id="gift-search-input" type="search" placeholder="Nome ou descrição" />
+                <span class="gift-search-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="m20 20-4.1-4.1m1.1-5.4a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </span>
+              </div>
             </div>
             <div class="field field-flat">
-              <label for="gift-sort-select">Ordenar</label>
+              <label for="gift-sort-select">Ordenar por</label>
               <select class="select" id="gift-sort-select">
                 <option value="availability">Disponibilidade</option>
                 <option value="price-asc">Menor preço</option>
@@ -78,16 +74,37 @@
                 <option value="name-asc">Nome A-Z</option>
               </select>
             </div>
+            <div class="gift-filter-label">Filtrar por</div>
             <div class="row event-filter-actions">
-              <button class="btn btn-primary filter-button" data-filter="all" data-gift-filter="all" type="button">Todos</button>
-              <button class="btn btn-secondary filter-button" data-filter="available" data-gift-filter="available" type="button">Disponíveis</button>
-              <button class="btn btn-secondary filter-button" data-filter="reserved" data-gift-filter="reserved" type="button">Escolhidos</button>
+              <button class="btn btn-primary filter-button" data-filter="all" data-gift-filter="all" type="button"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2Zm8 14H6V9h12v10Z" fill="currentColor"/></svg></span>Todos</button>
+              <button class="btn btn-secondary filter-button" data-filter="available" data-gift-filter="available" type="button"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5V5Zm2 2v10h10V7H7Z" fill="currentColor"/></svg></span>Disponíveis</button>
+              <button class="btn btn-secondary filter-button" data-filter="reserved" data-gift-filter="reserved" type="button"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20.5 10.8 19C6.7 15.3 4 12.8 4 9.7A4.3 4.3 0 0 1 8.3 5c1.4 0 2.8.7 3.7 1.8A4.9 4.9 0 0 1 15.7 5 4.3 4.3 0 0 1 20 9.7c0 3.1-2.7 5.6-6.8 9.3L12 20.5Z" fill="currentColor"/></svg></span>Escolhidos</button>
             </div>
           </div>
+          <aside class="gift-filter-tip" aria-label="Dica">
+            <strong>Dica</strong>
+            <span>Você pode adicionar quantos presentes quiser. Fique à vontade!</span>
+          </aside>
         </section>
 
         <section class="section public-gifts-layout">
-          <div id="gift-grid" class="grid-3 public-gifts-grid"></div>
+          <div class="public-gifts-list-column">
+            <div class="public-gifts-list-head">
+              <div>
+                <h2>Todos os presentes</h2>
+                <span id="public-gifts-count" class="public-gifts-count">0 itens</span>
+              </div>
+              <div class="public-gifts-view-toggle" aria-hidden="true">
+                <button class="is-active" type="button" tabindex="-1" aria-label="Visualização em grade">
+                  <svg viewBox="0 0 24 24"><path d="M5 5h5v5H5V5Zm9 0h5v5h-5V5ZM5 14h5v5H5v-5Zm9 0h5v5h-5v-5Z" fill="currentColor"/></svg>
+                </button>
+                <button type="button" tabindex="-1" aria-label="Visualização em lista">
+                  <svg viewBox="0 0 24 24"><path d="M8 6h12v2H8V6Zm0 5h12v2H8v-2Zm0 5h12v2H8v-2ZM4 6h2v2H4V6Zm0 5h2v2H4v-2Zm0 5h2v2H4v-2Z" fill="currentColor"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="gift-grid" class="grid-3 public-gifts-grid"></div>
+          </div>
           <aside id="gift-cart-panel" class="gift-cart-panel" aria-live="polite" aria-label="Presentes escolhidos"></aside>
         </section>
         <button id="gift-cart-mobile-bar" class="gift-cart-mobile-bar" type="button" aria-controls="gift-cart-panel" aria-expanded="false" hidden></button>
@@ -102,11 +119,14 @@
     </section>
 
     <template id="gift-template">
-      <article class="card card-pad">
+      <article class="card card-pad public-gift-card">
         <div class="gift-head"><h3 class="gift-name"></h3><strong class="gift-price"></strong></div>
         <p class="gift-description muted"></p>
-        <div class="row" style="align-items: center; margin-top: 4px;"><span class="gift-badge"></span><span class="gift-meta muted"></span></div>
-        <div class="gift-card-actions" style="margin-top: 10px;"><button class="btn btn-primary reserve-button with-icon" type="button" aria-label="Adicionar presente"><span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7V5a5 5 0 0 1 10 0v2h2v14H5V7h2zm2 0h6V5a3 3 0 0 0-6 0v2zm2 6h2v5h-2v-5z" fill="currentColor"/></svg></span><span class="reserve-button-label">Adicionar</span></button></div>
+        <div class="gift-card-meta-row"><span class="gift-badge"></span><span class="gift-meta muted"></span></div>
+        <div class="gift-card-actions">
+          <button class="btn btn-primary reserve-button with-icon" type="button" aria-label="Presentear com este item"><span class="btn-icon btn-icon-plus" aria-hidden="true">+</span><span class="reserve-button-label">Adicionar</span></button>
+          <button class="gift-card-secondary-action unreserve-button" type="button" aria-label="Retirar escolha"><span aria-hidden="true">Retirar</span></button>
+        </div>
       </article>
     </template>
   </main>

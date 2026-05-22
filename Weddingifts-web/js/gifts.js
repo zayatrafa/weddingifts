@@ -15,10 +15,10 @@ import {
 
 const PUBLIC_GIFT_CONTEXT_KEY = "wg_public_gift_context";
 const MAX_SLUG_LENGTH = 24;
-const ICON_GIFT = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-3.2A3 3 0 0 0 14 3h-4a3 3 0 0 0-2.8 4H4v14h16V7zM10 5h4a1 1 0 0 1 0 2h-4a1 1 0 1 1 0-2zm8 14H6V9h12v10z" fill="currentColor"/></svg></span>';
+const ICON_GIFT = '<span class="btn-icon btn-icon-plus" aria-hidden="true">+</span>';
 const ICON_SPINNER = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
 const ICON_UNDO = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 0 1 6.5 4.4H16v2h6V5h-2v2.1A9 9 0 1 0 21 12h-2a7 7 0 1 1-7-7z" fill="currentColor"/></svg></span>';
-const ICON_TRASH = '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4l1-2zm-1 6h2v10h1V9h2v10h1V9h2v10.5A1.5 1.5 0 0 1 14.5 21h-5A1.5 1.5 0 0 1 8 19.5V9z" fill="currentColor"/></svg></span>';
+const ICON_TRASH = '<span class="btn-icon trash-icon" aria-hidden="true"><img src="./assets/images/trash-icon.svg" alt="" draggable="false" /></span>';
 
 const state = {
   event: null,
@@ -48,6 +48,7 @@ const experience = document.getElementById("public-gifts-experience");
 const giftSearchInput = document.getElementById("gift-search-input");
 const giftSortSelect = document.getElementById("gift-sort-select");
 const giftGrid = document.getElementById("gift-grid");
+const giftCount = document.getElementById("public-gifts-count");
 const giftTemplate = document.getElementById("gift-template");
 const giftCartPanel = document.getElementById("gift-cart-panel");
 const giftCartMobileBar = document.getElementById("gift-cart-mobile-bar");
@@ -257,12 +258,14 @@ function renderGiftList() {
 
   if (!state.event) {
     giftGrid.innerHTML = `<div class="center-empty">${UI_TEXT.publicEvent.emptyEvent}</div>`;
+    updateGiftCount(0);
     renderGiftCart();
     return;
   }
 
   syncGiftCartFromGifts();
   const items = filteredGifts();
+  updateGiftCount(items.length);
   if (!items.length) {
     giftGrid.innerHTML = `<div class="center-empty">${UI_TEXT.publicEvent.emptyFilter}</div>`;
     renderGiftCart();
@@ -277,6 +280,7 @@ function renderGiftList() {
     const giftBadge = fragment.querySelector(".gift-badge");
     const giftMeta = fragment.querySelector(".gift-meta");
     const reserveButton = fragment.querySelector(".reserve-button");
+    const unreserveButton = fragment.querySelector(".unreserve-button");
 
     const available = availableUnits(gift);
     const reserved = reservedUnits(gift);
@@ -297,6 +301,15 @@ function renderGiftList() {
       event.preventDefault();
       reserveGift(gift.id);
     });
+
+    if (unreserveButton) {
+      unreserveButton.disabled = busy || cartQuantity === 0;
+      unreserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_UNDO}<span>${busy ? "Retirando..." : "Retirar"}</span>`;
+      unreserveButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        unreserveGift(gift.id);
+      });
+    }
 
     giftGrid.appendChild(fragment);
   });
@@ -328,15 +341,18 @@ function renderGiftCart() {
   giftCartPanel.innerHTML = `
     <div class="gift-cart-head">
       <div>
-        <p class="kicker">Presentes escolhidos</p>
         <h3>Sua seleção para os noivos</h3>
       </div>
       <button class="gift-cart-close" type="button" aria-label="Fechar seleção de presentes" data-cart-close>
-        <span aria-hidden="true">x</span>
+        <span aria-hidden="true">×</span>
       </button>
-      <span class="tag tag-ok">${escapeHtml(giftCartQuantityLabel(totalQuantity))}</span>
+      <span class="gift-cart-count"><strong>${escapeHtml(String(totalQuantity))}</strong><span>${totalQuantity === 1 ? "presente" : "presentes"}</span></span>
     </div>
     <ul class="gift-cart-list">${itemMarkup}</ul>
+    <div class="gift-cart-subtotal">
+      <span>Subtotal</span>
+      <strong>${escapeHtml(formatCurrency(totalValue))}</strong>
+    </div>
     <div class="gift-cart-total">
       <span>Total dos presentes</span>
       <strong>${escapeHtml(formatCurrency(totalValue))}</strong>
@@ -348,6 +364,13 @@ function renderGiftCart() {
 
   renderGiftCartMobileBar(summary);
   syncGiftCartDrawerState(summary);
+}
+
+function updateGiftCount(quantity) {
+  if (!giftCount) return;
+
+  const normalizedQuantity = toNonNegativeInteger(quantity);
+  giftCount.textContent = `${normalizedQuantity} ${normalizedQuantity === 1 ? "item" : "itens"}`;
 }
 
 function handleGiftCartPanelClick(event) {

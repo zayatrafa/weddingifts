@@ -616,12 +616,5 @@ function escapeAttribute(text) {
 }
 
 function trashIconSvg() {
-  return `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M4 7h16" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
-      <path d="M10 3h4" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
-      <path d="M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
-      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-    </svg>
-  `;
+  return '<img class="trash-icon" src="./assets/images/trash-icon.svg" alt="" aria-hidden="true" draggable="false" />';
 }

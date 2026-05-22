@@ -107,9 +107,14 @@
           <div id="invitation-step-panel" class="invitation-step-panel" aria-live="polite"></div>
 
           <div id="invitation-identify-fields" class="invitation-identify-fields" hidden>
-            <div class="field" style="margin: 0;">
-              <label for="invitation-guest-cpf-input">CPF do convidado</label>
-              <input class="input" id="invitation-guest-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" />
+            <div class="field rsvp-cpf-field" style="margin: 0;">
+              <label class="sr-only" for="invitation-guest-cpf-input">CPF do convidado</label>
+              <div class="rsvp-cpf-input-shell">
+                <span class="rsvp-cpf-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input class="input" id="invitation-guest-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" />
+              </div>
             </div>
             <div class="invitation-fixed-action">
               <button id="invitation-next-button" class="btn btn-primary" type="button">OK</button>

@@ -291,8 +291,9 @@ function showRsvpGate() {
   stepPanel.innerHTML = `
     <div class="invitation-identify-copy">
       <p class="kicker">Confirmação de presença</p>
+      <span class="rsvp-decorative-divider" aria-hidden="true">♥</span>
       <h2>Confirme sua presença</h2>
-      <p>Informe seu CPF para acessar seu convite, confirmar presença e editar acompanhantes.</p>
+      <p>Informe seu CPF para acessar seu convite e confirmar presença.</p>
     </div>
   `;
   rsvpLookupButton.disabled = false;

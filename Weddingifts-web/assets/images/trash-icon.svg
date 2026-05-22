@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+  <defs>
+    <linearGradient id="bodyFill" x1="128" y1="48" x2="128" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC3BD"/>
+      <stop offset="1" stop-color="#F7B0AA"/>
+    </linearGradient>
+    <linearGradient id="lidFill" x1="128" y1="24" x2="128" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB1A8"/>
+      <stop offset="1" stop-color="#FF9A92"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#E56C63" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Handle -->
+    <path d="M96 32c0-8.837 7.163-16 16-16h32c8.837 0 16 7.163 16 16v16h-16V34a2 2 0 0 0-2-2h-28a2 2 0 0 0-2 2v14H96V32z" fill="url(#lidFill)"/>
+
+    <!-- Lid -->
+    <path d="M64 48h128c8.837 0 16 7.163 16 16v20H48V64c0-8.837 7.163-16 16-16z" fill="url(#lidFill)"/>
+
+    <!-- Bin body -->
+    <path d="M58 84h140l-13 120c-1.958 18.067-17.23 31.765-35.403 31.765H106.4c-18.173 0-33.445-13.698-35.403-31.765L58 84z" fill="url(#bodyFill)"/>
+
+    <!-- Inner lines -->
+    <path d="M104 108v92"/>
+    <path d="M128 108v92"/>
+    <path d="M152 108v92"/>
+  </g>
+</svg>
