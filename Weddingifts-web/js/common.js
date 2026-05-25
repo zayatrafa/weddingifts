@@ -791,7 +791,7 @@ function renderMobileDrawerContent(drawer) {
       <div class="mobile-nav-drawer-head">
         <a class="mobile-nav-brand js-mobile-nav-dismiss" href="./index.html">
           <span class="shell-dot"></span>
-          <span>Weddingifts</span>
+          <span>WeddinGifts</span>
         </a>
         <button class="mobile-nav-close js-mobile-nav-dismiss" type="button" aria-label="Fechar menu">
           <span></span>

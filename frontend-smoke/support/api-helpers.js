@@ -107,6 +107,13 @@ export async function getRsvp(slug, guestCpf) {
   return requestJson(`/api/events/${encodeURIComponent(slug)}/rsvp?guestCpf=${encodeURIComponent(guestCpf)}`);
 }
 
+export async function updateRsvp(slug, guestCpf, status, overrides = {}) {
+  return requestJson(`/api/events/${encodeURIComponent(slug)}/rsvp`, {
+    method: "POST",
+    body: { guestCpf, status, ...overrides }
+  });
+}
+
 export async function createGift(token, eventId, overrides = {}) {
   return requestJson(`/api/events/${eventId}/gifts`, {
     method: "POST",
@@ -117,6 +124,13 @@ export async function createGift(token, eventId, overrides = {}) {
       price: overrides.price || 299.9,
       quantity: overrides.quantity || 1
     }
+  });
+}
+
+export async function reserveGift(giftId, guestCpf) {
+  return requestJson(`/api/gifts/${giftId}/reserve`, {
+    method: "POST",
+    body: { guestCpf }
   });
 }
 

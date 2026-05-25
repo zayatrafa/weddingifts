@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 
@@ -43,6 +44,7 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.False(string.IsNullOrWhiteSpace(payload.Slug));
         Assert.Empty(payload.Gifts);
         Assert.Equal(0, payload.GuestCount);
+        Assert.Null(payload.StatusSummary);
     }
 
     [Fact]
@@ -351,6 +353,75 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         var payload = await mineResponse.Content.ReadFromJsonAsync<List<EventResponseContract>>(JsonOptions);
         Assert.NotNull(payload);
         Assert.DoesNotContain(payload, ev => ev.Id == createdEvent.Id);
+    }
+
+    [Fact]
+    public async Task GetMyEvents_ShouldReturnStatusSummary_WithGuestAndGiftCounters()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var emptyEvent = await CreateRichEventAsync(session.Token, "Evento Sem Dados");
+        var eventWithSummary = await CreateRichEventAsync(session.Token, "Evento Com Resumo");
+
+        var acceptedGuest = await CreateGuestAsync(session.Token, eventWithSummary.Id, name: "Convidado Confirmado", maxExtraGuests: 2);
+        var declinedGuest = await CreateGuestAsync(session.Token, eventWithSummary.Id, name: "Convidado Recusado");
+        await CreateGuestAsync(session.Token, eventWithSummary.Id, name: "Convidado Pendente");
+
+        var acceptedRsvpResponse = await Client.PostAsJsonAsync($"/api/events/{eventWithSummary.Slug}/rsvp", new
+        {
+            guestCpf = acceptedGuest.Cpf,
+            status = "accepted",
+            companions = new object[]
+            {
+                new { name = "Acompanhante Um", birthDate = new DateOnly(2018, 1, 10), cpf = (string?)null },
+                new { name = "Acompanhante Dois", birthDate = new DateOnly(2019, 2, 20), cpf = (string?)null }
+            }
+        });
+        Assert.Equal(HttpStatusCode.OK, acceptedRsvpResponse.StatusCode);
+
+        var declinedRsvpResponse = await Client.PostAsJsonAsync($"/api/events/{eventWithSummary.Slug}/rsvp", new
+        {
+            guestCpf = declinedGuest.Cpf,
+            status = "declined"
+        });
+        Assert.Equal(HttpStatusCode.OK, declinedRsvpResponse.StatusCode);
+
+        var reservedGift = await CreateGiftAsync(session.Token, eventWithSummary.Id, quantity: 1);
+        var partialGift = await CreateGiftAsync(session.Token, eventWithSummary.Id, name: "Presente Parcial", quantity: 2);
+
+        await Client.PostAsJsonAsync($"/api/gifts/{reservedGift.Id}/reserve", new { guestCpf = acceptedGuest.Cpf });
+        await Client.PostAsJsonAsync($"/api/gifts/{partialGift.Id}/reserve", new { guestCpf = declinedGuest.Cpf });
+
+        var mineResponse = await GetAuthorizedAsync("/api/events/mine", session.Token);
+
+        Assert.Equal(HttpStatusCode.OK, mineResponse.StatusCode);
+
+        var payload = await mineResponse.Content.ReadFromJsonAsync<List<EventResponseContract>>(JsonOptions);
+        Assert.NotNull(payload);
+
+        var emptySummary = Assert.Single(payload, ev => ev.Id == emptyEvent.Id).StatusSummary;
+        Assert.NotNull(emptySummary);
+        Assert.Equal(0, emptySummary.ConfirmedGuestCount);
+        Assert.Equal(0, emptySummary.DeclinedGuestCount);
+        Assert.Equal(0, emptySummary.PendingGuestCount);
+        Assert.Equal(0, emptySummary.CompanionCount);
+        Assert.Equal(0, emptySummary.ReservedGiftCount);
+        Assert.Equal(0, emptySummary.AvailableGiftCount);
+
+        var summary = Assert.Single(payload, ev => ev.Id == eventWithSummary.Id).StatusSummary;
+        Assert.NotNull(summary);
+        Assert.Equal(1, summary.ConfirmedGuestCount);
+        Assert.Equal(1, summary.DeclinedGuestCount);
+        Assert.Equal(1, summary.PendingGuestCount);
+        Assert.Equal(2, summary.CompanionCount);
+        Assert.Equal(2, summary.ReservedGiftCount);
+        Assert.Equal(1, summary.AvailableGiftCount);
+
+        var publicResponse = await Client.GetAsync($"/api/events/{eventWithSummary.Slug}");
+        var publicBody = await publicResponse.Content.ReadAsStringAsync();
+        using var publicDocument = JsonDocument.Parse(publicBody);
+        Assert.False(publicDocument.RootElement.TryGetProperty("statusSummary", out _));
     }
 
     [Fact]

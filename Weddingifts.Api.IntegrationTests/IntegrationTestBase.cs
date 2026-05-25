@@ -177,6 +177,28 @@ public abstract class IntegrationTestBase
         return (await response.Content.ReadFromJsonAsync<EventGuestResponseContract>(JsonOptions))!;
     }
 
+    protected async Task<GiftResponseContract> CreateGiftAsync(
+        string token,
+        int eventId,
+        string? name = null,
+        string? description = null,
+        decimal? price = null,
+        int? quantity = null)
+    {
+        var response = await PostAuthorizedJsonAsync($"/api/events/{eventId}/gifts", new
+        {
+            name = name ?? "Jogo de pratos",
+            description = description ?? "6 pecas",
+            price = price ?? 299.90m,
+            quantity = quantity ?? 1
+        }, token);
+
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode, $"Erro ao criar presente: {body}");
+
+        return (await response.Content.ReadFromJsonAsync<GiftResponseContract>(JsonOptions))!;
+    }
+
     protected async Task<HttpResponseMessage> PostAuthorizedJsonAsync(string url, object body, string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
@@ -337,8 +359,35 @@ public sealed class EventResponseContract
     public List<string> GalleryImageUrls { get; set; } = [];
     public string Slug { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public List<object> Gifts { get; set; } = [];
+    public List<GiftResponseContract> Gifts { get; set; } = [];
     public int GuestCount { get; set; }
+    public EventStatusSummaryResponseContract? StatusSummary { get; set; }
+}
+
+public sealed class EventStatusSummaryResponseContract
+{
+    public int ConfirmedGuestCount { get; set; }
+    public int DeclinedGuestCount { get; set; }
+    public int PendingGuestCount { get; set; }
+    public int CompanionCount { get; set; }
+    public int ReservedGiftCount { get; set; }
+    public int AvailableGiftCount { get; set; }
+}
+
+public sealed class GiftResponseContract
+{
+    public int Id { get; set; }
+    public int EventId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+    public int ReservedQuantity { get; set; }
+    public int AvailableQuantity { get; set; }
+    public bool IsFullyReserved { get; set; }
+    public string? ReservedBy { get; set; }
+    public DateTime? ReservedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public sealed class EventGuestResponseContract

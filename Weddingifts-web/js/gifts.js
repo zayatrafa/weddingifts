@@ -24,10 +24,8 @@ const state = {
   event: null,
   rsvp: null,
   gifts: [],
-  filter: "all",
   giftCart: {},
-  giftQuery: "",
-  giftSort: "availability",
+  giftSort: "price-asc",
   guestCpf: "",
   actionGiftId: null,
   loading: false,
@@ -36,16 +34,19 @@ const state = {
 };
 
 const root = document.getElementById("public-gifts-root");
+const hero = document.getElementById("public-gifts-hero");
 const title = document.getElementById("public-gifts-title");
 const subtitle = document.getElementById("public-gifts-subtitle");
 const date = document.getElementById("public-gifts-date");
+const notFound = document.getElementById("public-event-not-found");
+const notFoundTitle = document.getElementById("public-event-not-found-title");
+const notFoundMessage = document.getElementById("public-event-not-found-message");
 const guestIdentification = document.getElementById("gift-guest-identification");
 const guestCpfInput = document.getElementById("gift-guest-cpf-input");
 const identifyButton = document.getElementById("gift-identify-button");
 const identifyBackLink = document.getElementById("gift-identify-back-link");
 const status = document.getElementById("public-gifts-status");
 const experience = document.getElementById("public-gifts-experience");
-const giftSearchInput = document.getElementById("gift-search-input");
 const giftSortSelect = document.getElementById("gift-sort-select");
 const giftGrid = document.getElementById("gift-grid");
 const giftCount = document.getElementById("public-gifts-count");
@@ -53,7 +54,6 @@ const giftTemplate = document.getElementById("gift-template");
 const giftCartPanel = document.getElementById("gift-cart-panel");
 const giftCartMobileBar = document.getElementById("gift-cart-mobile-bar");
 const giftCartMobileOverlay = document.getElementById("gift-cart-mobile-overlay");
-const filters = document.querySelectorAll(".filter-button");
 const orderSuccess = document.getElementById("gift-order-success");
 const backToInvitationLink = document.getElementById("gift-back-to-invitation-link");
 
@@ -76,24 +76,6 @@ guestCpfInput.addEventListener("keydown", (event) => {
 });
 
 identifyButton.addEventListener("click", () => acceptGuestCpf(digitsOnly(guestCpfInput.value)));
-
-filters.forEach((button) => {
-  button.addEventListener("click", () => {
-    state.filter = button.dataset.giftFilter || button.dataset.filter;
-    filters.forEach((item) => {
-      item.classList.remove("btn-primary");
-      item.classList.add("btn-secondary");
-    });
-    button.classList.remove("btn-secondary");
-    button.classList.add("btn-primary");
-    renderGiftList();
-  });
-});
-
-giftSearchInput.addEventListener("input", () => {
-  state.giftQuery = giftSearchInput.value.trim().toLowerCase();
-  renderGiftList();
-});
 
 giftSortSelect.addEventListener("change", () => {
   state.giftSort = giftSortSelect.value;
@@ -141,7 +123,11 @@ async function loadGiftPage(slug) {
   }
 
   if (safeSlug.length > MAX_SLUG_LENGTH) {
-    renderLoadError("O slug deve ter no máximo 24 caracteres.");
+    renderLinkProblem({
+      stateName: "invalid-slug",
+      titleText: "Este link parece estar incompleto",
+      messageText: "Confira se o endereço foi copiado por inteiro ou peça para o casal enviar o convite novamente."
+    });
     return;
   }
 
@@ -164,13 +150,19 @@ async function loadGiftPage(slug) {
 
     renderCpfGate();
   } catch (error) {
-    renderLoadError(`${UI_TEXT.publicEvent.loadError}: ${error.message}`);
+    renderLinkProblem({
+      stateName: "error",
+      titleText: "Não encontramos este evento",
+      messageText: "O link pode ter sido alterado, removido ou copiado com algum caractere faltando. Peça para o casal reenviar o convite."
+    });
   } finally {
     state.loading = false;
   }
 }
 
 function renderEventSummary() {
+  hero.hidden = false;
+  notFound.hidden = true;
   title.textContent = state.event?.name || "Lista de presentes";
   subtitle.textContent = state.event?.hostNames
     ? `Escolha um presente para ${state.event.hostNames}.`
@@ -183,32 +175,36 @@ function renderEventSummary() {
 }
 
 function renderMissingSlug() {
-  root.dataset.state = "missing-slug";
-  guestIdentification.hidden = true;
-  experience.hidden = true;
-  orderSuccess.hidden = true;
-  title.textContent = "Lista não encontrada";
-  subtitle.textContent = "Abra a lista pelo link enviado pelo casal.";
-  date.textContent = "";
-  setStatus(status, "status-error", "Link de presentes incompleto.");
+  renderLinkProblem({
+    stateName: "missing-slug",
+    titleText: "Esta lista não abriu um evento",
+    messageText: "Abra a lista pelo link enviado pelo casal. Se você recebeu o endereço por mensagem, confira se ele foi copiado por completo."
+  });
 }
 
-function renderLoadError(message) {
-  root.dataset.state = "error";
+function renderLinkProblem({ stateName, titleText, messageText }) {
+  root.dataset.state = stateName;
+  hero.hidden = true;
+  notFound.hidden = false;
   guestIdentification.hidden = true;
   experience.hidden = true;
   orderSuccess.hidden = true;
-  title.textContent = "Presentes indisponíveis";
-  subtitle.textContent = "Não foi possível abrir esta lista.";
-  date.textContent = "";
-  setStatus(status, "status-error", message);
+  status.hidden = true;
+  giftCartMobileBar.hidden = true;
+  giftCartMobileOverlay.hidden = true;
+  setGiftCartDrawerOpen(false);
+  notFoundTitle.textContent = titleText;
+  notFoundMessage.textContent = messageText;
 }
 
 function renderCpfGate() {
   root.dataset.state = "identify";
+  hero.hidden = false;
+  notFound.hidden = true;
   guestIdentification.hidden = false;
   experience.hidden = true;
   orderSuccess.hidden = true;
+  status.hidden = false;
   identifyButton.disabled = false;
   setStatus(status, "status-info", "Informe seu CPF para ver a lista e escolher seu presente.");
 }
@@ -243,9 +239,12 @@ async function acceptGuestCpf(guestCpf, options = {}) {
 
 async function renderGiftExperience() {
   root.dataset.state = "gifts";
+  hero.hidden = false;
+  notFound.hidden = true;
   guestIdentification.hidden = true;
   experience.hidden = false;
   orderSuccess.hidden = true;
+  status.hidden = false;
   setStatus(status, "status-loading", "Carregando presentes...");
 
   await refreshGifts();
@@ -267,7 +266,7 @@ function renderGiftList() {
   const items = filteredGifts();
   updateGiftCount(items.length);
   if (!items.length) {
-    giftGrid.innerHTML = `<div class="center-empty">${UI_TEXT.publicEvent.emptyFilter}</div>`;
+    giftGrid.innerHTML = '<div class="center-empty">Nenhum presente disponível no momento.</div>';
     renderGiftCart();
     return;
   }
@@ -340,13 +339,13 @@ function renderGiftCart() {
 
   giftCartPanel.innerHTML = `
     <div class="gift-cart-head">
-      <div>
+      <div class="gift-cart-title">
         <h3>Sua seleção para os noivos</h3>
+        <span class="gift-cart-count"><strong>${escapeHtml(String(totalQuantity))}</strong><span>${totalQuantity === 1 ? "presente" : "presentes"}</span></span>
       </div>
       <button class="gift-cart-close" type="button" aria-label="Fechar seleção de presentes" data-cart-close>
         <span aria-hidden="true">×</span>
       </button>
-      <span class="gift-cart-count"><strong>${escapeHtml(String(totalQuantity))}</strong><span>${totalQuantity === 1 ? "presente" : "presentes"}</span></span>
     </div>
     <ul class="gift-cart-list">${itemMarkup}</ul>
     <div class="gift-cart-subtotal">
@@ -481,9 +480,12 @@ function finalizeGiftOrder() {
 
   closeGiftCartDrawer();
   root.dataset.state = "complete";
+  hero.hidden = false;
+  notFound.hidden = true;
   guestIdentification.hidden = true;
   experience.hidden = true;
   orderSuccess.hidden = false;
+  status.hidden = false;
   setStatus(status, "status-success", "Presentes registrados com sucesso.");
 }
 
@@ -658,18 +660,7 @@ function badgeForGift(gift) {
 }
 
 function filteredGifts() {
-  const query = state.giftQuery;
-  let items = state.gifts;
-
-  if (state.filter === "available") items = items.filter((gift) => availableUnits(gift) > 0);
-  if (state.filter === "reserved") items = items.filter((gift) => reservedUnits(gift) > 0);
-
-  if (query) {
-    items = items.filter((gift) => {
-      const haystack = `${gift.name || ""} ${gift.description || ""}`.toLowerCase();
-      return haystack.includes(query);
-    });
-  }
+  const items = state.gifts.filter((gift) => availableUnits(gift) > 0);
 
   return [...items].sort(compareGifts);
 }
@@ -683,7 +674,7 @@ function compareGifts(left, right) {
     case "name-asc":
       return String(left.name || "").localeCompare(String(right.name || ""));
     default:
-      return availableUnits(right) - availableUnits(left) || String(left.name || "").localeCompare(String(right.name || ""));
+      return String(left.name || "").localeCompare(String(right.name || ""));
   }
 }
 

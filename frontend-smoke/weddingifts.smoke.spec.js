@@ -11,6 +11,8 @@ import {
   generateUniqueCpf,
   getGuests,
   getRsvp,
+  reserveGift,
+  updateRsvp,
   uniqueSuffix
 } from "./support/api-helpers.js";
 
@@ -72,14 +74,57 @@ test("my-events carrega eventos do usuario e mantem acoes principais funcionais"
   const session = await createAuthenticatedSession();
   const eventName = `Evento Listagem ${uniqueSuffix()}`;
   const eventData = await createEvent(session.token, { name: eventName });
+  const acceptedGuest = await createGuest(session.token, eventData.id, {
+    name: "Convidado Confirmado",
+    maxExtraGuests: 2
+  });
+  const declinedGuest = await createGuest(session.token, eventData.id, { name: "Convidado Recusado" });
+  await createGuest(session.token, eventData.id, { name: "Convidado Pendente" });
+  const reservedGift = await createGift(session.token, eventData.id, {
+    name: `Presente Reservado ${uniqueSuffix()}`,
+    quantity: 1
+  });
+  const partialGift = await createGift(session.token, eventData.id, {
+    name: `Presente Parcial ${uniqueSuffix()}`,
+    quantity: 2
+  });
+
+  await updateRsvp(eventData.slug, acceptedGuest.cpf, "accepted", {
+    companions: [
+      { name: "Acompanhante Um", birthDate: "2018-01-10", cpf: null },
+      { name: "Acompanhante Dois", birthDate: "2019-02-20", cpf: null }
+    ]
+  });
+  await updateRsvp(eventData.slug, declinedGuest.cpf, "declined");
+  await reserveGift(reservedGift.id, acceptedGuest.cpf);
+  await reserveGift(partialGift.id, declinedGuest.cpf);
 
   await seedAuthSession(page, session.login);
   await page.goto("/my-events.html");
 
-  await expect(page.locator(".event-title", { hasText: eventName })).toBeVisible();
+  const eventCard = page.locator(".my-event-card", { hasText: eventName });
+  await expect(eventCard.locator(".event-title", { hasText: eventName })).toBeVisible();
+  const statusSummary = eventCard.locator(".my-event-status-summary");
+  await expect(statusSummary).toContainText("3 convidados");
+  await expect(statusSummary).toContainText("2 acompanhantes");
+  await expect(statusSummary).toContainText("1 confirmados");
+  await expect(statusSummary).toContainText("1 recusados");
+  await expect(statusSummary).toContainText("1 pendentes");
+  await expect(statusSummary).toContainText("2 presentes reservados");
+  await expect(statusSummary).toContainText(/1 presentes dispon.ve(is|Ã­veis)/);
+  await expect(eventCard).not.toContainText("NaN");
+  await expect(eventCard).not.toContainText("undefined");
+  await expect(eventCard.locator(".my-event-meta")).toHaveText(new RegExp(`Slug:\\s*${eventData.slug}$`));
   await expect(page.getByRole("button", { name: "Convidados" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Presentes" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Hist.rico de reservas/ })).toBeVisible();
+
+  const desktopOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(desktopOverflow).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 390, height: 800 });
+  const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(mobileOverflow).toBeLessThanOrEqual(1);
 
   await page.getByRole("button", { name: "Presentes" }).click();
   await expect(page).toHaveURL(new RegExp(`my-event\\.html\\?eventId=${eventData.id}$`));

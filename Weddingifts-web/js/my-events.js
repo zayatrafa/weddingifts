@@ -95,10 +95,7 @@ function renderEvents() {
     item.className = "event-item my-event-card";
     item.dataset.eventId = String(eventData.id);
 
-    const giftCount = Array.isArray(eventData.gifts) ? eventData.gifts.length : 0;
-    const guestCount = Number.isInteger(eventData.guestCount)
-      ? eventData.guestCount
-      : (Array.isArray(eventData.guests) ? eventData.guests.length : 0);
+    const guestCount = toSafeCount(eventData.guestCount, Array.isArray(eventData.guests) ? eventData.guests.length : 0);
     const editFieldPrefix = `event-${eventData.id}-edit`;
 
     item.innerHTML = `
@@ -116,7 +113,8 @@ function renderEvents() {
 
       <p class="my-event-date">Data e hora: <strong>${escapeHtml(formatEventDateTime(eventData))}</strong></p>
       ${renderEventDetails(eventData)}
-      <p class="my-event-meta">Slug: <span>${escapeHtml(eventData.slug)}</span> · ${giftCount} presente(s) · ${guestCount} convidado(s)</p>
+      ${renderEventStatusSummary(eventData, guestCount)}
+      <p class="my-event-meta">Slug: <span>${escapeHtml(eventData.slug)}</span></p>
 
       <div class="my-event-primary-actions" aria-label="Ações principais do evento">
           <button class="btn btn-main-action btn-main-action-secondary with-icon" type="button" data-action="manage-guests">${ICON_GUESTS}Convidados</button>
@@ -333,6 +331,26 @@ function renderEventDetails(eventData) {
       ${linkRows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd><a href="${escapeAttribute(value)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a></dd></div>`).join("")}
     </dl>
   `;
+}
+
+function renderEventStatusSummary(eventData, guestCount) {
+  const summary = eventData.statusSummary || {};
+  const values = [
+    `${toSafeCount(guestCount)} convidados`,
+    `${toSafeCount(summary.companionCount)} acompanhantes`,
+    `${toSafeCount(summary.confirmedGuestCount)} confirmados`,
+    `${toSafeCount(summary.declinedGuestCount)} recusados`,
+    `${toSafeCount(summary.pendingGuestCount)} pendentes`,
+    `${toSafeCount(summary.reservedGiftCount)} presentes reservados`,
+    `${toSafeCount(summary.availableGiftCount)} presentes disponíveis`
+  ];
+
+  return `<p class="my-event-status-summary">${values.map((value) => `<span>${escapeHtml(value)}</span>`).join("")}</p>`;
+}
+
+function toSafeCount(value, fallback = 0) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) && numberValue >= 0 ? Math.trunc(numberValue) : fallback;
 }
 
 function syncEditDateTimeBounds(editForm) {

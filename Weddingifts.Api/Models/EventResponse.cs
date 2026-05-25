@@ -1,5 +1,7 @@
 ﻿using Weddingifts.Api.Entities;
 
+using System.Text.Json.Serialization;
+
 namespace Weddingifts.Api.Models;
 
 public sealed class EventResponse
@@ -25,8 +27,10 @@ public sealed class EventResponse
     public DateTime CreatedAt { get; init; }
     public IReadOnlyList<GiftResponse> Gifts { get; init; } = [];
     public int GuestCount { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public EventStatusSummaryResponse? StatusSummary { get; init; }
 
-    public static EventResponse FromEntity(Event ev)
+    public static EventResponse FromEntity(Event ev, bool includeStatusSummary = false)
     {
         return new EventResponse
         {
@@ -50,7 +54,8 @@ public sealed class EventResponse
             Slug = ev.Slug,
             CreatedAt = ev.CreatedAt,
             Gifts = ev.Gifts.Select(GiftResponse.FromEntity).ToList(),
-            GuestCount = ev.Guests.Count
+            GuestCount = ev.Guests.Count,
+            StatusSummary = includeStatusSummary ? EventStatusSummaryResponse.FromEntity(ev) : null
         };
     }
 

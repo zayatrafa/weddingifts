@@ -56,7 +56,7 @@ public class EventController : ControllerBase
     {
         var userId = GetAuthenticatedUserId();
         var events = await _eventService.GetEventsByUser(userId);
-        var response = events.Select(EventResponse.FromEntity);
+        var response = events.Select(ev => EventResponse.FromEntity(ev, includeStatusSummary: true));
 
         return Ok(response);
     }

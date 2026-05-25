@@ -49,6 +49,9 @@ const mapLink = document.getElementById("event-map-link");
 const openRsvpButton = document.getElementById("open-rsvp-button");
 const openGiftsButton = document.getElementById("open-gifts-button");
 const content = document.getElementById("public-event-content");
+const notFound = document.getElementById("public-event-not-found");
+const notFoundTitle = document.getElementById("public-event-not-found-title");
+const notFoundMessage = document.getElementById("public-event-not-found-message");
 const status = document.getElementById("invitation-flow-status");
 const messageSection = document.getElementById("event-message-section");
 const messageText = document.getElementById("event-invitation-message");
@@ -148,7 +151,11 @@ async function loadEvent(slug) {
   }
 
   if (safeSlug.length > MAX_SLUG_LENGTH) {
-    renderLoadError("O slug deve ter no máximo 24 caracteres.");
+    renderLinkProblem({
+      stateName: "invalid-slug",
+      titleText: "Este link parece estar incompleto",
+      messageText: "Confira se o endereço foi copiado por inteiro ou peça para o casal enviar o convite novamente."
+    });
     return;
   }
 
@@ -162,24 +169,31 @@ async function loadEvent(slug) {
     renderEventHub();
     clearFlowStatus();
   } catch (error) {
-    renderLoadError(`${UI_TEXT.publicEvent.loadError}: ${error.message}`);
+    renderLinkProblem({
+      stateName: "error",
+      titleText: "Não encontramos este evento",
+      messageText: "O link pode ter sido alterado, removido ou copiado com algum caractere faltando. Peça para o casal reenviar o convite."
+    });
   }
 }
 
 function renderMissingSlug() {
-  root.dataset.state = "missing-slug";
-  hero.hidden = true;
-  content.hidden = true;
-  flowRoot.hidden = true;
-  setStatus(status, "status-error", "Abra o convite pelo link enviado pelo casal.");
+  renderLinkProblem({
+    stateName: "missing-slug",
+    titleText: "Este link não abriu um evento",
+    messageText: "Abra o convite pelo link enviado pelo casal. Se você recebeu o endereço por mensagem, confira se ele foi copiado por completo."
+  });
 }
 
-function renderLoadError(message) {
-  root.dataset.state = "error";
+function renderLinkProblem({ stateName, titleText, messageText }) {
+  root.dataset.state = stateName;
   hero.hidden = true;
   content.hidden = true;
   flowRoot.hidden = true;
-  setStatus(status, "status-error", message);
+  notFound.hidden = false;
+  notFoundTitle.textContent = titleText;
+  notFoundMessage.textContent = messageText;
+  clearFlowStatus();
 }
 
 function renderEventHub() {
@@ -188,6 +202,7 @@ function renderEventHub() {
   root.dataset.state = "ready";
   hero.hidden = false;
   content.hidden = false;
+  notFound.hidden = true;
 
   title.textContent = state.event.name || "Evento";
   hosts.textContent = state.event.hostNames ? `Com ${state.event.hostNames}` : "";
@@ -388,7 +403,7 @@ function renderRsvpForm() {
 
       <div class="row row-tight fit-content rsvp-form-actions">
         <button id="rsvp-close-button" class="btn btn-secondary" type="button">Fechar</button>
-        <button id="rsvp-submit-button" class="btn btn-primary" type="submit">Salvar confirmação</button>
+        <button id="rsvp-submit-button" class="btn btn-primary" type="submit">Salvar</button>
       </div>
     </form>
   `;
@@ -528,7 +543,7 @@ async function submitRsvp(event) {
     const submitButton = document.getElementById("rsvp-submit-button");
     if (submitButton) {
       submitButton.disabled = false;
-      submitButton.textContent = "Salvar confirmação";
+      submitButton.textContent = "Salvar";
     }
   }
 }
