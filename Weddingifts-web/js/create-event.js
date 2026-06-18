@@ -9,12 +9,14 @@ import {
   UI_TEXT
 } from "./common.js";
 import {
-  MAX_EVENT_DATE_TIME_LOCAL,
+  MAX_EVENT_DATE_LOCAL,
   buildEnrichedEventPayload,
-  defaultEventDateTimeLocalValue,
+  buildDateTimeLocalValue,
+  defaultEventDateLocalValue,
   getEnrichedEventValidationError,
+  isFutureEventDate,
   isFutureEventDateTime,
-  minFutureEventDateTimeLocalValue,
+  minFutureEventDateLocalValue,
   readEnrichedEventFormValues,
   renderTimeZoneOptions
 } from "./event-contract.js";
@@ -25,23 +27,28 @@ if (!session) throw new Error("Autenticação obrigatória.");
 const token = session.token;
 const createEventForm = document.getElementById("create-event-form");
 const status = document.getElementById("status");
-const eventDateTimeInput = document.getElementById("event-date-time-input");
+const eventDateInput = document.getElementById("event-date-input");
+const eventTimeInput = document.getElementById("event-time-input");
 const timeZoneInput = document.getElementById("time-zone-input");
 const EVENT_BUTTON_DEFAULT = `${calendarPlusIcon()}Criar evento`;
 const EVENT_BUTTON_LOADING = `${spinnerIcon()}Criando...`;
 
 timeZoneInput.innerHTML = renderTimeZoneOptions();
-eventDateTimeInput.max = MAX_EVENT_DATE_TIME_LOCAL;
-eventDateTimeInput.value = defaultEventDateTimeLocalValue(timeZoneInput.value);
-syncEventDateTimeBounds();
+eventDateInput.max = MAX_EVENT_DATE_LOCAL;
+eventDateInput.value = defaultEventDateLocalValue(timeZoneInput.value);
+syncEventDateBounds();
 
 timeZoneInput.addEventListener("change", () => {
-  syncEventDateTimeBounds();
-  validateEventDateTimeField();
+  syncEventDateBounds();
+  validateEventDateField();
 });
 
-eventDateTimeInput.addEventListener("input", () => {
-  validateEventDateTimeField();
+eventDateInput.addEventListener("input", () => {
+  validateEventDateField();
+});
+
+eventTimeInput.addEventListener("input", () => {
+  validateEventDateField();
 });
 
 initUserDropdown({
@@ -61,7 +68,7 @@ async function createEvent(event) {
   const validationError = getEnrichedEventValidationError(values);
 
   if (validationError) {
-    validateEventDateTimeField();
+    validateEventDateField();
     setStatus(status, "status-error", validationError);
     return;
   }
@@ -100,21 +107,30 @@ function spinnerIcon() {
   return '<span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor"/></svg></span>';
 }
 
-function syncEventDateTimeBounds() {
-  eventDateTimeInput.min = minFutureEventDateTimeLocalValue(timeZoneInput.value);
+function syncEventDateBounds() {
+  eventDateInput.min = minFutureEventDateLocalValue(timeZoneInput.value);
+  eventDateInput.max = MAX_EVENT_DATE_LOCAL;
 }
 
-function validateEventDateTimeField() {
-  const value = eventDateTimeInput.value;
-  if (!value) {
-    eventDateTimeInput.setCustomValidity("");
+function validateEventDateField() {
+  const dateValue = eventDateInput.value;
+  const timeValue = eventTimeInput.value;
+  const dateTimeValue = buildDateTimeLocalValue(dateValue, timeValue);
+
+  if (!dateValue) {
+    eventDateInput.setCustomValidity("");
     return;
   }
 
-  if (!isFutureEventDateTime(value, timeZoneInput.value)) {
-    eventDateTimeInput.setCustomValidity("Informe uma data e hora futuras para o evento.");
+  if (dateTimeValue && !isFutureEventDateTime(dateTimeValue, timeZoneInput.value)) {
+    eventDateInput.setCustomValidity("Informe uma data e hora futuras para o evento.");
     return;
   }
 
-  eventDateTimeInput.setCustomValidity("");
+  if (!dateTimeValue && !isFutureEventDate(dateValue, timeZoneInput.value)) {
+    eventDateInput.setCustomValidity("Informe uma data futura para o evento.");
+    return;
+  }
+
+  eventDateInput.setCustomValidity("");
 }

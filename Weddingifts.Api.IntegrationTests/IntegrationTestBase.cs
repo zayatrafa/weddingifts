@@ -372,6 +372,7 @@ public sealed class EventStatusSummaryResponseContract
     public int CompanionCount { get; set; }
     public int ReservedGiftCount { get; set; }
     public int AvailableGiftCount { get; set; }
+    public decimal TotalRaisedAmount { get; set; }
 }
 
 public sealed class GiftResponseContract

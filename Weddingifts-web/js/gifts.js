@@ -27,6 +27,7 @@ const state = {
   giftCart: {},
   giftSort: "price-asc",
   guestCpf: "",
+  identifyingGuest: false,
   actionGiftId: null,
   loading: false,
   cartDrawerOpen: false,
@@ -135,7 +136,7 @@ async function loadGiftPage(slug) {
     state.loading = true;
     state.slug = safeSlug;
     root.dataset.state = "loading";
-    setStatus(status, "status-loading", "Carregando lista de presentes...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.giftsLoading);
 
     const apiBase = getApiBase();
     state.event = await requestJson(`${apiBase}/api/events/${encodeURIComponent(safeSlug)}`);
@@ -210,7 +211,7 @@ function renderCpfGate() {
 }
 
 async function acceptGuestCpf(guestCpf, options = {}) {
-  if (!state.event) return;
+  if (!state.event || state.identifyingGuest) return;
 
   if (!isValidCpf(guestCpf)) {
     showFieldError(guestCpfInput, "Informe um CPF válido para acessar a lista de presentes.");
@@ -218,9 +219,11 @@ async function acceptGuestCpf(guestCpf, options = {}) {
   }
 
   try {
+    state.identifyingGuest = true;
     identifyButton.disabled = true;
+    identifyButton.textContent = "Buscando...";
     clearFieldError(guestCpfInput);
-    setStatus(status, "status-loading", "Validando convidado...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.rsvpLookupLoading);
     const apiBase = getApiBase();
     state.rsvp = await requestJson(`${apiBase}/api/events/${encodeURIComponent(state.event.slug)}/rsvp?guestCpf=${encodeURIComponent(guestCpf)}`);
     state.guestCpf = guestCpf;
@@ -233,7 +236,9 @@ async function acceptGuestCpf(guestCpf, options = {}) {
     }
     renderCpfGate();
   } finally {
+    state.identifyingGuest = false;
     identifyButton.disabled = false;
+    identifyButton.textContent = "OK";
   }
 }
 
@@ -245,7 +250,7 @@ async function renderGiftExperience() {
   experience.hidden = false;
   orderSuccess.hidden = true;
   status.hidden = false;
-  setStatus(status, "status-loading", "Carregando presentes...");
+  setStatus(status, "status-loading", UI_TEXT.publicEvent.giftsLoadingList);
 
   await refreshGifts();
   renderGiftList();
@@ -265,8 +270,12 @@ function renderGiftList() {
   syncGiftCartFromGifts();
   const items = filteredGifts();
   updateGiftCount(items.length);
+
   if (!items.length) {
-    giftGrid.innerHTML = '<div class="center-empty">Nenhum presente disponível no momento.</div>';
+    const emptyMessage = state.gifts.length
+      ? UI_TEXT.publicEvent.allGiftsReserved
+      : UI_TEXT.publicEvent.emptyGifts;
+    giftGrid.innerHTML = `<div class="center-empty">${escapeHtml(emptyMessage)}</div>`;
     renderGiftCart();
     return;
   }
@@ -284,6 +293,7 @@ function renderGiftList() {
     const available = availableUnits(gift);
     const reserved = reservedUnits(gift);
     const cartQuantity = getGiftCartQuantity(gift);
+    const hasActiveGiftAction = state.actionGiftId !== null;
     const busy = state.actionGiftId === gift.id;
     const badge = badgeForGift(gift);
 
@@ -294,7 +304,7 @@ function renderGiftList() {
     giftBadge.classList.add("tag", badge.className);
     giftMeta.textContent = `${giftAvailabilityQuantityLabel(available)} | ${giftChoiceQuantityLabel(reserved)}${cartQuantity ? ` | Escolhidos: ${cartQuantity}` : ""}`;
 
-    reserveButton.disabled = busy || available === 0;
+    reserveButton.disabled = hasActiveGiftAction || available === 0;
     reserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_GIFT}<span class="reserve-button-label">${busy ? "Adicionando..." : "Adicionar"}</span>`;
     reserveButton.addEventListener("click", (event) => {
       event.preventDefault();
@@ -302,7 +312,7 @@ function renderGiftList() {
     });
 
     if (unreserveButton) {
-      unreserveButton.disabled = busy || cartQuantity === 0;
+      unreserveButton.disabled = hasActiveGiftAction || cartQuantity === 0;
       unreserveButton.innerHTML = `${busy ? ICON_SPINNER : ICON_UNDO}<span>${busy ? "Retirando..." : "Retirar"}</span>`;
       unreserveButton.addEventListener("click", (event) => {
         event.preventDefault();
@@ -327,9 +337,9 @@ function renderGiftCart() {
       <li class="gift-cart-item">
         <div>
           <strong>${escapeHtml(gift.name)}</strong>
-          <span>${giftCartQuantityLabel(quantity)} | ${escapeHtml(formatCurrency(Number(gift.price || 0) * quantity))}</span>
+          <span>${giftCartQuantityLabel(quantity)} | ${escapeHtml(formatCurrency(toNonNegativeNumber(gift.price) * quantity))}</span>
         </div>
-        <button class="btn btn-secondary btn-sm gift-selection-remove" type="button" data-cart-remove-gift-id="${escapeAttribute(gift.id)}" aria-label="Retirar ${escapeAttribute(gift.name)} dos presentes escolhidos" title="Retirar presente" ${state.actionGiftId === gift.id ? "disabled" : ""}>
+        <button class="btn btn-secondary btn-sm gift-selection-remove" type="button" data-cart-remove-gift-id="${escapeAttribute(gift.id)}" aria-label="Retirar ${escapeAttribute(gift.name)} dos presentes escolhidos" title="Retirar presente" ${state.actionGiftId !== null ? "disabled" : ""}>
           ${state.actionGiftId === gift.id ? ICON_SPINNER : ICON_TRASH}
           <span class="gift-selection-remove-label">${state.actionGiftId === gift.id ? "Retirando..." : "Retirar"}</span>
         </button>
@@ -357,7 +367,7 @@ function renderGiftCart() {
       <strong>${escapeHtml(formatCurrency(totalValue))}</strong>
     </div>
     <div class="gift-cart-actions">
-      <button id="gift-checkout-button" class="btn btn-primary" type="button" ${items.length ? "" : "disabled"}>Registrar presentes</button>
+      <button id="gift-checkout-button" class="btn btn-primary" type="button" ${items.length && state.actionGiftId === null ? "" : "disabled"}>Registrar presentes</button>
     </div>
   `;
 
@@ -380,6 +390,7 @@ function handleGiftCartPanelClick(event) {
   if (removeButton && giftCartPanel.contains(removeButton)) {
     event.preventDefault();
     event.stopPropagation();
+    if (state.actionGiftId !== null) return;
 
     const giftId = Number(removeButton.dataset.cartRemoveGiftId);
     if (Number.isFinite(giftId)) {
@@ -398,6 +409,7 @@ function handleGiftCartPanelClick(event) {
   const checkoutButton = target.closest("#gift-checkout-button");
   if (checkoutButton && giftCartPanel.contains(checkoutButton)) {
     event.preventDefault();
+    if (state.actionGiftId !== null) return;
     finalizeGiftOrder();
   }
 }
@@ -431,7 +443,7 @@ async function reserveGift(giftId) {
     adjustGiftCartQuantity(giftId, 1);
     await refreshGifts();
     renderGiftList();
-    setStatus(status, "status-success", "Presente escolhido.");
+    setStatus(status, "status-success", UI_TEXT.publicEvent.reserveSuccess);
   } catch (error) {
     setStatus(status, "status-error", `${UI_TEXT.publicEvent.reserveError}: ${error.message}`);
   } finally {
@@ -515,14 +527,14 @@ function savePublicGiftContext() {
 }
 
 function availableUnits(gift) {
-  if (typeof gift.availableQuantity === "number") return gift.availableQuantity;
-  const reserved = typeof gift.reservedQuantity === "number" ? gift.reservedQuantity : 0;
-  return Math.max(0, gift.quantity - reserved);
+  if (typeof gift.availableQuantity === "number") return toNonNegativeInteger(gift.availableQuantity);
+  const reserved = toNonNegativeInteger(gift.reservedQuantity);
+  return Math.max(0, toNonNegativeInteger(gift.quantity) - reserved);
 }
 
 function reservedUnits(gift) {
-  if (typeof gift.reservedQuantity === "number") return gift.reservedQuantity;
-  return Math.max(0, gift.quantity - availableUnits(gift));
+  if (typeof gift.reservedQuantity === "number") return toNonNegativeInteger(gift.reservedQuantity);
+  return Math.max(0, toNonNegativeInteger(gift.quantity) - availableUnits(gift));
 }
 
 function giftCartKey(giftId) {
@@ -579,7 +591,7 @@ function getGiftCartSummary() {
   return {
     items,
     totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-    totalValue: items.reduce((sum, item) => sum + Number(item.gift.price || 0) * item.quantity, 0)
+    totalValue: items.reduce((sum, item) => sum + toNonNegativeNumber(item.gift.price) * item.quantity, 0)
   };
 }
 
@@ -668,9 +680,9 @@ function filteredGifts() {
 function compareGifts(left, right) {
   switch (state.giftSort) {
     case "price-asc":
-      return Number(left.price) - Number(right.price) || String(left.name || "").localeCompare(String(right.name || ""));
+      return toNonNegativeNumber(left.price) - toNonNegativeNumber(right.price) || String(left.name || "").localeCompare(String(right.name || ""));
     case "price-desc":
-      return Number(right.price) - Number(left.price) || String(left.name || "").localeCompare(String(right.name || ""));
+      return toNonNegativeNumber(right.price) - toNonNegativeNumber(left.price) || String(left.name || "").localeCompare(String(right.name || ""));
     case "name-asc":
       return String(left.name || "").localeCompare(String(right.name || ""));
     default:
@@ -681,6 +693,12 @@ function compareGifts(left, right) {
 function toNonNegativeInteger(value) {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function toNonNegativeNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
 }
 

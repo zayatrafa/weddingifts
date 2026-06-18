@@ -165,6 +165,34 @@ static bool IsMissingOrPlaceholder(string? value)
         || value.Contains("__SET_IN_USER_SECRETS_OR_ENV__", StringComparison.Ordinal);
 }
 
+static string[] GetAllowedOrigins(IConfiguration configuration, params string[] defaultOrigins)
+{
+    return defaultOrigins
+        .Concat(SplitConfiguredOrigins(configuration["ALLOWED_ORIGINS"]))
+        .Concat(SplitConfiguredOrigins(configuration["AllowedOrigins"]))
+        .Concat(SplitConfiguredOrigins(configuration["Cors:AllowedOrigins"]))
+        .Concat(configuration.GetSection("Cors:AllowedOrigins").GetChildren().Select(section => section.Value ?? string.Empty))
+        .Select(NormalizeAllowedOrigin)
+        .Where(origin => !string.IsNullOrWhiteSpace(origin))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+}
+
+static IEnumerable<string> SplitConfiguredOrigins(string? rawOrigins)
+{
+    return string.IsNullOrWhiteSpace(rawOrigins)
+        ? Array.Empty<string>()
+        : rawOrigins.Split(
+            new[] { ',', ';' },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+        );
+}
+
+static string NormalizeAllowedOrigin(string origin)
+{
+    return origin.Trim().TrimEnd('/');
+}
+
 static string InferFieldFromErrorMessage(string errorMessage)
 {
     if (errorMessage.Contains("birthdate", StringComparison.OrdinalIgnoreCase))
@@ -284,24 +312,20 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+var allowedOrigins = GetAllowedOrigins(
+    builder.Configuration,
+    "http://localhost:5500",
+    "http://127.0.0.1:5500"
+);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WeddingiftsWeb", policy =>
     {
-        if (builder.Environment.IsDevelopment() || isFrontendSmokeEnvironment)
-        {
-            policy
-                .SetIsOriginAllowed(_ => true)
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        }
-        else
-        {
-            policy
-                .WithOrigins("http://localhost:5500", "http://127.0.0.1:5500")
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        }
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 

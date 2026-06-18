@@ -10,6 +10,7 @@ public sealed class EventStatusSummaryResponse
     public int CompanionCount { get; init; }
     public int ReservedGiftCount { get; init; }
     public int AvailableGiftCount { get; init; }
+    public decimal TotalRaisedAmount { get; init; }
 
     public static EventStatusSummaryResponse FromEntity(Event ev)
     {
@@ -24,7 +25,8 @@ public sealed class EventStatusSummaryResponse
             PendingGuestCount = pendingGuestCount,
             CompanionCount = ev.Guests.Sum(guest => guest.Companions.Count),
             ReservedGiftCount = ev.Gifts.Sum(gift => gift.ReservedQuantity),
-            AvailableGiftCount = ev.Gifts.Sum(gift => Math.Max(0, gift.Quantity - gift.ReservedQuantity))
+            AvailableGiftCount = ev.Gifts.Sum(gift => Math.Max(0, gift.Quantity - gift.ReservedQuantity)),
+            TotalRaisedAmount = ev.Gifts.Sum(gift => gift.Price * gift.ReservedQuantity)
         };
     }
 }

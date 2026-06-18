@@ -27,7 +27,7 @@ Ferramentas de teste e frontend confirmadas no repositório:
 
 ## Variações De Ambiente
 
-- `Development`: PostgreSQL, Swagger e CORS local mais permissivo
+- `Development`: PostgreSQL, Swagger e CORS controlado por origens configuráveis
 - `Testing`: caminho de configuração para testes de integração
 - `FrontendSmoke`: API iniciada contra arquivo local SQLite com configuração determinística de JWT
 
@@ -64,3 +64,5 @@ O `Development` normal exige configuração local para:
 - `Jwt:Key`
 
 Os `appsettings` versionados mantêm placeholders para segredos e preservam defaults JWT não sensíveis.
+
+O CORS aceita por padrão `http://localhost:5500` e `http://127.0.0.1:5500`. Origens extras para testes temporários, como um frontend exposto por TryCloudflare, devem ser configuradas por `ALLOWED_ORIGINS`, `AllowedOrigins` ou `Cors:AllowedOrigins`.

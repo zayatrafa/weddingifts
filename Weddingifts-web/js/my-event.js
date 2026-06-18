@@ -112,6 +112,8 @@ async function loadMyEvents() {
 
   try {
     setStatus(status, "status-loading", UI_TEXT.gifts.loading);
+    renderGiftsLoading();
+    renderReservationsLoading();
 
     const apiBase = getApiBase();
     state.events = await requestJson(`${apiBase}/api/events/mine`, { headers: authHeaders(token) });
@@ -293,6 +295,7 @@ async function loadSelectedEventGifts() {
   }
 
   try {
+    renderGiftsLoading();
     const apiBase = getApiBase();
     state.gifts = await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts`);
     renderGifts();
@@ -311,6 +314,7 @@ async function loadSelectedEventReservations() {
   }
 
   try {
+    renderReservationsLoading();
     const apiBase = getApiBase();
     state.reservations = await requestJson(`${apiBase}/api/events/${state.selectedEventId}/gifts/reservations`, {
       headers: authHeaders(token)
@@ -446,9 +450,15 @@ function renderGifts() {
     const item = document.createElement("article");
     item.className = "gift-item";
 
+    const quantity = toNonNegativeInteger(gift.quantity);
+    const reserved = toNonNegativeInteger(gift.reservedQuantity);
     const available = typeof gift.availableQuantity === "number"
-      ? gift.availableQuantity
-      : Math.max(0, gift.quantity - (gift.reservedQuantity || 0));
+      ? toNonNegativeInteger(gift.availableQuantity)
+      : Math.max(0, quantity - reserved);
+    const canDelete = reserved === 0;
+    const deleteTitle = canDelete
+      ? "Excluir presente"
+      : "Não é possível excluir um presente com reservas ativas.";
 
     const badgeClass = available === 0 ? "tag-muted" : available === 1 ? "tag-warning" : "tag-ok";
     const badgeText = available === 0 ? "Reservado" : available === 1 ? "Última unidade" : "Disponível";
@@ -461,10 +471,10 @@ function renderGifts() {
         </div>
         <div class="gift-card-side-actions">
           <span class="tag ${badgeClass}">${badgeText}</span>
-          <button class="icon-button danger gift-delete" type="button" title="Excluir presente" aria-label="Excluir presente">${trashIconSvg()}</button>
+          <button class="icon-button danger gift-delete" type="button" title="${deleteTitle}" aria-label="${deleteTitle}"${canDelete ? "" : " disabled"}>${trashIconSvg()}</button>
         </div>
       </div>
-      <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${gift.reservedQuantity || 0} reservados</p>
+      <p class="meta">${formatCurrency(gift.price)} | ${available} disponíveis | ${reserved} reservados</p>
       <div class="row row-tight top-gap-sm">
         <button class="btn btn-secondary with-icon gift-edit" type="button">${ICON_EDIT}Editar presente</button>
       </div>
@@ -474,12 +484,18 @@ function renderGifts() {
       startGiftEditMode(gift);
     });
 
-    item.querySelector(".gift-delete")?.addEventListener("click", () => {
-      deleteGift(gift);
-    });
+    if (canDelete) {
+      item.querySelector(".gift-delete")?.addEventListener("click", () => {
+        deleteGift(gift);
+      });
+    }
 
     giftsList.appendChild(item);
   });
+}
+
+function renderGiftsLoading() {
+  giftsList.innerHTML = `<div class="center-empty">${UI_TEXT.gifts.loadingList}</div>`;
 }
 
 function filteredGifts() {
@@ -507,10 +523,12 @@ function renderReservations() {
     item.className = "gift-item";
     const guestName = findGuestNameByCpf(reservation.guestCpf);
 
-    const activeQuantity = Number(reservation.activeQuantity ?? 0);
+    const activeQuantity = toNonNegativeInteger(reservation.activeQuantity);
+    const reservedQuantity = toNonNegativeInteger(reservation.reservedQuantity);
+    const unreservedQuantity = toNonNegativeInteger(reservation.unreservedQuantity);
     const badgeClass = activeQuantity > 0 ? "tag-ok" : "tag-muted";
     const badgeText = activeQuantity > 0 ? "Reserva ativa" : "Reserva encerrada";
-    const activeValue = activeQuantity * Number(reservation.giftPrice ?? 0);
+    const activeValue = activeQuantity * toNonNegativeNumber(reservation.giftPrice);
 
     item.innerHTML = `
       <div class="gift-head">
@@ -520,12 +538,16 @@ function renderReservations() {
         </div>
         <span class="tag ${badgeClass}">${badgeText}</span>
       </div>
-      <p class="meta">Ativas: ${activeQuantity} | Reservadas: ${Number(reservation.reservedQuantity ?? 0)} | Canceladas: ${Number(reservation.unreservedQuantity ?? 0)} | Valor ativo: ${formatCurrency(activeValue)}</p>
+      <p class="meta">Ativas: ${activeQuantity} | Reservadas: ${reservedQuantity} | Canceladas: ${unreservedQuantity} | Valor ativo: ${formatCurrency(activeValue)}</p>
       <p class="meta">Primeiro registro: ${formatDateTime(reservation.reservedAt)} | Última reserva: ${formatDateTime(reservation.lastReservedAt || reservation.reservedAt)} | Último cancelamento: ${formatDateTime(reservation.lastUnreservedAt)}</p>
     `;
 
     reservationsList.appendChild(item);
   });
+}
+
+function renderReservationsLoading() {
+  reservationsList.innerHTML = `<div class="center-empty">${UI_TEXT.gifts.loadingReservations}</div>`;
 }
 
 function findGuestNameByCpf(cpf) {
@@ -540,6 +562,18 @@ function findGuestNameByCpf(cpf) {
 
 function normalizeCpf(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function toNonNegativeInteger(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function toNonNegativeNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
 }
 
 function normalizeSearchText(value) {

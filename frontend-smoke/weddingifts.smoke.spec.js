@@ -7,9 +7,10 @@ import {
   createGuest,
   createUser,
   formatCpf,
-  futureDateTimeInputValue,
+  futureDateInputValue,
   generateUniqueCpf,
   getGuests,
+  getGifts,
   getRsvp,
   reserveGift,
   updateRsvp,
@@ -42,7 +43,8 @@ test("create-event cria evento com campos publicos e redireciona para meus event
 
   await page.getByLabel("Nome do evento").fill(eventName);
   await page.getByLabel("Nomes do casal").fill("Ana e Bruno");
-  await page.getByLabel("Data e hora").fill(futureDateTimeInputValue());
+  await page.getByLabel("Data").fill(futureDateInputValue());
+  await expect(page.getByLabel("Horário")).not.toHaveAttribute("required", "");
   await page.getByLabel("Fuso do evento").selectOption("America/Sao_Paulo");
   await page.getByLabel("Nome do local").fill("Espaco Smoke");
   await page.getByLabel("Endere\u00e7o do local").fill("Rua Smoke, 123 - Sao Paulo, SP");
@@ -54,6 +56,11 @@ test("create-event cria evento com campos publicos e redireciona para meus event
   await page.getByLabel("Programação do evento").fill(scheduleInfo);
   await page.getByLabel("Galeria de fotos").fill(galleryUrl);
   await expect(page.getByLabel("URL da imagem de capa")).not.toHaveAttribute("required", "");
+  await expect(page.getByLabel("Nome do local")).not.toHaveAttribute("required", "");
+  await expect(page.getByLabel("Endere\u00e7o do local")).not.toHaveAttribute("required", "");
+  await expect(page.getByLabel("Link do Google Maps")).not.toHaveAttribute("required", "");
+  await expect(page.getByLabel("Informa\u00e7\u00f5es da cerim\u00f4nia")).not.toHaveAttribute("required", "");
+  await expect(page.getByLabel("Traje")).not.toHaveAttribute("required", "");
   await page.getByRole("button", { name: "Criar evento" }).click();
 
   await page.waitForURL(/my-events\.html\?focusEventId=\d+/);
@@ -106,12 +113,12 @@ test("my-events carrega eventos do usuario e mantem acoes principais funcionais"
   await expect(eventCard.locator(".event-title", { hasText: eventName })).toBeVisible();
   const statusSummary = eventCard.locator(".my-event-status-summary");
   await expect(statusSummary).toContainText("3 convidados");
-  await expect(statusSummary).toContainText("2 acompanhantes");
-  await expect(statusSummary).toContainText("1 confirmados");
+  await expect(statusSummary).toContainText("1 confirmados + 2 acompanhantes");
   await expect(statusSummary).toContainText("1 recusados");
   await expect(statusSummary).toContainText("1 pendentes");
   await expect(statusSummary).toContainText("2 presentes reservados");
   await expect(statusSummary).toContainText(/1 presentes dispon.ve(is|Ã­veis)/);
+  await expect(statusSummary).toContainText("Total arrecadado: R$ 599,80");
   await expect(eventCard).not.toContainText("NaN");
   await expect(eventCard).not.toContainText("undefined");
   await expect(eventCard.locator(".my-event-meta")).toHaveText(new RegExp(`Slug:\\s*${eventData.slug}$`));
@@ -130,7 +137,7 @@ test("my-events carrega eventos do usuario e mantem acoes principais funcionais"
   await expect(page).toHaveURL(new RegExp(`my-event\\.html\\?eventId=${eventData.id}$`));
 });
 
-test("my-event mantem resumo compacto com campos longos", async ({ page }) => {
+test("my-event nao reexibe resumo de informacoes do evento", async ({ page }) => {
   const session = await createAuthenticatedSession();
   const longUrlTail = "setor-a-corredor-b-".repeat(18);
   const eventData = await createEnrichedEvent(session.token, {
@@ -152,64 +159,85 @@ test("my-event mantem resumo compacto com campos longos", async ({ page }) => {
   await page.goto(`/my-event.html?eventId=${eventData.id}`);
 
   const summary = page.locator("#selected-event-summary");
-  await expect(summary).toBeVisible();
-  await expect(summary).toContainText("Evento selecionado");
-  await expect(summary).toContainText("Comida e bebida");
-  await expect(summary).toContainText("Programação");
-  await expect(summary.locator("h2")).toHaveAttribute("title", eventData.name);
-
-  const mapLink = summary.getByRole("link", { name: eventData.locationMapsUrl });
-  await expect(mapLink).toHaveAttribute("title", eventData.locationMapsUrl);
-  await expect(mapLink).toHaveCSS("text-overflow", "ellipsis");
+  await expect(summary).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Adicionar presente" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Presentes do evento selecionado" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Histórico de reservas do evento" })).toBeVisible();
 
   const desktopMetrics = await page.evaluate(() => {
-    const summaryElement = document.querySelector("#selected-event-summary");
-    const detailsElement = document.querySelector(".selected-event-details");
-    const detailItem = document.querySelector(".selected-event-details div");
     const dashboard = document.querySelector(".dashboard-grid");
-    const summaryRect = summaryElement.getBoundingClientRect();
     const dashboardRect = dashboard.getBoundingClientRect();
-    const detailItemStyle = getComputedStyle(detailItem);
     return {
-      summaryHeight: summaryRect.height,
       dashboardTop: dashboardRect.top,
-      detailColumns: getComputedStyle(detailsElement).gridTemplateColumns.split(" ").filter(Boolean).length,
-      detailItemBorderTopWidth: detailItemStyle.borderTopWidth,
-      detailItemBorderRadius: detailItemStyle.borderTopLeftRadius,
-      detailItemBackgroundColor: detailItemStyle.backgroundColor,
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
     };
   });
 
-  expect(desktopMetrics.detailColumns).toBe(3);
-  expect(desktopMetrics.summaryHeight).toBeLessThanOrEqual(250);
   expect(desktopMetrics.dashboardTop).toBeLessThanOrEqual(600);
-  expect(desktopMetrics.detailItemBorderTopWidth).toBe("0px");
-  expect(desktopMetrics.detailItemBorderRadius).toBe("0px");
-  expect(desktopMetrics.detailItemBackgroundColor).toBe("rgba(0, 0, 0, 0)");
   expect(desktopMetrics.horizontalOverflow).toBeLessThanOrEqual(1);
 
   await page.setViewportSize({ width: 390, height: 800 });
 
   const mobileMetrics = await page.evaluate(() => {
-    const detailsElement = document.querySelector(".selected-event-details");
-    const scrollElement = document.querySelector(".selected-event-summary-scroll");
-    const titleRect = document.querySelector(".selected-event-summary-head h2").getBoundingClientRect();
-    const dateRect = document.querySelector(".selected-event-summary-head .tag").getBoundingClientRect();
     return {
-      detailColumns: getComputedStyle(detailsElement).gridTemplateColumns.split(" ").filter(Boolean).length,
-      detailsClientHeight: scrollElement.clientHeight,
-      detailsScrollHeight: scrollElement.scrollHeight,
-      dateTop: dateRect.top,
-      titleBottom: titleRect.bottom,
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
     };
   });
 
-  expect(mobileMetrics.detailColumns).toBe(1);
-  expect(mobileMetrics.detailsScrollHeight).toBeGreaterThan(mobileMetrics.detailsClientHeight);
-  expect(mobileMetrics.dateTop).toBeGreaterThanOrEqual(mobileMetrics.titleBottom - 1);
   expect(mobileMetrics.horizontalOverflow).toBeLessThanOrEqual(1);
+});
+
+test("my-event exclui presente pelo botao da lista", async ({ page }) => {
+  const session = await createAuthenticatedSession();
+  const eventData = await createEvent(session.token, {
+    name: `Evento Excluir Presente ${uniqueSuffix()}`
+  });
+  const gift = await createGift(session.token, eventData.id, {
+    name: `Presente Excluir ${uniqueSuffix()}`
+  });
+
+  await seedAuthSession(page, session.login);
+  await page.goto(`/my-event.html?eventId=${eventData.id}`);
+
+  const giftCard = page.locator("#gifts-list .gift-item", { hasText: gift.name });
+  await expect(giftCard).toBeVisible();
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain(gift.name);
+    await dialog.accept();
+  });
+
+  await giftCard.getByRole("button", { name: "Excluir presente" }).click();
+
+  await expect(giftCard).toHaveCount(0);
+  await expect(page.locator("#gifts-list")).toContainText("Nenhum presente cadastrado");
+  await expect(page.locator("#gift-form-status")).toContainText("Presente excluído com sucesso.");
+  await expect.poll(async () => {
+    const gifts = await getGifts(eventData.id);
+    return gifts.some((item) => item.id === gift.id);
+  }).toBe(false);
+});
+
+test("my-event desabilita exclusao de presente com reserva ativa", async ({ page }) => {
+  const session = await createAuthenticatedSession();
+  const eventData = await createEvent(session.token, {
+    name: `Evento Presente Reservado ${uniqueSuffix()}`
+  });
+  const guest = await createGuest(session.token, eventData.id);
+  const gift = await createGift(session.token, eventData.id, {
+    name: `Presente Reservado ${uniqueSuffix()}`
+  });
+  await reserveGift(gift.id, guest.cpf);
+
+  await seedAuthSession(page, session.login);
+  await page.goto(`/my-event.html?eventId=${eventData.id}`);
+
+  const giftCard = page.locator("#gifts-list .gift-item", { hasText: gift.name });
+  await expect(giftCard).toBeVisible();
+
+  const deleteButton = giftCard.getByRole("button", { name: "Não é possível excluir um presente com reservas ativas." });
+  await expect(deleteButton).toBeDisabled();
+  await expect(deleteButton).toHaveAttribute("title", "Não é possível excluir um presente com reservas ativas.");
 });
 
 test("my-guests cria e edita limite de acompanhantes", async ({ page }) => {
@@ -249,6 +277,32 @@ test("my-guests cria e edita limite de acompanhantes", async ({ page }) => {
     const guests = await getGuests(session.token, eventData.id);
     return guests.find((guest) => guest.cpf === guestCpf)?.maxExtraGuests;
   }).toBe(1);
+});
+
+test("estados vazios privados mantem CTAs e mensagens do MVP", async ({ page }) => {
+  const session = await createAuthenticatedSession();
+
+  await seedAuthSession(page, session.login);
+  await page.goto("/my-events.html");
+
+  await expect(page.locator("#events-list")).toContainText("Você ainda não criou nenhum evento.");
+  await expect(page.getByRole("link", { name: "Criar evento" })).toBeVisible();
+  await expectNoRuntimePlaceholders(page.locator("main"));
+
+  const eventData = await createEvent(session.token, {
+    name: `Evento Vazio ${uniqueSuffix()}`
+  });
+
+  await page.goto(`/my-guests.html?eventId=${eventData.id}`);
+  await expect(page.getByRole("heading", { name: "Adicionar convidado" })).toBeVisible();
+  await expect(page.locator("#guests-list")).toContainText("Nenhum convidado cadastrado ainda.");
+  await expectNoRuntimePlaceholders(page.locator("main"));
+
+  await page.goto(`/my-event.html?eventId=${eventData.id}`);
+  await expect(page.getByRole("heading", { name: "Adicionar presente" })).toBeVisible();
+  await expect(page.locator("#gifts-list")).toContainText("Nenhum presente cadastrado ainda.");
+  await expect(page.locator("#reservations-list")).toContainText("Nenhuma reserva registrada para este evento.");
+  await expectNoRuntimePlaceholders(page.locator("main"));
 });
 
 test("evento publico mostra hub antes do CPF e permite presentear em pagina separada", async ({ page }) => {
@@ -299,19 +353,14 @@ test("evento publico mostra hub antes do CPF e permite presentear em pagina sepa
 
   await page.locator("#open-gifts-button").click();
   await expect(page).toHaveURL(new RegExp(`gifts\\.html\\?slug=${eventData.slug}$`));
-  await expect(page.locator("#gift-search-input")).toBeVisible();
+  await expect(page.locator("#gift-sort-select")).toBeVisible();
   await expect(page.locator("#gift-cart-panel")).not.toContainText("Voltar ao convite");
 
-  await page.locator("#gift-search-input").fill(secondGift.name);
+  await expect(page.locator(".gift-name", { hasText: gift.name })).toBeVisible();
   await expect(page.locator(".gift-name", { hasText: secondGift.name })).toBeVisible();
-  await expect(page.locator(".gift-name", { hasText: gift.name })).toHaveCount(0);
 
-  await page.locator("#gift-search-input").fill("");
   await page.locator("#gift-sort-select").selectOption("price-desc");
   await expect(page.locator(".gift-name").first()).toHaveText(secondGift.name);
-
-  await page.locator("[data-gift-filter='available']").click();
-  await expect(page.locator(".gift-name", { hasText: gift.name })).toBeVisible();
 
   const giftCard = page.locator("article.card.card-pad").filter({
     has: page.locator(".gift-name", { hasText: gift.name })
@@ -332,16 +381,15 @@ test("evento publico mostra hub antes do CPF e permite presentear em pagina sepa
   expect(removeButtonState.cursor).not.toBe("wait");
   await giftCard.getByRole("button", { name: "Presentear com este item" }).click();
 
-  await expect(page.locator("#public-gifts-status")).toContainText("Presente escolhido.");
+  await expect(page.locator("#public-gifts-status")).toContainText("Presente reservado com sucesso.");
   await expect(page.locator("#gift-cart-panel")).toContainText(gift.name);
-  await page.locator("[data-gift-filter='reserved']").click();
-  await expect(giftCard.locator(".gift-meta")).toContainText("0 disponíveis | 1 escolhido");
+  await expect(page.locator(".gift-name", { hasText: gift.name })).toHaveCount(0);
 
-  await giftCard.getByRole("button", { name: "Retirar escolha" }).click();
+  await page.locator("#gift-cart-panel [data-cart-remove-gift-id]").click();
 
   await expect(page.locator("#public-gifts-status")).toContainText("Presente retirado.");
   await expect(page.locator("#gift-cart-panel")).toContainText("Nenhum presente escolhido ainda");
-  await page.locator("[data-gift-filter='available']").click();
+  await expect(giftCard).toBeVisible();
   await expect(giftCard.locator(".gift-meta")).toContainText("1 disponível | 0 escolhidos");
 
   await giftCard.getByRole("button", { name: "Presentear com este item" }).click();
@@ -355,7 +403,7 @@ test("evento publico mostra hub antes do CPF e permite presentear em pagina sepa
   await expect(page.locator("#gift-identify-back-link")).toHaveAttribute("href", `./event.html?slug=${eventData.slug}`);
   await page.getByLabel("CPF do convidado").fill(formatCpf(guest.cpf));
   await page.getByLabel("CPF do convidado").press("Enter");
-  await expect(page.locator("#gift-search-input")).toBeVisible();
+  await expect(page.locator("#gift-sort-select")).toBeVisible();
 });
 
 test("lista de presentes usa selecao mobile em gaveta", async ({ page }) => {
@@ -374,7 +422,7 @@ test("lista de presentes usa selecao mobile em gaveta", async ({ page }) => {
   await page.goto(`/gifts.html?slug=${eventData.slug}`);
   await page.getByLabel("CPF do convidado").fill(formatCpf(guest.cpf));
   await page.getByRole("button", { name: "OK" }).click();
-  await expect(page.locator("#gift-search-input")).toBeVisible();
+  await expect(page.locator("#gift-sort-select")).toBeVisible();
   await expect(page.locator("#gift-cart-mobile-bar")).toBeHidden();
 
   const giftCard = page.locator("article.card.card-pad").filter({
@@ -382,7 +430,7 @@ test("lista de presentes usa selecao mobile em gaveta", async ({ page }) => {
   }).first();
 
   await giftCard.getByRole("button", { name: "Presentear com este item" }).click();
-  await expect(page.locator("#public-gifts-status")).toContainText("Presente escolhido.");
+  await expect(page.locator("#public-gifts-status")).toContainText("Presente reservado com sucesso.");
 
   const mobileBar = page.locator("#gift-cart-mobile-bar");
   await expect(mobileBar).toBeVisible();
@@ -402,6 +450,38 @@ test("lista de presentes usa selecao mobile em gaveta", async ({ page }) => {
   await mobileBar.click();
   await page.locator("#gift-checkout-button").click();
   await expect(page.locator("#gift-order-success")).toContainText("Presentes registrados com sucesso");
+});
+
+test("lista publica diferencia sem presentes de todos reservados", async ({ page }) => {
+  const owner = await createAuthenticatedSession();
+  const emptyEvent = await createEvent(owner.token, {
+    name: `Evento Sem Presentes ${uniqueSuffix()}`
+  });
+  const emptyGuest = await createGuest(owner.token, emptyEvent.id);
+
+  await page.goto(`/gifts.html?slug=${emptyEvent.slug}`);
+  await page.getByLabel("CPF do convidado").fill(formatCpf(emptyGuest.cpf));
+  await page.getByRole("button", { name: "OK" }).click();
+  await expect(page.locator("#gift-grid")).toContainText("Nenhum presente cadastrado ainda.");
+  await expectNoRuntimePlaceholders(page.locator("#public-gifts-root"));
+
+  const reservedEvent = await createEvent(owner.token, {
+    name: `Evento Reservado ${uniqueSuffix()}`
+  });
+  const reservingGuest = await createGuest(owner.token, reservedEvent.id);
+  const browsingGuest = await createGuest(owner.token, reservedEvent.id);
+  const gift = await createGift(owner.token, reservedEvent.id, {
+    name: `Presente Ja Reservado ${uniqueSuffix()}`,
+    quantity: 1
+  });
+  await reserveGift(gift.id, reservingGuest.cpf);
+
+  await page.goto(`/gifts.html?slug=${reservedEvent.slug}`);
+  await page.getByLabel("CPF do convidado").fill(formatCpf(browsingGuest.cpf));
+  await page.getByRole("button", { name: "OK" }).click();
+  await expect(page.locator("#gift-grid")).toContainText("Todos os presentes desta lista já foram reservados.");
+  await expect(page.locator("#gift-cart-panel")).toContainText("Nenhum presente escolhido ainda");
+  await expectNoRuntimePlaceholders(page.locator("#public-gifts-root"));
 });
 
 test("convite publico permite confirmar presenca com acompanhante e voltar ao presente", async ({ page }) => {
@@ -457,7 +537,9 @@ test("convite publico abre por slug e identifica convidado por CPF", async ({ pa
 
   await page.goto("/event.html");
   await expect(page.locator("#public-event-root")).toHaveAttribute("data-state", "missing-slug");
-  await expect(page.locator("#invitation-flow-status")).toContainText("Abra o convite pelo link enviado");
+  await expect(page.locator("#public-event-not-found")).toBeVisible();
+  await expect(page.locator("#public-event-not-found")).toContainText("Este link não abriu um evento");
+  await expect(page.locator("#invitation-flow-status")).toBeHidden();
   await expect(page.locator("#slug-input")).toHaveCount(0);
 
   await page.goto(`/event.html?slug=${eventData.slug}`);
@@ -494,6 +576,116 @@ test("convite publico abre por slug e identifica convidado por CPF", async ({ pa
   await expect(page.locator("#invitation-identify-fields")).toBeHidden();
   await expect(page.locator("#invitation-flow-status")).toBeHidden();
   await expect(page.locator("#rsvp-status")).toBeHidden();
+});
+
+test("convite publico preserva formulario e restaura botao quando RSVP falha", async ({ page }) => {
+  const owner = await createAuthenticatedSession();
+  const eventData = await createEnrichedEvent(owner.token, {
+    name: `Evento Falha RSVP ${uniqueSuffix()}`
+  });
+  const guest = await createGuest(owner.token, eventData.id, {
+    maxExtraGuests: 1
+  });
+
+  await page.route("**/api/events/**/rsvp", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.abort("failed");
+      return;
+    }
+
+    await route.fallback();
+  });
+
+  await page.goto(`/event.html?slug=${eventData.slug}`);
+  await page.getByRole("button", { name: "Confirmar presença" }).click();
+  await page.getByLabel("CPF do convidado").fill(formatCpf(guest.cpf));
+  await page.getByRole("button", { name: "OK" }).click();
+  await expect(page.locator("#rsvp-panel")).toContainText("Confirmação pendente");
+
+  await page.getByLabel("Mensagem para os noivos").fill("Mensagem preservada");
+  await page.getByLabel("Restrições alimentares").fill("Sem lactose");
+  await page.getByLabel("Quantidade de acompanhantes").fill("1");
+  await page.locator("#companion-0-name").fill("Clara Smoke");
+  await page.locator("#companion-0-birth-date").fill("2018-01-01");
+  await page.locator("#rsvp-submit-button").click();
+
+  await expect(page.locator("#rsvp-form .field-error")).toContainText("Não conseguimos salvar sua resposta agora. Verifique sua conexão e tente novamente.");
+  await expect(page.locator("#rsvp-submit-button")).toBeEnabled();
+  await expect(page.locator("#rsvp-submit-button")).toHaveText("Salvar");
+  await expect(page.locator("#rsvp-panel")).toBeVisible();
+  await expect(page.locator(".rsvp-result-message")).toHaveCount(0);
+  await expect(page.getByLabel("Mensagem para os noivos")).toHaveValue("Mensagem preservada");
+  await expect(page.getByLabel("Restrições alimentares")).toHaveValue("Sem lactose");
+  await expect(page.getByLabel("Quantidade de acompanhantes")).toHaveValue("1");
+  await expect(page.locator("#companion-0-name")).toHaveValue("Clara Smoke");
+  await expect(page.locator("#companion-0-birth-date")).toHaveValue("2018-01-01");
+  await expectNoRuntimePlaceholders(page.locator("#invitation-flow-root"));
+});
+
+test("convite publico mostra loading e sucesso ao confirmar recusar e atualizar RSVP", async ({ page }) => {
+  const owner = await createAuthenticatedSession();
+  const eventData = await createEnrichedEvent(owner.token, {
+    name: `Evento Status RSVP ${uniqueSuffix()}`
+  });
+  const confirmGuest = await createGuest(owner.token, eventData.id, { name: "Convidado Confirma" });
+  const declineGuest = await createGuest(owner.token, eventData.id, { name: "Convidado Recusa" });
+  const updateGuest = await createGuest(owner.token, eventData.id, { name: "Convidado Atualiza" });
+  await updateRsvp(eventData.slug, updateGuest.cpf, "accepted");
+
+  await page.route(/\/api\/events\/[^/]+\/rsvp\?guestCpf=/, async (route) => {
+    await delay(150);
+    await route.fallback();
+  });
+
+  await page.route(/\/api\/events\/[^/]+\/rsvp$/, async (route) => {
+    if (["POST", "PUT"].includes(route.request().method())) {
+      await delay(150);
+    }
+
+    await route.fallback();
+  });
+
+  await page.goto(`/event.html?slug=${eventData.slug}`);
+  await page.getByRole("button", { name: "Confirmar presença" }).click();
+  await page.getByLabel("CPF do convidado").fill(formatCpf(confirmGuest.cpf));
+  await page.getByRole("button", { name: "OK" }).click();
+  await expect(page.locator("#invitation-flow-status")).toContainText("Buscando convite...");
+  await expect(page.locator("#invitation-next-button")).toBeDisabled();
+  await expect(page.locator("#rsvp-panel")).toContainText("Confirmação pendente");
+
+  await page.locator("#rsvp-submit-button").click();
+  await expect(page.locator("#invitation-flow-status")).toContainText("Salvando resposta...");
+  await expect(page.locator("#rsvp-submit-button")).toBeDisabled();
+  await expect(page.locator(".rsvp-result-message")).toContainText("Presença confirmada.");
+  await expect.poll(async () => {
+    const rsvp = await getRsvp(eventData.slug, confirmGuest.cpf);
+    return rsvp.rsvpStatus;
+  }).toBe("accepted");
+
+  await page.getByRole("button", { name: "Confirmar presença" }).click();
+  await page.getByLabel("CPF do convidado").fill(formatCpf(declineGuest.cpf));
+  await page.getByRole("button", { name: "OK" }).click();
+  await expect(page.locator("#rsvp-panel")).toContainText("Confirmação pendente");
+  await page.getByLabel("Não poderei comparecer").check();
+  await page.locator("#rsvp-submit-button").click();
+  await expect(page.locator(".rsvp-result-message")).toContainText("Resposta recusada.");
+  await expect.poll(async () => {
+    const rsvp = await getRsvp(eventData.slug, declineGuest.cpf);
+    return rsvp.rsvpStatus;
+  }).toBe("declined");
+
+  await page.getByRole("button", { name: "Confirmar presença" }).click();
+  await page.getByLabel("CPF do convidado").fill(formatCpf(updateGuest.cpf));
+  await page.getByRole("button", { name: "OK" }).click();
+  await expect(page.locator("#rsvp-panel")).toContainText("Presença confirmada");
+  await page.getByLabel("Não poderei comparecer").check();
+  await page.locator("#rsvp-submit-button").click();
+  await expect(page.locator(".rsvp-result-message")).toContainText("Resposta atualizada.");
+  await expect.poll(async () => {
+    const rsvp = await getRsvp(eventData.slug, updateGuest.cpf);
+    return rsvp.rsvpStatus;
+  }).toBe("declined");
+  await expectNoRuntimePlaceholders(page.locator("#invitation-flow-root"));
 });
 
 test("evento publico permite consultar e atualizar RSVP", async ({ page }) => {
@@ -585,4 +777,14 @@ async function seedAuthSession(page, loginPayload) {
   await page.addInitScript((session) => {
     window.localStorage.setItem("wg_auth_session", JSON.stringify(session));
   }, loginPayload);
+}
+
+async function expectNoRuntimePlaceholders(locator) {
+  await expect(locator).not.toContainText(/\b(undefined|null|NaN)\b/);
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }

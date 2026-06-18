@@ -108,6 +108,7 @@ async function loadMyEvents() {
 
   try {
     setStatus(status, "status-loading", UI_TEXT.guests.loading);
+    renderGuestsLoading();
 
     const apiBase = getApiBase();
     state.events = await requestJson(`${apiBase}/api/events/mine`, { headers: authHeaders(token) });
@@ -292,6 +293,7 @@ async function loadSelectedEventGuests() {
   }
 
   try {
+    renderGuestsLoading();
     const apiBase = getApiBase();
     state.guests = await requestJson(`${apiBase}/api/events/${state.selectedEventId}/guests`, {
       headers: authHeaders(token)
@@ -414,6 +416,10 @@ function renderGuests() {
   });
 }
 
+function renderGuestsLoading() {
+  guestsList.innerHTML = `<div class="center-empty">${UI_TEXT.guests.loadingList}</div>`;
+}
+
 function guestRsvpStatusBadge(status) {
   switch (normalizeRsvpStatus(status)) {
     case "accepted":
@@ -443,8 +449,8 @@ function buildGuestReservationSummary(cpf) {
   const normalizedCpf = digitsOnly(cpf);
   const matchingReservations = state.reservations.filter((reservation) => digitsOnly(reservation.guestCpf) === normalizedCpf);
   const total = matchingReservations.reduce((sum, reservation) => {
-    const activeQuantity = Number(reservation.activeQuantity ?? 0);
-    const giftPrice = Number(reservation.giftPrice ?? 0);
+    const activeQuantity = toNonNegativeInteger(reservation.activeQuantity);
+    const giftPrice = toNonNegativeNumber(reservation.giftPrice);
     return sum + (activeQuantity > 0 ? activeQuantity * giftPrice : 0);
   }, 0);
 
@@ -539,6 +545,12 @@ function parseMaxExtraGuests(value) {
 function toNonNegativeInteger(value) {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return parsed;
+}
+
+function toNonNegativeNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
 }
 

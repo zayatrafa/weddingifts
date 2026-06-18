@@ -320,7 +320,7 @@ function showRsvpGate() {
 async function lookupRsvp() {
   if (state.lookupSubmitting || !state.event) return;
 
-  const guestCpf = state.guestCpf || digitsOnly(guestCpfInput.value);
+  const guestCpf = digitsOnly(guestCpfInput.value) || state.guestCpf;
   if (!isValidCpf(guestCpf)) {
     showFieldError(guestCpfInput, "Informe um CPF válido para consultar o convite.");
     return;
@@ -329,9 +329,10 @@ async function lookupRsvp() {
   try {
     state.lookupSubmitting = true;
     rsvpLookupButton.disabled = true;
+    rsvpLookupButton.textContent = "Buscando...";
     clearFieldError(guestCpfInput);
     clearRsvpStatus();
-    setStatus(status, "status-loading", "Consultando convite...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.rsvpLookupLoading);
 
     const apiBase = getApiBase();
     state.rsvp = await requestJson(`${apiBase}/api/events/${encodeURIComponent(state.event.slug)}/rsvp?guestCpf=${encodeURIComponent(guestCpf)}`);
@@ -346,6 +347,7 @@ async function lookupRsvp() {
   } finally {
     state.lookupSubmitting = false;
     rsvpLookupButton.disabled = false;
+    rsvpLookupButton.textContent = "OK";
   }
 }
 
@@ -442,8 +444,19 @@ function hideRsvpSection() {
   clearRsvpStatus();
 }
 
-function renderRsvpResult(selectedStatus) {
+function renderRsvpResult(selectedStatus, { wasPending = true } = {}) {
   const accepted = selectedStatus === "accepted";
+  const resultTitle = wasPending
+    ? (accepted ? UI_TEXT.publicEvent.rsvpAccepted : UI_TEXT.publicEvent.rsvpDeclined)
+    : UI_TEXT.publicEvent.rsvpUpdated;
+  const resultKicker = resultTitle.replace(/\.$/, "");
+  const resultBody = wasPending
+    ? (accepted
+      ? "Obrigado por confirmar presença. Vai ser especial celebrar essa história com você."
+      : "Sentiremos sua falta. Mesmo assim, você faz parte dessa história.")
+    : (accepted
+      ? "Sua presença foi atualizada e registrada para o casal."
+      : "Sua resposta foi atualizada. Sentiremos sua falta.");
 
   flowRoot.hidden = false;
   flowRoot.dataset.state = "complete";
@@ -459,11 +472,9 @@ function renderRsvpResult(selectedStatus) {
           ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
           : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>'}
       </span>
-      <p class="kicker">${accepted ? "Presença confirmada" : "Resposta registrada"}</p>
-      <h2>${accepted ? "Obrigado por confirmar presença." : "Sentiremos sua falta."}</h2>
-      <p>${accepted
-        ? "Sua resposta foi registrada. Vai ser especial celebrar essa história com você."
-        : "Que pena que você não poderá comparecer. Mesmo assim, você faz parte dessa história."}</p>
+      <p class="kicker">${escapeHtml(resultKicker)}</p>
+      <h2>${escapeHtml(resultTitle)}</h2>
+      <p>${escapeHtml(resultBody)}</p>
       <div class="rsvp-result-actions">
         <button id="rsvp-edit-response-button" class="btn btn-secondary with-icon" type="button">
           <span class="btn-icon" aria-hidden="true">
@@ -495,6 +506,7 @@ async function submitRsvp(event) {
   const messageToCouple = document.getElementById("rsvp-message-input")?.value.trim() || "";
   const dietaryRestrictions = document.getElementById("rsvp-dietary-input")?.value.trim() || "";
   const guestCpf = state.guestCpf || digitsOnly(guestCpfInput.value);
+  const previousRsvpStatus = normalizeRsvpStatus(state.rsvp.rsvpStatus);
 
   clearRsvpFieldErrors();
   const validationError = validateRsvpSubmission(selectedStatus, messageToCouple, dietaryRestrictions);
@@ -523,9 +535,9 @@ async function submitRsvp(event) {
     }
 
     clearRsvpStatus();
-    setStatus(status, "status-loading", "Salvando confirmação...");
+    setStatus(status, "status-loading", UI_TEXT.publicEvent.rsvpSaveLoading);
     const apiBase = getApiBase();
-    const method = normalizeRsvpStatus(state.rsvp.rsvpStatus) === "pending" ? "POST" : "PUT";
+    const method = previousRsvpStatus === "pending" ? "POST" : "PUT";
     state.rsvp = await requestJson(`${apiBase}/api/events/${encodeURIComponent(state.event.slug)}/rsvp`, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -533,11 +545,11 @@ async function submitRsvp(event) {
     });
     state.guestCpf = guestCpf;
     savePublicGiftContext();
-    renderRsvpResult(selectedStatus);
+    renderRsvpResult(selectedStatus, { wasPending: previousRsvpStatus === "pending" });
     clearFlowStatus();
   } catch (error) {
     clearFlowStatus();
-    showBackendRsvpError(`Não foi possível salvar sua resposta: ${error.message}`);
+    showBackendRsvpError(getRsvpSaveErrorMessage(error));
   } finally {
     state.rsvpSubmitting = false;
     const submitButton = document.getElementById("rsvp-submit-button");
@@ -546,6 +558,24 @@ async function submitRsvp(event) {
       submitButton.textContent = "Salvar";
     }
   }
+}
+
+function getRsvpSaveErrorMessage(error) {
+  const message = String(error?.message || "").trim();
+  const normalizedMessage = message.toLowerCase();
+  const genericRetry = UI_TEXT.common.retry.toLowerCase();
+
+  if (
+    !message
+    || normalizedMessage === genericRetry
+    || normalizedMessage.includes("failed to fetch")
+    || normalizedMessage.includes("networkerror")
+    || normalizedMessage.includes("load failed")
+  ) {
+    return UI_TEXT.publicEvent.rsvpSaveError;
+  }
+
+  return message;
 }
 
 function validateRsvpSubmission(selectedStatus, messageToCouple, dietaryRestrictions) {

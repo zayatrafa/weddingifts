@@ -1,6 +1,7 @@
 import {
   authHeaders,
   buildPublicEventLink,
+  formatCurrency,
   getApiBase,
   initUserDropdown,
   logoutAndRedirectToLogin,
@@ -10,17 +11,20 @@ import {
   UI_TEXT
 } from "./common.js";
 import {
-  MAX_EVENT_DATE_TIME_LOCAL,
+  MAX_EVENT_DATE_LOCAL,
+  buildDateTimeLocalValue,
   buildEnrichedEventPayload,
   formatEventDateTime,
   getEnrichedEventValidationError,
   getEventTimeZoneId,
   getTimeZoneLabel,
+  isFutureEventDate,
   isFutureEventDateTime,
-  minFutureEventDateTimeLocalValue,
+  minFutureEventDateLocalValue,
   readEnrichedEventFormValues,
   renderTimeZoneOptions,
-  toEventDateTimeInputValue
+  toEventDateInputValue,
+  toEventTimeInputValue
 } from "./event-contract.js";
 
 const session = requireAuth();
@@ -36,7 +40,6 @@ const focusEventIdFromQuery = Number(query.get("focusEventId"));
 let shouldFocusFromQuery = Number.isInteger(focusEventIdFromQuery) && focusEventIdFromQuery > 0;
 
 const state = { events: [] };
-const MOBILE_EDIT_SCROLL_QUERY = "(max-width: 680px)";
 const ICON_EDIT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.05-9.06.92.92-9.05 9.06zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.49 1.5 3.75 3.75 1.49-1.5z" fill="currentColor"/></svg>';
 const ICON_SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.59 13.41a1 1 0 0 1 0-1.41l2.83-2.83a3 3 0 0 1 4.24 4.24l-1.42 1.42a3 3 0 0 1-4.24 0 1 1 0 1 0-1.41 1.41 5 5 0 0 0 7.07 0l1.42-1.42a5 5 0 0 0-7.07-7.07l-2.83 2.83a1 1 0 0 1-1.41 0z" fill="currentColor"/><path d="M13.41 10.59a1 1 0 0 1 0 1.41l-2.83 2.83a3 3 0 0 1-4.24-4.24l1.42-1.42a3 3 0 0 1 4.24 0 1 1 0 1 0 1.41-1.41 5 5 0 0 0-7.07 0L4.93 9.17a5 5 0 1 0 7.07 7.07l2.83-2.83a1 1 0 0 1 1.41 0z" fill="currentColor"/></svg>';
 const ICON_TRASH = '<img class="trash-icon" src="./assets/images/trash-icon.svg" alt="" aria-hidden="true" draggable="false" />';
@@ -58,6 +61,7 @@ async function loadMyEvents() {
   try {
     refreshEventsButton.disabled = true;
     setEventsStatus("status-loading", UI_TEXT.events.loading);
+    renderEventsLoading();
 
     const apiBase = getApiBase();
     state.events = await requestJson(`${apiBase}/api/events/mine`, {
@@ -84,7 +88,7 @@ async function loadMyEvents() {
 
 function renderEvents() {
   if (!state.events.length) {
-    eventsList.innerHTML = '<div class="center-empty">Nenhum evento cadastrado no momento.</div>';
+    eventsList.innerHTML = `<div class="center-empty">${UI_TEXT.events.empty}</div>`;
     return;
   }
 
@@ -133,8 +137,12 @@ function renderEvents() {
         </div>
         <div class="row row-tight">
           <div class="field field-flat">
-            <label>Data e hora</label>
-            <input class="input" type="datetime-local" name="eventDateTime" max="${MAX_EVENT_DATE_TIME_LOCAL}" value="${escapeAttribute(toEventDateTimeInputValue(eventData))}" required />
+            <label>Data</label>
+            <input class="input" type="date" name="eventDate" max="${MAX_EVENT_DATE_LOCAL}" value="${escapeAttribute(toEventDateInputValue(eventData))}" required />
+          </div>
+          <div class="field field-flat">
+            <label>Horário</label>
+            <input class="input" type="time" name="eventTime" value="${escapeAttribute(toEventTimeInputValue(eventData))}" />
           </div>
           <div class="field field-flat">
             <label>Fuso do evento</label>
@@ -143,23 +151,23 @@ function renderEvents() {
         </div>
         <div class="field field-flat">
           <label>Nome do local</label>
-          <input class="input" type="text" name="locationName" maxlength="160" value="${escapeAttribute(eventData.locationName)}" required />
+          <input class="input" type="text" name="locationName" maxlength="160" value="${escapeAttribute(eventData.locationName)}" />
         </div>
         <div class="field field-flat">
           <label>Endereço do local</label>
-          <input class="input" type="text" name="locationAddress" maxlength="255" value="${escapeAttribute(eventData.locationAddress)}" required />
+          <input class="input" type="text" name="locationAddress" maxlength="255" value="${escapeAttribute(eventData.locationAddress)}" />
         </div>
         <div class="field field-flat">
           <label>Link do Google Maps</label>
-          <input class="input" type="url" name="locationMapsUrl" maxlength="500" value="${escapeAttribute(eventData.locationMapsUrl)}" required />
+          <input class="input" type="url" name="locationMapsUrl" maxlength="500" value="${escapeAttribute(eventData.locationMapsUrl)}" />
         </div>
         <div class="field field-flat">
           <label>Informações da cerimônia</label>
-          <textarea class="textarea" name="ceremonyInfo" maxlength="500" required>${escapeHtml(eventData.ceremonyInfo)}</textarea>
+          <textarea class="textarea" name="ceremonyInfo" maxlength="500">${escapeHtml(eventData.ceremonyInfo)}</textarea>
         </div>
         <div class="field field-flat">
           <label>Traje</label>
-          <input class="input" type="text" name="dressCode" maxlength="160" value="${escapeAttribute(eventData.dressCode)}" required />
+          <input class="input" type="text" name="dressCode" maxlength="160" value="${escapeAttribute(eventData.dressCode)}" />
         </div>
         <div class="field field-flat">
           <label for="${editFieldPrefix}-invitation-message">Mensagem do convite</label>
@@ -190,7 +198,7 @@ function renderEvents() {
 
     const editForm = item.querySelector("[data-edit-form]");
     const editButton = item.querySelector('[data-action="edit"]');
-    syncEditDateTimeBounds(editForm);
+    syncEditDateBounds(editForm);
 
     item.querySelector('[data-action="copy"]').addEventListener("click", async () => {
       try {
@@ -220,19 +228,23 @@ function renderEvents() {
       editButton.classList.toggle("is-active", !nextStateHidden);
       editButton.setAttribute("aria-pressed", String(!nextStateHidden));
       if (!nextStateHidden) {
-        scrollEditFormIntoViewOnMobile(editForm);
+        scrollEditFormIntoView(editForm);
       }
       editButton.setAttribute("aria-label", nextStateHidden ? "Editar evento" : "Fechar edição");
       editButton.setAttribute("title", nextStateHidden ? "Editar evento" : "Fechar edição");
     });
 
     editForm.elements.timeZoneId.addEventListener("change", () => {
-      syncEditDateTimeBounds(editForm);
-      validateEditDateTimeField(editForm);
+      syncEditDateBounds(editForm);
+      validateEditDateField(editForm);
     });
 
-    editForm.elements.eventDateTime.addEventListener("input", () => {
-      validateEditDateTimeField(editForm);
+    editForm.elements.eventDate.addEventListener("input", () => {
+      validateEditDateField(editForm);
+    });
+
+    editForm.elements.eventTime.addEventListener("input", () => {
+      validateEditDateField(editForm);
     });
 
     item.querySelector('[data-action="cancel-edit"]').addEventListener("click", () => {
@@ -253,7 +265,7 @@ function renderEvents() {
       const validationError = getEnrichedEventValidationError(values);
 
       if (validationError) {
-        validateEditDateTimeField(editForm);
+        validateEditDateField(editForm);
         setEventsStatus("status-error", validationError);
         return;
       }
@@ -304,6 +316,12 @@ function renderEvents() {
   });
 }
 
+function renderEventsLoading() {
+  if (!eventsList.innerHTML.trim()) {
+    eventsList.innerHTML = `<div class="center-empty">${UI_TEXT.events.loading}</div>`;
+  }
+}
+
 function renderEventDetails(eventData) {
   const rows = [
     ["Casal", eventData.hostNames],
@@ -335,17 +353,28 @@ function renderEventDetails(eventData) {
 
 function renderEventStatusSummary(eventData, guestCount) {
   const summary = eventData.statusSummary || {};
-  const values = [
-    `${toSafeCount(guestCount)} convidados`,
-    `${toSafeCount(summary.companionCount)} acompanhantes`,
-    `${toSafeCount(summary.confirmedGuestCount)} confirmados`,
-    `${toSafeCount(summary.declinedGuestCount)} recusados`,
-    `${toSafeCount(summary.pendingGuestCount)} pendentes`,
-    `${toSafeCount(summary.reservedGiftCount)} presentes reservados`,
-    `${toSafeCount(summary.availableGiftCount)} presentes disponíveis`
-  ];
 
-  return `<p class="my-event-status-summary">${values.map((value) => `<span>${escapeHtml(value)}</span>`).join("")}</p>`;
+  return `
+    <div class="my-event-status-summary" aria-label="Resumo do evento">
+      <div class="my-event-status-group">
+        <span class="my-event-status-icon">${ICON_GUESTS}</span>
+        <div class="my-event-status-lines">
+          <span>${toSafeCount(guestCount)} convidados</span>
+          <span>${toSafeCount(summary.confirmedGuestCount)} confirmados + ${toSafeCount(summary.companionCount)} acompanhantes</span>
+          <span>${toSafeCount(summary.declinedGuestCount)} recusados</span>
+          <span>${toSafeCount(summary.pendingGuestCount)} pendentes</span>
+        </div>
+      </div>
+      <div class="my-event-status-group">
+        <span class="my-event-status-icon">${ICON_GIFT}</span>
+        <div class="my-event-status-lines">
+          <span>${toSafeCount(summary.reservedGiftCount)} presentes reservados</span>
+          <span>${toSafeCount(summary.availableGiftCount)} presentes disponíveis</span>
+          <span>Total arrecadado: ${escapeHtml(formatCurrency(toSafeMoney(summary.totalRaisedAmount)))}</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function toSafeCount(value, fallback = 0) {
@@ -353,30 +382,44 @@ function toSafeCount(value, fallback = 0) {
   return Number.isFinite(numberValue) && numberValue >= 0 ? Math.trunc(numberValue) : fallback;
 }
 
-function syncEditDateTimeBounds(editForm) {
-  editForm.elements.eventDateTime.min = minFutureEventDateTimeLocalValue(editForm.elements.timeZoneId.value);
-  editForm.elements.eventDateTime.max = MAX_EVENT_DATE_TIME_LOCAL;
+function toSafeMoney(value) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : 0;
 }
 
-function validateEditDateTimeField(editForm) {
-  const value = editForm.elements.eventDateTime.value;
-  if (!value) {
-    editForm.elements.eventDateTime.setCustomValidity("");
+function syncEditDateBounds(editForm) {
+  editForm.elements.eventDate.min = minFutureEventDateLocalValue(editForm.elements.timeZoneId.value);
+  editForm.elements.eventDate.max = MAX_EVENT_DATE_LOCAL;
+}
+
+function validateEditDateField(editForm) {
+  const dateValue = editForm.elements.eventDate.value;
+  const timeValue = editForm.elements.eventTime.value;
+  const dateTimeValue = buildDateTimeLocalValue(dateValue, timeValue);
+
+  if (!dateValue) {
+    editForm.elements.eventDate.setCustomValidity("");
     return;
   }
 
-  if (!isFutureEventDateTime(value, editForm.elements.timeZoneId.value)) {
-    editForm.elements.eventDateTime.setCustomValidity("Informe uma data e hora futuras para o evento.");
+  if (dateTimeValue && !isFutureEventDateTime(dateTimeValue, editForm.elements.timeZoneId.value)) {
+    editForm.elements.eventDate.setCustomValidity("Informe uma data e hora futuras para o evento.");
     return;
   }
 
-  editForm.elements.eventDateTime.setCustomValidity("");
+  if (!dateTimeValue && !isFutureEventDate(dateValue, editForm.elements.timeZoneId.value)) {
+    editForm.elements.eventDate.setCustomValidity("Informe uma data futura para o evento.");
+    return;
+  }
+
+  editForm.elements.eventDate.setCustomValidity("");
 }
 
 function fillEventEditForm(editForm, eventData) {
   editForm.elements.name.value = eventData.name || "";
   editForm.elements.hostNames.value = eventData.hostNames || "";
-  editForm.elements.eventDateTime.value = toEventDateTimeInputValue(eventData);
+  editForm.elements.eventDate.value = toEventDateInputValue(eventData);
+  editForm.elements.eventTime.value = toEventTimeInputValue(eventData);
   editForm.elements.timeZoneId.innerHTML = renderTimeZoneOptions(getEventTimeZoneId(eventData));
   editForm.elements.locationName.value = eventData.locationName || "";
   editForm.elements.locationAddress.value = eventData.locationAddress || "";
@@ -388,8 +431,8 @@ function fillEventEditForm(editForm, eventData) {
   editForm.elements.scheduleInfo.value = eventData.scheduleInfo || "";
   editForm.elements.coverImageUrl.value = eventData.coverImageUrl || "";
   editForm.elements.galleryImageUrls.value = galleryUrlsToText(eventData.galleryImageUrls);
-  syncEditDateTimeBounds(editForm);
-  validateEditDateTimeField(editForm);
+  syncEditDateBounds(editForm);
+  validateEditDateField(editForm);
 }
 
 function galleryUrlsToText(galleryImageUrls) {
@@ -420,9 +463,7 @@ function applyFocusFromQueryIfNeeded() {
   return true;
 }
 
-function scrollEditFormIntoViewOnMobile(editForm) {
-  if (!window.matchMedia(MOBILE_EDIT_SCROLL_QUERY).matches) return;
-
+function scrollEditFormIntoView(editForm) {
   window.requestAnimationFrame(() => {
     const shellNav = document.querySelector(".shell-nav");
     const topOffset = (shellNav?.getBoundingClientRect().height || 0) + 12;

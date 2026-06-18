@@ -275,6 +275,7 @@ public sealed class EventService
         }
 
         return BuildEnrichedEventData(
+            request.EventDate,
             request.HostNames,
             request.EventDateTime,
             request.TimeZoneId,
@@ -291,6 +292,7 @@ public sealed class EventService
         _ = normalizedName;
 
         return BuildEnrichedEventData(
+            request.EventDate,
             request.HostNames,
             request.EventDateTime,
             request.TimeZoneId,
@@ -303,6 +305,7 @@ public sealed class EventService
     }
 
     private EventData BuildEnrichedEventData(
+        DateTime? eventDate,
         string? hostNames,
         DateTimeOffset? eventDateTime,
         string? timeZoneId,
@@ -316,21 +319,22 @@ public sealed class EventService
         var normalizedHostNames = NormalizeRequiredText(hostNames, "nomes do casal", MaxHostNamesLength);
         var normalizedTimeZoneId = _eventTimeZoneService.NormalizeSupportedTimeZoneId(timeZoneId);
 
-        if (!eventDateTime.HasValue)
-            throw new DomainValidationException("Data e hora do evento são obrigatórias.");
-
-        var normalizedEventDateTime = _eventTimeZoneService.NormalizeEventDateTimeUtc(eventDateTime.Value, normalizedTimeZoneId);
+        var normalizedEventDateTime = eventDateTime.HasValue
+            ? _eventTimeZoneService.NormalizeEventDateTimeUtc(eventDateTime.Value, normalizedTimeZoneId)
+            : _eventTimeZoneService.BuildLegacyEventDateTimeUtc(
+                eventDate ?? throw new DomainValidationException("Data do evento é obrigatória."),
+                normalizedTimeZoneId);
 
         return new EventData(
             EventDate: _eventTimeZoneService.GetLegacyEventDateUtc(normalizedEventDateTime, normalizedTimeZoneId),
             HostNames: normalizedHostNames,
             EventDateTime: normalizedEventDateTime,
             TimeZoneId: normalizedTimeZoneId,
-            LocationName: NormalizeRequiredText(locationName, "nome do local", MaxLocationNameLength),
-            LocationAddress: NormalizeRequiredText(locationAddress, "endereço do local", MaxLocationAddressLength),
-            LocationMapsUrl: NormalizeRequiredUrl(locationMapsUrl, "link do Maps"),
-            CeremonyInfo: NormalizeRequiredText(ceremonyInfo, "informações da cerimônia", MaxCeremonyInfoLength),
-            DressCode: NormalizeRequiredText(dressCode, "traje", MaxDressCodeLength),
+            LocationName: NormalizeOptionalText(locationName, "nome do local", MaxLocationNameLength),
+            LocationAddress: NormalizeOptionalText(locationAddress, "endereço do local", MaxLocationAddressLength),
+            LocationMapsUrl: NormalizeOptionalUrl(locationMapsUrl, "link do Maps"),
+            CeremonyInfo: NormalizeOptionalText(ceremonyInfo, "informações da cerimônia", MaxCeremonyInfoLength),
+            DressCode: NormalizeOptionalText(dressCode, "traje", MaxDressCodeLength),
             CoverImageUrl: NormalizeOptionalUrl(coverImageUrl, "imagem de capa"));
     }
 

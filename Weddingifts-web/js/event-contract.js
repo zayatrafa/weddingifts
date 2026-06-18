@@ -1,5 +1,6 @@
 export const DEFAULT_EVENT_TIME_ZONE = "America/Sao_Paulo";
 export const MAX_EVENT_DATE_TIME_LOCAL = "2100-12-31T23:59";
+export const MAX_EVENT_DATE_LOCAL = "2100-12-31";
 
 export const EVENT_FIELD_LIMITS = {
   name: 120,
@@ -51,10 +52,19 @@ export function getTimeZoneLabel(timeZoneId) {
 }
 
 export function readEnrichedEventFormValues(elements) {
+  const eventDateTimeLocal = elements.eventDateTime?.value || buildDateTimeLocalValue(
+    elements.eventDate?.value,
+    elements.eventTime?.value
+  );
+  const eventDateLocal = elements.eventDate?.value || datePartFromDateTimeLocal(eventDateTimeLocal);
+  const eventTimeLocal = elements.eventTime?.value || timePartFromDateTimeLocal(eventDateTimeLocal);
+
   return {
     name: elements.name.value.trim(),
     hostNames: elements.hostNames.value.trim(),
-    eventDateTimeLocal: elements.eventDateTime.value,
+    eventDateLocal,
+    eventTimeLocal,
+    eventDateTimeLocal,
     timeZoneId: elements.timeZoneId.value,
     locationName: elements.locationName.value.trim(),
     locationAddress: elements.locationAddress.value.trim(),
@@ -73,7 +83,10 @@ export function buildEnrichedEventPayload(values) {
   return {
     name: values.name,
     hostNames: values.hostNames,
-    eventDateTime: buildEventDateTimeOffset(values.eventDateTimeLocal, values.timeZoneId),
+    eventDate: buildEventDateUtc(values.eventDateLocal),
+    eventDateTime: values.eventDateTimeLocal
+      ? buildEventDateTimeOffset(values.eventDateTimeLocal, values.timeZoneId)
+      : null,
     timeZoneId: values.timeZoneId,
     locationName: values.locationName,
     locationAddress: values.locationAddress,
@@ -92,13 +105,8 @@ export function getEnrichedEventValidationError(values) {
   const requiredFields = [
     ["name", "nome do evento"],
     ["hostNames", "nomes do casal"],
-    ["eventDateTimeLocal", "data e hora do evento"],
-    ["timeZoneId", "fuso do evento"],
-    ["locationName", "nome do local"],
-    ["locationAddress", "endereco do local"],
-    ["locationMapsUrl", "link do Maps"],
-    ["ceremonyInfo", "informações da cerimônia"],
-    ["dressCode", "traje"]
+    ["eventDateLocal", "data do evento"],
+    ["timeZoneId", "fuso do evento"]
   ];
 
   const missingField = requiredFields.find(([key]) => !String(values[key] || "").trim());
@@ -126,12 +134,24 @@ export function getEnrichedEventValidationError(values) {
     return "Selecione um fuso brasileiro válido para o evento.";
   }
 
-  if (!isValidLocalDateTimeValue(values.eventDateTimeLocal)) {
+  if (!isValidLocalDateValue(values.eventDateLocal)) {
+    return "Informe uma data válida para o evento.";
+  }
+
+  if (values.eventTimeLocal && !isValidLocalTimeValue(values.eventTimeLocal)) {
+    return "Informe um horário válido para o evento.";
+  }
+
+  if (values.eventDateTimeLocal && !isValidLocalDateTimeValue(values.eventDateTimeLocal)) {
     return "Informe uma data e hora válidas para o evento.";
   }
 
-  if (!isFutureEventDateTime(values.eventDateTimeLocal, values.timeZoneId)) {
+  if (values.eventDateTimeLocal && !isFutureEventDateTime(values.eventDateTimeLocal, values.timeZoneId)) {
     return "Informe uma data e hora futuras para o evento.";
+  }
+
+  if (!values.eventDateTimeLocal && !isFutureEventDate(values.eventDateLocal, values.timeZoneId)) {
+    return "Informe uma data futura para o evento.";
   }
 
   const invalidUrl = [
@@ -174,6 +194,13 @@ export function isFutureEventDateTime(dateTimeLocal, timeZoneId) {
   return Boolean(instant) && instant.getTime() > Date.now() && dateTimeLocal <= MAX_EVENT_DATE_TIME_LOCAL;
 }
 
+export function isFutureEventDate(dateLocal, timeZoneId) {
+  if (!isValidLocalDateValue(dateLocal) || !isSupportedEventTimeZone(timeZoneId)) return false;
+
+  const todayLocal = toTimeZoneDateLocalValue(new Date(), timeZoneId);
+  return dateLocal > todayLocal && dateLocal <= MAX_EVENT_DATE_LOCAL;
+}
+
 export function buildEventDateTimeOffset(dateTimeLocal, timeZoneId) {
   const parsed = parseLocalDateTimeValue(dateTimeLocal);
   const instant = getUtcInstantForLocalDateTime(dateTimeLocal, timeZoneId);
@@ -196,6 +223,16 @@ export function buildEventDateTimeOffset(dateTimeLocal, timeZoneId) {
   return `${dateTimeLocal}:00${formatOffset(offsetMinutes)}`;
 }
 
+export function buildEventDateUtc(dateLocal) {
+  return isValidLocalDateValue(dateLocal) ? `${dateLocal}T00:00:00.000Z` : null;
+}
+
+export function buildDateTimeLocalValue(dateLocal, timeLocal) {
+  const normalizedDate = String(dateLocal || "").trim();
+  const normalizedTime = String(timeLocal || "").trim();
+  return normalizedDate && normalizedTime ? `${normalizedDate}T${normalizedTime}` : "";
+}
+
 export function defaultEventDateTimeLocalValue(timeZoneId = DEFAULT_EVENT_TIME_ZONE) {
   const nowParts = getZonedParts(new Date(), timeZoneId);
   const futureDate = new Date(Date.UTC(nowParts.year, nowParts.month - 1, nowParts.day + 30, 19, 0, 0, 0));
@@ -207,8 +244,23 @@ export function defaultEventDateTimeLocalValue(timeZoneId = DEFAULT_EVENT_TIME_Z
   ].join("-") + "T19:00";
 }
 
+export function defaultEventDateLocalValue(timeZoneId = DEFAULT_EVENT_TIME_ZONE) {
+  return datePartFromDateTimeLocal(defaultEventDateTimeLocalValue(timeZoneId));
+}
+
 export function minFutureEventDateTimeLocalValue(timeZoneId = DEFAULT_EVENT_TIME_ZONE) {
   return toTimeZoneDateTimeLocalValue(new Date(Date.now() + 5 * 60 * 1000), timeZoneId);
+}
+
+export function minFutureEventDateLocalValue(timeZoneId = DEFAULT_EVENT_TIME_ZONE) {
+  const nowParts = getZonedParts(new Date(), timeZoneId);
+  const tomorrow = new Date(Date.UTC(nowParts.year, nowParts.month - 1, nowParts.day + 1, 0, 0, 0, 0));
+
+  return [
+    String(tomorrow.getUTCFullYear()).padStart(4, "0"),
+    String(tomorrow.getUTCMonth() + 1).padStart(2, "0"),
+    String(tomorrow.getUTCDate()).padStart(2, "0")
+  ].join("-");
 }
 
 export function toEventDateTimeInputValue(eventData) {
@@ -217,6 +269,14 @@ export function toEventDateTimeInputValue(eventData) {
   if (!date) return "";
 
   return toTimeZoneDateTimeLocalValue(date, getEventTimeZoneId(eventData));
+}
+
+export function toEventDateInputValue(eventData) {
+  return datePartFromDateTimeLocal(toEventDateTimeInputValue(eventData));
+}
+
+export function toEventTimeInputValue(eventData) {
+  return timePartFromDateTimeLocal(toEventDateTimeInputValue(eventData));
 }
 
 export function formatEventDateTime(eventData) {
@@ -246,6 +306,10 @@ export function parseEventInstant(value) {
 function toTimeZoneDateTimeLocalValue(date, timeZoneId) {
   const parts = getZonedParts(date, timeZoneId);
   return `${String(parts.year).padStart(4, "0")}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}T${String(parts.hour).padStart(2, "0")}:${String(parts.minute).padStart(2, "0")}`;
+}
+
+function toTimeZoneDateLocalValue(date, timeZoneId) {
+  return datePartFromDateTimeLocal(toTimeZoneDateTimeLocalValue(date, timeZoneId));
 }
 
 function getUtcInstantForLocalDateTime(dateTimeLocal, timeZoneId) {
@@ -328,6 +392,38 @@ function isValidLocalDateTimeValue(value) {
   return Boolean(parseLocalDateTimeValue(value));
 }
 
+function isValidLocalDateValue(value) {
+  return Boolean(parseLocalDateValue(value));
+}
+
+function isValidLocalTimeValue(value) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || ""));
+}
+
+function parseLocalDateValue(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+
+  if (
+    Number.isNaN(date.getTime())
+    || date.getUTCFullYear() !== year
+    || date.getUTCMonth() + 1 !== month
+    || date.getUTCDate() !== day
+    || year < 1900
+    || year > 2100
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
 function parseLocalDateTimeValue(value) {
   const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!match) return null;
@@ -353,6 +449,14 @@ function parseLocalDateTimeValue(value) {
   }
 
   return { year, month, day, hour, minute };
+}
+
+function datePartFromDateTimeLocal(value) {
+  return String(value || "").split("T")[0] || "";
+}
+
+function timePartFromDateTimeLocal(value) {
+  return String(value || "").split("T")[1] || "";
 }
 
 function dateTimeIsOutOfRange(year, hour, minute) {

@@ -6,7 +6,7 @@
 2. A confiança em mobile ainda depende em parte de validação manual.
 3. Alguns arquivos do repositório parecem auxiliares ou legados e podem induzir manutenção ao erro.
 4. As convenções de deploy para produção ainda não estão confirmadas com força suficiente no código para um runbook formal.
-5. O CORS fora de `Development` ainda está moldado para origens locais e exigiria trabalho explícito antes de um deploy mais amplo.
+5. A política definitiva de CORS para staging/produção ainda precisa ser validada em ambiente real; para teste público temporário há configuração explícita por origem.
 
 ## Risco De Documentação
 

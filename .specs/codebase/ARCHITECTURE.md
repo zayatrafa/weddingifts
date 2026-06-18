@@ -97,6 +97,7 @@ O frontend é multipágina e, do ponto de vista do produto, sem servidor própri
 - `FrontendSmoke` troca para SQLite
 - Swagger fica ativo em `Development` e `FrontendSmoke`
 - rate limiting fica ativo fora dos ambientes exclusivos de teste
+- CORS usa origens permitidas configuráveis, com defaults locais para o frontend estático
 - a configuração JWT precisa existir e usar chave com pelo menos 32 bytes
 - migrations automáticas rodam fora de `Testing` e `FrontendSmoke`
 

@@ -209,6 +209,42 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
     }
 
     [Fact]
+    public async Task CreateEvent_ShouldReturnCreated_WithRequiredEnrichedFieldsAndDateOnly()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var session = await CreateAuthenticatedUserSessionAsync();
+        var eventDate = new DateTime(2030, 8, 10);
+        var expectedEventDateTime = CreateEventDateTimeOffset(
+            "America/Manaus",
+            new DateTime(2030, 8, 10, 12, 0, 0, DateTimeKind.Unspecified));
+
+        var response = await PostAuthorizedJsonAsync("/api/events", new
+        {
+            name = "Casamento Minimo",
+            hostNames = "Ana e Bruno",
+            eventDate,
+            timeZoneId = "America/Manaus"
+        }, session.Token);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<EventResponseContract>(JsonOptions);
+
+        Assert.NotNull(payload);
+        Assert.Equal("Casamento Minimo", payload.Name);
+        Assert.Equal("Ana e Bruno", payload.HostNames);
+        Assert.Equal(DateTime.SpecifyKind(eventDate.Date, DateTimeKind.Utc), payload.EventDate);
+        Assert.Equal(expectedEventDateTime.UtcDateTime, payload.EventDateTime);
+        Assert.Equal("America/Manaus", payload.TimeZoneId);
+        Assert.Equal(string.Empty, payload.LocationName);
+        Assert.Equal(string.Empty, payload.LocationAddress);
+        Assert.Equal(string.Empty, payload.LocationMapsUrl);
+        Assert.Equal(string.Empty, payload.CeremonyInfo);
+        Assert.Equal(string.Empty, payload.DressCode);
+    }
+
+    [Fact]
     public async Task CreateEvent_ShouldReturnBadRequest_WhenGalleryImageUrlIsInvalid()
     {
         await Factory.ResetDatabaseAsync();
@@ -408,6 +444,7 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.Equal(0, emptySummary.CompanionCount);
         Assert.Equal(0, emptySummary.ReservedGiftCount);
         Assert.Equal(0, emptySummary.AvailableGiftCount);
+        Assert.Equal(0m, emptySummary.TotalRaisedAmount);
 
         var summary = Assert.Single(payload, ev => ev.Id == eventWithSummary.Id).StatusSummary;
         Assert.NotNull(summary);
@@ -417,6 +454,7 @@ public sealed class EventIntegrationTests : IntegrationTestBase, IClassFixture<I
         Assert.Equal(2, summary.CompanionCount);
         Assert.Equal(2, summary.ReservedGiftCount);
         Assert.Equal(1, summary.AvailableGiftCount);
+        Assert.Equal(599.80m, summary.TotalRaisedAmount);
 
         var publicResponse = await Client.GetAsync($"/api/events/{eventWithSummary.Slug}");
         var publicBody = await publicResponse.Content.ReadAsStringAsync();

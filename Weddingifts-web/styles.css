@@ -1745,6 +1745,12 @@ body.mobile-nav-open {
   border-color: var(--line-strong);
 }
 
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  box-shadow: none;
+}
+
 .icon-button.is-active {
   color: var(--text);
   border-color: rgba(255, 56, 92, 0.7);
@@ -3454,17 +3460,44 @@ body.mobile-nav-open {
 .my-event-status-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 8px;
-  margin: 6px 0 0;
+  gap: 10px 18px;
+  margin: 8px 0 0;
   color: #7f7468;
   font-size: 0.79rem;
   line-height: 1.45;
 }
 
-.my-event-status-summary span:not(:last-child)::after {
-  content: "·";
-  margin-left: 8px;
-  color: #b0a79d;
+.my-event-status-group {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-width: min(100%, 230px);
+}
+
+.my-event-status-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  color: #7f7468;
+}
+
+.my-event-status-icon .btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.my-event-status-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.my-event-status-lines {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .my-event-primary-actions {
@@ -5681,18 +5714,18 @@ body,
   position: relative !important;
   z-index: 1 !important;
   display: grid !important;
-  grid-template-columns: minmax(280px, 1fr) 108px !important;
+  grid-template-columns: minmax(0, 270px) 108px !important;
   align-items: start !important;
   justify-content: start !important;
   gap: 16px !important;
-  width: min(100%, 650px) !important;
-  max-width: 650px !important;
+  width: min(100%, 394px) !important;
+  max-width: 394px !important;
   margin-top: 0 !important;
 }
 
 .public-event-rsvp.invitation-flow[data-state="identify"] .rsvp-cpf-field {
   width: 100% !important;
-  max-width: none !important;
+  max-width: 270px !important;
 }
 
 .public-event-rsvp.invitation-flow[data-state="identify"] .rsvp-cpf-input-shell {
@@ -5720,7 +5753,7 @@ body,
 
 .public-event-rsvp.invitation-flow[data-state="identify"] #invitation-guest-cpf-input {
   width: 100% !important;
-  max-width: none !important;
+  max-width: 270px !important;
   min-height: 58px !important;
   padding-left: 58px !important;
   border-color: rgba(202, 188, 184, 0.95) !important;
@@ -6948,5 +6981,192 @@ body:has(.public-gifts-page) .global-footer {
 
   .shell-dot::before {
     font-size: 1.8rem;
+  }
+}
+
+/* In-app notifications replace fixed status blocks while keeping status text available to assistive tech. */
+.status {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+.status-toast-region {
+  position: fixed;
+  top: calc(72px + env(safe-area-inset-top, 0px));
+  right: 18px;
+  z-index: 1200;
+  display: grid;
+  gap: 10px;
+  width: min(390px, calc(100vw - 28px));
+  pointer-events: none;
+}
+
+.status-toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  min-height: 58px;
+  border: 1px solid rgba(202, 188, 184, 0.78);
+  border-radius: 8px;
+  background: rgba(255, 253, 251, 0.98);
+  padding: 13px 12px 13px 14px;
+  color: #423936;
+  box-shadow: 0 18px 48px rgba(69, 55, 51, 0.18);
+  pointer-events: auto;
+  animation: status-toast-enter 180ms ease-out both;
+}
+
+.status-toast.is-leaving {
+  animation: status-toast-exit 180ms ease-in both;
+}
+
+.status-toast-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(124, 105, 93, 0.12);
+  color: #745f54;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.status-toast-icon::before {
+  content: "i";
+}
+
+.status-toast-message {
+  min-width: 0;
+  padding-top: 2px;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.42;
+}
+
+.status-toast-close {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #8b7a72;
+  cursor: pointer;
+}
+
+.status-toast-close:hover,
+.status-toast-close:focus-visible {
+  background: rgba(124, 105, 93, 0.12);
+  color: #3f3632;
+  outline: none;
+}
+
+.status-toast-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.status-toast-success {
+  border-color: rgba(31, 122, 77, 0.26);
+  background: rgba(246, 253, 248, 0.98);
+}
+
+.status-toast-success .status-toast-icon {
+  background: rgba(31, 122, 77, 0.12);
+  color: #1f7a4d;
+}
+
+.status-toast-success .status-toast-icon::before {
+  content: "";
+  width: 7px;
+  height: 12px;
+  margin-top: -2px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.status-toast-error {
+  border-color: rgba(193, 53, 21, 0.28);
+  background: rgba(255, 247, 245, 0.98);
+}
+
+.status-toast-error .status-toast-icon {
+  background: rgba(193, 53, 21, 0.12);
+  color: #a93b24;
+}
+
+.status-toast-error .status-toast-icon::before {
+  content: "!";
+}
+
+.status-toast-loading .status-toast-icon::before {
+  content: "";
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 999px;
+  animation: status-toast-spin 820ms linear infinite;
+}
+
+@keyframes status-toast-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(18px, -6px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes status-toast-exit {
+  to {
+    opacity: 0;
+    transform: translate3d(18px, -6px, 0);
+  }
+}
+
+@keyframes status-toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 680px) {
+  .status-toast-region {
+    top: calc(70px + env(safe-area-inset-top, 0px));
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .status-toast {
+    min-height: 56px;
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-toast,
+  .status-toast.is-leaving,
+  .status-toast-loading .status-toast-icon::before {
+    animation: none;
   }
 }

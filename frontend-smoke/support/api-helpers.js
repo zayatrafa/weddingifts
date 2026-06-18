@@ -127,6 +127,10 @@ export async function createGift(token, eventId, overrides = {}) {
   });
 }
 
+export async function getGifts(eventId) {
+  return requestJson(`/api/events/${eventId}/gifts`);
+}
+
 export async function reserveGift(giftId, guestCpf) {
   return requestJson(`/api/gifts/${giftId}/reserve`, {
     method: "POST",

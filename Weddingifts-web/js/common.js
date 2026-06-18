@@ -1,4 +1,6 @@
-﻿export const DEFAULT_API_BASE = inferApiBase();
+import "./api-config.js";
+
+export const DEFAULT_API_BASE = inferApiBase();
 const AUTH_KEY = "wg_auth_session";
 const MOBILE_NAV_TOGGLE_ID = "mobile-nav-toggle";
 const MOBILE_NAV_OVERLAY_ID = "mobile-nav-overlay";
@@ -6,8 +8,26 @@ const MOBILE_NAV_DRAWER_ID = "mobile-nav-drawer";
 const MOBILE_NAV_TITLE = "Navegação principal";
 
 const STATUS_CLASSES = Object.freeze(["status-info", "status-success", "status-error", "status-loading"]);
+const STATUS_TOAST_REGION_ID = "wg-status-toast-region";
+const STATUS_TOAST_MAX_ITEMS = 4;
+const STATUS_TOAST_DEDUPE_MS = 900;
+const STATUS_TOAST_DEFAULT_TIMEOUT_MS = 4200;
+const STATUS_TOAST_TIMEOUTS = Object.freeze({
+  "status-info": 4200,
+  "status-success": 4200,
+  "status-error": 6800,
+  "status-loading": 3200
+});
+const STATUS_TOAST_CLASSES = Object.freeze({
+  "status-info": "status-toast-info",
+  "status-success": "status-toast-success",
+  "status-error": "status-toast-error",
+  "status-loading": "status-toast-loading"
+});
 const GENERIC_ERROR_MESSAGE = "Não foi possível concluir a operação. Tente novamente.";
 let mobileHeaderController = null;
+let lastStatusToastKey = "";
+let lastStatusToastAt = 0;
 
 // Shared product copy used across multiple pages.
 export const UI_TEXT = {
@@ -38,8 +58,8 @@ export const UI_TEXT = {
   },
   events: {
     loading: "Carregando seus eventos...",
-    empty: "Você ainda não possui eventos.",
-    emptyWithAction: "Você ainda não possui eventos. Crie um evento primeiro.",
+    empty: "Você ainda não criou nenhum evento.",
+    emptyWithAction: "Você ainda não criou nenhum evento.",
     loaded: "Eventos carregados com sucesso.",
     createdFocus: "Evento criado e destacado com sucesso.",
     createLoading: "Criando evento...",
@@ -66,8 +86,8 @@ export const UI_TEXT = {
     deleteLoading: "Excluindo presente...",
     deleteSuccess: "Presente excluído com sucesso.",
     deleteError: "Não foi possível excluir o presente.",
-    empty: "Nenhum presente cadastrado para este evento.",
-    emptyFilter: "Nenhum presente encontrado para este filtro.",
+    empty: "Nenhum presente cadastrado ainda.",
+    emptyFilter: "Nenhum resultado encontrado.",
     emptyReservations: "Nenhuma reserva registrada para este evento."
   },
   guests: {
@@ -82,23 +102,33 @@ export const UI_TEXT = {
     deleteLoading: "Excluindo convidado...",
     deleteSuccess: "Convidado excluído com sucesso.",
     deleteError: "Não foi possível excluir o convidado.",
-    empty: "Nenhum convidado cadastrado para este evento.",
-    emptyFilter: "Nenhum convidado encontrado para este filtro.",
+    empty: "Nenhum convidado cadastrado ainda.",
+    emptyFilter: "Nenhum resultado encontrado.",
     reservationNone: "Sem reserva ativa",
     reservationActive: "Reserva ativa"
   },
   publicEvent: {
     initial: "Informe o slug para carregar o evento público.",
-    loading: "Carregando evento e presentes...",
+    loading: "Carregando convite...",
     loadError: "Não foi possível carregar o evento.",
-    reserveLoading: "Registrando presente...",
-    reserveSuccess: "Presente registrado com sucesso.",
+    rsvpLookupLoading: "Buscando convite...",
+    rsvpSaveLoading: "Salvando resposta...",
+    rsvpSaveError: "Não conseguimos salvar sua resposta agora. Verifique sua conexão e tente novamente.",
+    rsvpAccepted: "Presença confirmada.",
+    rsvpDeclined: "Resposta recusada.",
+    rsvpUpdated: "Resposta atualizada.",
+    giftsLoading: "Carregando lista de presentes...",
+    giftsLoadingList: "Carregando presentes...",
+    reserveLoading: "Reservando presente...",
+    reserveSuccess: "Presente reservado com sucesso.",
     reserveError: "Não foi possível registrar o presente.",
     unreserveLoading: "Retirando presente...",
     unreserveSuccess: "Presente retirado com sucesso.",
     unreserveError: "Não foi possível retirar o presente.",
     emptyEvent: "Nenhum evento carregado.",
-    emptyFilter: "Nenhum presente encontrado para este filtro."
+    emptyGifts: "Nenhum presente cadastrado ainda.",
+    allGiftsReserved: "Todos os presentes desta lista já foram reservados.",
+    emptyFilter: "Nenhum resultado encontrado."
   },
   confirms: {
     deleteEvent: (name) => `Tem certeza que deseja excluir o evento "${name}"?`,
@@ -364,6 +394,8 @@ export function formatCurrency(value) {
 
 export function setStatus(element, type, message) {
   let target = element || document.getElementById("status");
+  const normalizedType = STATUS_CLASSES.includes(type) ? type : "status-info";
+  const statusMessage = String(message ?? "");
 
   if (!target) {
     target = document.createElement("p");
@@ -380,10 +412,86 @@ export function setStatus(element, type, message) {
     preferredContainer.appendChild(target);
   }
 
-  target.hidden = false;
-  target.textContent = message;
+  target.hidden = !statusMessage.trim();
+  target.textContent = statusMessage;
+  target.setAttribute("role", normalizedType === "status-error" ? "alert" : "status");
+  target.setAttribute("aria-live", normalizedType === "status-error" ? "assertive" : "polite");
   target.classList.remove(...STATUS_CLASSES);
-  target.classList.add(type);
+  target.classList.add(normalizedType);
+
+  if (!target.hidden) {
+    showStatusToast(normalizedType, statusMessage);
+  }
+}
+
+function showStatusToast(type, message) {
+  if (typeof document === "undefined") return;
+
+  const text = String(message ?? "").trim();
+  if (!text) return;
+
+  const now = Date.now();
+  const toastKey = `${type}:${text}`;
+  if (toastKey === lastStatusToastKey && now - lastStatusToastAt < STATUS_TOAST_DEDUPE_MS) return;
+
+  lastStatusToastKey = toastKey;
+  lastStatusToastAt = now;
+
+  const region = ensureStatusToastRegion();
+  const toast = document.createElement("div");
+  toast.className = `status-toast ${STATUS_TOAST_CLASSES[type] || STATUS_TOAST_CLASSES["status-info"]}`;
+  toast.setAttribute("role", type === "status-error" ? "alert" : "status");
+  toast.setAttribute("aria-live", type === "status-error" ? "assertive" : "polite");
+
+  const icon = document.createElement("span");
+  icon.className = "status-toast-icon";
+  icon.setAttribute("aria-hidden", "true");
+
+  const copy = document.createElement("span");
+  copy.className = "status-toast-message";
+  copy.textContent = text;
+
+  const closeButton = document.createElement("button");
+  closeButton.className = "status-toast-close";
+  closeButton.type = "button";
+  closeButton.setAttribute("aria-label", "Fechar notificacao");
+  closeButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6 6.4 5z" fill="currentColor"/></svg>';
+  closeButton.addEventListener("click", () => dismissStatusToast(toast));
+
+  toast.append(icon, copy, closeButton);
+  region.appendChild(toast);
+  trimStatusToasts(region);
+
+  window.setTimeout(
+    () => dismissStatusToast(toast),
+    STATUS_TOAST_TIMEOUTS[type] || STATUS_TOAST_DEFAULT_TIMEOUT_MS
+  );
+}
+
+function ensureStatusToastRegion() {
+  let region = document.getElementById(STATUS_TOAST_REGION_ID);
+  if (region) return region;
+
+  region = document.createElement("div");
+  region.id = STATUS_TOAST_REGION_ID;
+  region.className = "status-toast-region";
+  region.setAttribute("aria-label", "Notificacoes");
+  document.body.appendChild(region);
+  return region;
+}
+
+function trimStatusToasts(region) {
+  const toasts = Array.from(region.querySelectorAll(".status-toast"));
+  while (toasts.length > STATUS_TOAST_MAX_ITEMS) {
+    dismissStatusToast(toasts.shift());
+  }
+}
+
+function dismissStatusToast(toast) {
+  if (!toast?.isConnected || toast.classList.contains("is-leaving")) return;
+
+  toast.classList.add("is-leaving");
+  window.setTimeout(() => toast.remove(), 180);
 }
 
 export function buildPublicEventLink(slug) {
@@ -563,9 +671,18 @@ function inferApiBase() {
   const isBrowser = typeof window !== "undefined" && !!window.location;
   if (!isBrowser) return "http://localhost:5298";
 
+  const configuredApiBase = normalizeApiBase(window.WEDDINGIFTS_API_BASE_URL);
+  if (configuredApiBase) return configuredApiBase;
+
   const protocol = window.location.protocol === "https:" ? "https:" : "http:";
   const hostname = window.location.hostname || "localhost";
   return `${protocol}//${hostname}:5298`;
+}
+
+function normalizeApiBase(value) {
+  if (typeof value !== "string") return "";
+
+  return value.trim().replace(/\/+$/, "");
 }
 
 // Global mobile header / drawer controller used by pages that render .shell-nav.
